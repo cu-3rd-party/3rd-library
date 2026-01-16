@@ -6,6 +6,7 @@ use crate::errors::ApiError;
 
 pub mod auth;
 pub mod content;
+pub mod engagement;
 
 #[derive(Clone)]
 pub struct AppState {

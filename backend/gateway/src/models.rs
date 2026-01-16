@@ -51,3 +51,40 @@ pub struct StatsResponse {
     pub unique_users: i64,
     pub last_interaction_at: i64,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct CommentRequest {
+    pub body: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CommentResponse {
+    pub id: String,
+    pub content_id: String,
+    pub user_id: String,
+    pub body: String,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CommentListResponse {
+    pub items: Vec<CommentResponse>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LikeRequest {
+    pub liked: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct LikeResponse {
+    pub likes: i64,
+    pub liked: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct EngagementResponse {
+    pub likes: i64,
+    pub comments: i64,
+    pub liked_by_user: bool,
+}

@@ -12,7 +12,7 @@ mod proto;
 
 use crate::clients::Clients;
 use crate::config::GatewayConfig;
-use crate::handlers::{AppState, auth, content};
+use crate::handlers::{AppState, auth, content, engagement};
 
 #[tokio::main]
 async fn main() {
@@ -40,6 +40,12 @@ async fn main() {
         .route("/contents/:id", get(content::get_content))
         .route("/contents/:id/download", get(content::download_content))
         .route("/contents/:id/stats", get(content::get_stats))
+        .route(
+            "/contents/:id/comments",
+            get(engagement::list_comments).post(engagement::add_comment),
+        )
+        .route("/contents/:id/likes", post(engagement::set_like))
+        .route("/contents/:id/engagement", get(engagement::get_engagement))
         .with_state(state)
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http());

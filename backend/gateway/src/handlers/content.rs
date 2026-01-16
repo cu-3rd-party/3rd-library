@@ -9,7 +9,7 @@ use axum::{
 use crate::errors::ApiError;
 use crate::handlers::{SharedState, anonymous_id, bearer_token};
 use crate::models::{ContentListResponse, ContentMetadata, StatsResponse};
-use crate::proto::{auth, content, engagement, statistics};
+use crate::proto::{auth, content, statistics};
 
 #[derive(Debug, serde::Deserialize)]
 pub struct ListQuery {
@@ -233,35 +233,16 @@ async fn record_interaction(
     user_id: &str,
     kind: InteractionKind,
 ) {
-    let (engagement_type, statistics_type) = match kind {
-        InteractionKind::View => (
-            engagement::InteractionType::View as i32,
-            statistics::InteractionType::View as i32,
-        ),
-        InteractionKind::Download => (
-            engagement::InteractionType::Download as i32,
-            statistics::InteractionType::Download as i32,
-        ),
+    let statistics_type = match kind {
+        InteractionKind::View => statistics::InteractionType::View as i32,
+        InteractionKind::Download => statistics::InteractionType::Download as i32,
     };
 
-    let mut engagement_client = state.clients.engagement_client();
     let mut statistics_client = state.clients.statistics_client();
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs() as i64;
-
-    if let Err(err) = engagement_client
-        .record_interaction(engagement::RecordInteractionRequest {
-            content_id: content_id.to_string(),
-            user_id: user_id.to_string(),
-            r#type: engagement_type,
-            occurred_at: now,
-        })
-        .await
-    {
-        tracing::warn!(error = %err, "failed to record engagement");
-    }
 
     if let Err(err) = statistics_client
         .record_interaction(statistics::RecordInteractionRequest {
