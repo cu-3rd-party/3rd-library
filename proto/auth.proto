@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package auth.v1;
 
+option go_package = "github.com/igor/3rd-library/auth/internal/gen;authpb";
+
 service AuthService {
   rpc Ping(PingRequest) returns (PingResponse);
 }

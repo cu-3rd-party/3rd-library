@@ -1,0 +1,43 @@
+PROTO_DIR := proto
+GO_AUTH_OUT := backend/auth/internal/gen
+PY_STAT_OUT := backend/statistics/src/proto
+PY_NOTIF_OUT := backend/notification/src/proto
+PY_ENG_OUT := backend/engagement/src/proto
+PY_CONTENT_OUT := backend/content/src/proto
+GOBIN := $(shell go env GOPATH)/bin
+PATH := $(GOBIN):$(PATH)
+UV := $(HOME)/.local/bin/uv
+
+.PHONY: proto proto-go proto-python proto-rust proto-clean
+
+proto: proto-go proto-python proto-rust
+
+proto-go:
+	protoc -I $(PROTO_DIR) \
+		--go_out=$(GO_AUTH_OUT) --go_opt=paths=source_relative \
+		--go-grpc_out=$(GO_AUTH_OUT) --go-grpc_opt=paths=source_relative \
+		$(PROTO_DIR)/auth.proto
+
+proto-python:
+	cd backend/statistics && $(UV) run python -m grpc_tools.protoc -I ../../$(PROTO_DIR) \
+		--python_out=src/proto --grpc_python_out=src/proto \
+		../../$(PROTO_DIR)/statistics.proto
+	cd backend/notification && $(UV) run python -m grpc_tools.protoc -I ../../$(PROTO_DIR) \
+		--python_out=src/proto --grpc_python_out=src/proto \
+		../../$(PROTO_DIR)/notification.proto
+	cd backend/engagement && $(UV) run python -m grpc_tools.protoc -I ../../$(PROTO_DIR) \
+		--python_out=src/proto --grpc_python_out=src/proto \
+		../../$(PROTO_DIR)/engagement.proto
+	cd backend/content && $(UV) run python -m grpc_tools.protoc -I ../../$(PROTO_DIR) \
+		--python_out=src/proto --grpc_python_out=src/proto \
+		../../$(PROTO_DIR)/content.proto
+
+proto-rust:
+	$(MAKE) -C backend/gateway build-proto
+
+proto-clean:
+	rm -f $(GO_AUTH_OUT)/*.pb.go
+	rm -f $(PY_STAT_OUT)/*_pb2.py $(PY_STAT_OUT)/*_pb2_grpc.py
+	rm -f $(PY_NOTIF_OUT)/*_pb2.py $(PY_NOTIF_OUT)/*_pb2_grpc.py
+	rm -f $(PY_ENG_OUT)/*_pb2.py $(PY_ENG_OUT)/*_pb2_grpc.py
+	rm -f $(PY_CONTENT_OUT)/*_pb2.py $(PY_CONTENT_OUT)/*_pb2_grpc.py

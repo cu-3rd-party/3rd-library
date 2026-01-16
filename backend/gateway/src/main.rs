@@ -1,5 +1,8 @@
 use axum::{routing::get, Router};
 use tokio::net::TcpListener;
+
+#[allow(dead_code)]
+mod proto;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
