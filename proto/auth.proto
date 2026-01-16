@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package auth.v1;
 
-option go_package = "github.com/igor/3rd-library/auth/internal/gen;authpb";
+option go_package = "github.com/cu-3rd-party/3rd-library/auth/internal/gen;authpb";
 
 service AuthService {
   rpc Register(RegisterRequest) returns (AuthResponse);

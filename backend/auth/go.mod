@@ -1,4 +1,4 @@
-module github.com/igor/3rd-library/auth
+module github.com/cu-3rd-party/3rd-library/auth
 
 go 1.25.5
 

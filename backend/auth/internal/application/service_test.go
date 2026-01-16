@@ -5,8 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/igor/3rd-library/auth/internal/domain"
-	"github.com/igor/3rd-library/auth/internal/infrastructure"
+	"github.com/cu-3rd-party/3rd-library/auth/internal/domain"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -25,8 +24,49 @@ func (s *stubTokenManager) Parse(_ string) (string, error) {
 	return s.parseUser, s.parseErr
 }
 
+type inMemoryUserRepo struct {
+	byID    map[string]domain.User
+	byEmail map[string]string
+}
+
+func newInMemoryUserRepo() *inMemoryUserRepo {
+	return &inMemoryUserRepo{
+		byID:    make(map[string]domain.User),
+		byEmail: make(map[string]string),
+	}
+}
+
+func (repo *inMemoryUserRepo) Create(_ context.Context, user domain.User) error {
+	if _, exists := repo.byEmail[user.Email]; exists {
+		return domain.ErrEmailTaken
+	}
+	repo.byID[user.ID] = user
+	repo.byEmail[user.Email] = user.ID
+	return nil
+}
+
+func (repo *inMemoryUserRepo) GetByEmail(_ context.Context, email string) (domain.User, error) {
+	id, ok := repo.byEmail[email]
+	if !ok {
+		return domain.User{}, domain.ErrUserNotFound
+	}
+	user, ok := repo.byID[id]
+	if !ok {
+		return domain.User{}, domain.ErrUserNotFound
+	}
+	return user, nil
+}
+
+func (repo *inMemoryUserRepo) GetByID(_ context.Context, userID string) (domain.User, error) {
+	user, ok := repo.byID[userID]
+	if !ok {
+		return domain.User{}, domain.ErrUserNotFound
+	}
+	return user, nil
+}
+
 func TestAuthServiceRegisterSuccess(t *testing.T) {
-	repo := infrastructure.NewInMemoryUserRepository()
+	repo := newInMemoryUserRepo()
 	token := &stubTokenManager{issueToken: "token"}
 	now := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 
@@ -57,7 +97,7 @@ func TestAuthServiceRegisterSuccess(t *testing.T) {
 }
 
 func TestAuthServiceRegisterValidation(t *testing.T) {
-	repo := infrastructure.NewInMemoryUserRepository()
+	repo := newInMemoryUserRepo()
 	svc := NewAuthService(repo, &stubTokenManager{}, time.Now, func() string { return "id" })
 
 	_, _, err := svc.Register(context.Background(), "", "nope", "")
@@ -67,7 +107,7 @@ func TestAuthServiceRegisterValidation(t *testing.T) {
 }
 
 func TestAuthServiceRegisterEmailTaken(t *testing.T) {
-	repo := infrastructure.NewInMemoryUserRepository()
+	repo := newInMemoryUserRepo()
 	existing := domain.User{ID: "user-1", Name: "Jane", Email: "jane@example.com", PasswordHash: "hash", CreatedAt: time.Now()}
 	if err := repo.Create(context.Background(), existing); err != nil {
 		t.Fatalf("create error: %v", err)
@@ -82,7 +122,7 @@ func TestAuthServiceRegisterEmailTaken(t *testing.T) {
 }
 
 func TestAuthServiceLoginSuccess(t *testing.T) {
-	repo := infrastructure.NewInMemoryUserRepository()
+	repo := newInMemoryUserRepo()
 	hash, err := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.DefaultCost)
 	if err != nil {
 		t.Fatalf("hash error: %v", err)
@@ -107,7 +147,7 @@ func TestAuthServiceLoginSuccess(t *testing.T) {
 }
 
 func TestAuthServiceLoginInvalidCredentials(t *testing.T) {
-	repo := infrastructure.NewInMemoryUserRepository()
+	repo := newInMemoryUserRepo()
 	hash, err := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.DefaultCost)
 	if err != nil {
 		t.Fatalf("hash error: %v", err)
@@ -126,7 +166,7 @@ func TestAuthServiceLoginInvalidCredentials(t *testing.T) {
 }
 
 func TestAuthServiceValidate(t *testing.T) {
-	repo := infrastructure.NewInMemoryUserRepository()
+	repo := newInMemoryUserRepo()
 	user := domain.User{ID: "user-1", Name: "Jane", Email: "jane@example.com", PasswordHash: "hash", CreatedAt: time.Now()}
 	if err := repo.Create(context.Background(), user); err != nil {
 		t.Fatalf("create error: %v", err)
@@ -149,7 +189,7 @@ func TestAuthServiceValidate(t *testing.T) {
 }
 
 func TestAuthServiceGetUser(t *testing.T) {
-	repo := infrastructure.NewInMemoryUserRepository()
+	repo := newInMemoryUserRepo()
 	user := domain.User{ID: "user-1", Name: "Jane", Email: "jane@example.com", PasswordHash: "hash", CreatedAt: time.Now()}
 	if err := repo.Create(context.Background(), user); err != nil {
 		t.Fatalf("create error: %v", err)

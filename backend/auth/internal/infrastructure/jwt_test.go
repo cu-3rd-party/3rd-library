@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/igor/3rd-library/auth/internal/domain"
+	"github.com/cu-3rd-party/3rd-library/auth/internal/domain"
 )
 
 func TestJWTManagerIssueAndParse(t *testing.T) {

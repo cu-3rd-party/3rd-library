@@ -9,10 +9,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/igor/3rd-library/auth/internal/application"
-	authpb "github.com/igor/3rd-library/auth/internal/gen"
-	"github.com/igor/3rd-library/auth/internal/infrastructure"
-	transportgrpc "github.com/igor/3rd-library/auth/internal/transport/grpc"
+	"github.com/cu-3rd-party/3rd-library/auth/internal/application"
+	authpb "github.com/cu-3rd-party/3rd-library/auth/internal/gen"
+	"github.com/cu-3rd-party/3rd-library/auth/internal/infrastructure"
+	transportgrpc "github.com/cu-3rd-party/3rd-library/auth/internal/transport/grpc"
 	"google.golang.org/grpc"
 )
 

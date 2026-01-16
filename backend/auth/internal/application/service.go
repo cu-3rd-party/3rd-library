@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/igor/3rd-library/auth/internal/domain"
+	"github.com/cu-3rd-party/3rd-library/auth/internal/domain"
 	"golang.org/x/crypto/bcrypt"
 )
 

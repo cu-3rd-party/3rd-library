@@ -3,9 +3,9 @@ package grpc
 import (
 	"context"
 
-	"github.com/igor/3rd-library/auth/internal/application"
-	"github.com/igor/3rd-library/auth/internal/domain"
-	authpb "github.com/igor/3rd-library/auth/internal/gen"
+	"github.com/cu-3rd-party/3rd-library/auth/internal/application"
+	"github.com/cu-3rd-party/3rd-library/auth/internal/domain"
+	authpb "github.com/cu-3rd-party/3rd-library/auth/internal/gen"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

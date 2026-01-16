@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/igor/3rd-library/auth/internal/application"
-	"github.com/igor/3rd-library/auth/internal/domain"
+	"github.com/cu-3rd-party/3rd-library/auth/internal/application"
+	"github.com/cu-3rd-party/3rd-library/auth/internal/domain"
 )
 
 type JWTManager struct {
