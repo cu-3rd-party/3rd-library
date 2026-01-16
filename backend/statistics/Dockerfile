@@ -3,5 +3,6 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN pip install --no-cache-dir uv && uv sync --frozen
 COPY src ./src
+ENV PYTHONPATH=/app/src:/app/src/proto
 EXPOSE 50052
 CMD ["uv", "run", "python", "src/main.py"]

@@ -1,6 +1,7 @@
 use axum::{Router, routing::get, routing::post};
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod clients;
@@ -51,6 +52,7 @@ async fn main() {
         .layer(TraceLayer::new_for_http());
 
     let addr = "0.0.0.0:8080";
+    info!("Serving at {addr}");
     let listener = TcpListener::bind(addr)
         .await
         .expect("failed to bind address");

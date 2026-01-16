@@ -8,8 +8,12 @@ GOBIN := $(shell go env GOPATH)/bin
 PATH := $(GOBIN):$(PATH)
 UV ?= uv
 PYTEST_CMD := $(shell command -v $(UV) >/dev/null 2>&1 && echo "$(UV) run pytest" || echo "python -m pytest")
+COLOR_RESET := \033[0m
+COLOR_RED := \033[0;31m
+COLOR_GREEN := \033[0;32m
+COLOR_CYAN := \033[0;36m
 
-.PHONY: proto proto-go proto-python proto-rust proto-clean test test-auth test-content test-engagement test-notification test-statistics
+.PHONY: proto proto-go proto-python proto-rust proto-clean test test-auth test-content test-engagement test-notification test-statistics e2e
 
 proto: proto-go proto-python proto-rust
 
@@ -59,3 +63,7 @@ test-notification:
 
 test-statistics:
 	cd backend/statistics && $(PYTEST_CMD)
+
+e2e:
+	@printf "$(COLOR_CYAN)Running Selenium E2E tests...$(COLOR_RESET)\n"
+	@python e2e/run_e2e.py

@@ -4,8 +4,6 @@ services:
       context: ./backend/gateway
     env_file:
       - ./env/gateway.env
-    networks:
-      - app
     ports:
       - "8080:8080"
     depends_on:
@@ -17,10 +15,8 @@ services:
       context: ./backend/auth
     env_file:
       - ./env/auth.env
-    networks:
-      - app
     depends_on:
-      - postgres
+      - auth-postgres
       - kafka
 
   statistics:
@@ -28,8 +24,6 @@ services:
       context: ./backend/statistics
     env_file:
       - ./env/statistics.env
-    networks:
-      - app
     depends_on:
       - clickhouse
       - kafka
@@ -39,10 +33,8 @@ services:
       context: ./backend/notification
     env_file:
       - ./env/notification.env
-    networks:
-      - app
     depends_on:
-      - mongo
+      - notification-mongo
       - kafka
 
   engagement:
@@ -50,10 +42,8 @@ services:
       context: ./backend/engagement
     env_file:
       - ./env/engagement.env
-    networks:
-      - app
     depends_on:
-      - mongo
+      - engagement-mongo
       - kafka
 
   content:
@@ -61,10 +51,8 @@ services:
       context: ./backend/content
     env_file:
       - ./env/content.env
-    networks:
-      - app
     depends_on:
-      - mongo
+      - content-mongo
       - kafka
 
   frontend:
@@ -74,39 +62,53 @@ services:
       - "5173:5173"
     depends_on:
       - gateway
-    networks:
-      - app
 
-  postgres:
+  auth-postgres:
     image: postgres:16
     env_file:
       - ./env/postgres.env
     ports:
       - "5432:5432"
-    networks:
-      - app
+    volumes:
+      - auth-postgres-data:/var/lib/postgresql/data
 
-  clickhouse:
-    image: clickhouse
-    ports:
-      - "9000:9000"
-      - "8123:8123"
-    networks:
-      - app
-
-  mongo:
+  notification-mongo:
     image: mongo
     ports:
       - "27017:27017"
-    networks:
-      - app
+    volumes:
+      - notification-mongo-data:/data/db
+
+  engagement-mongo:
+    image: mongo
+    ports:
+      - "27018:27017"
+    volumes:
+      - engagement-mongo-data:/data/db
+
+  content-mongo:
+    image: mongo
+    ports:
+      - "27019:27017"
+    volumes:
+      - content-mongo-data:/data/db
+
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    env_file:
+      - ./env/clickhouse.env
+    ports:
+      - "9000:9000"
+      - "8123:8123"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
 
   redis:
     image: redis
     ports:
       - "6379:6379"
-    networks:
-      - app
+    volumes:
+      - redis-data:/data
 
   kafka:
     image: apache/kafka:4.1.0
@@ -115,8 +117,8 @@ services:
     restart: unless-stopped
     ports:
       - "9092:9092"
-    networks:
-      - app
+    volumes:
+      - kafka-data:/var/lib/kafka/data
 
   minio:
     image: minio/minio
@@ -126,8 +128,15 @@ services:
     ports:
       - "9001:9001"
       - "9002:9000"
-    networks:
-      - app
+    volumes:
+      - minio-data:/data
 
-networks:
-  app:
+volumes:
+  auth-postgres-data:
+  notification-mongo-data:
+  engagement-mongo-data:
+  content-mongo-data:
+  clickhouse-data:
+  redis-data:
+  kafka-data:
+  minio-data:
