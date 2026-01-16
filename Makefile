@@ -6,7 +6,8 @@ PY_ENG_OUT := backend/engagement/src/proto
 PY_CONTENT_OUT := backend/content/src/proto
 GOBIN := $(shell go env GOPATH)/bin
 PATH := $(GOBIN):$(PATH)
-UV := $(HOME)/.local/bin/uv
+UV ?= uv
+PYTEST_CMD := $(shell command -v $(UV) >/dev/null 2>&1 && echo "$(UV) run pytest" || echo "python -m pytest")
 
 .PHONY: proto proto-go proto-python proto-rust proto-clean test test-auth test-content test-engagement test-notification test-statistics
 
@@ -48,13 +49,13 @@ test-auth:
 	cd backend/auth && go test ./...
 
 test-content:
-	cd backend/content && $(UV) run pytest
+	cd backend/content && $(PYTEST_CMD)
 
 test-engagement:
-	cd backend/engagement && $(UV) run pytest
+	cd backend/engagement && $(PYTEST_CMD)
 
 test-notification:
-	cd backend/notification && $(UV) run pytest
+	cd backend/notification && $(PYTEST_CMD)
 
 test-statistics:
-	cd backend/statistics && $(UV) run pytest
+	cd backend/statistics && $(PYTEST_CMD)
