@@ -8,7 +8,7 @@ GOBIN := $(shell go env GOPATH)/bin
 PATH := $(GOBIN):$(PATH)
 UV := $(HOME)/.local/bin/uv
 
-.PHONY: proto proto-go proto-python proto-rust proto-clean
+.PHONY: proto proto-go proto-python proto-rust proto-clean test test-auth test-content test-engagement test-notification test-statistics
 
 proto: proto-go proto-python proto-rust
 
@@ -41,3 +41,20 @@ proto-clean:
 	rm -f $(PY_NOTIF_OUT)/*_pb2.py $(PY_NOTIF_OUT)/*_pb2_grpc.py
 	rm -f $(PY_ENG_OUT)/*_pb2.py $(PY_ENG_OUT)/*_pb2_grpc.py
 	rm -f $(PY_CONTENT_OUT)/*_pb2.py $(PY_CONTENT_OUT)/*_pb2_grpc.py
+
+test: test-auth test-content test-engagement test-notification test-statistics
+
+test-auth:
+	cd backend/auth && go test ./...
+
+test-content:
+	cd backend/content && $(UV) run pytest
+
+test-engagement:
+	cd backend/engagement && $(UV) run pytest
+
+test-notification:
+	cd backend/notification && $(UV) run pytest
+
+test-statistics:
+	cd backend/statistics && $(UV) run pytest
