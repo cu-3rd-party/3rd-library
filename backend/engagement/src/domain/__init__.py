@@ -1,4 +1,4 @@
-from .models import EngagementSummary, Interaction, InteractionType
+from .models import Comment, EngagementSummary
 from .repository import EngagementRepository
 
-__all__ = ["EngagementSummary", "EngagementRepository", "Interaction", "InteractionType"]
+__all__ = ["Comment", "EngagementSummary", "EngagementRepository"]

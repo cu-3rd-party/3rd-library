@@ -24,23 +24,31 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10\x65ngagement.proto\x12\rengagement.v1\"\x82\x01\n\x18RecordInteractionRequest\x12\x12\n\ncontent_id\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\t\x12,\n\x04type\x18\x03 \x01(\x0e\x32\x1e.engagement.v1.InteractionType\x12\x13\n\x0boccurred_at\x18\x04 \x01(\x03\"3\n\x19RecordInteractionResponse\x12\x16\n\x0einteraction_id\x18\x01 \x01(\t\"*\n\x14GetEngagementRequest\x12\x12\n\ncontent_id\x18\x01 \x01(\t\"O\n\x15GetEngagementResponse\x12\r\n\x05views\x18\x01 \x01(\x03\x12\x11\n\tdownloads\x18\x02 \x01(\x03\x12\x14\n\x0cunique_users\x18\x03 \x01(\x03*m\n\x0fInteractionType\x12 \n\x1cINTERACTION_TYPE_UNSPECIFIED\x10\x00\x12\x19\n\x15INTERACTION_TYPE_VIEW\x10\x01\x12\x1d\n\x19INTERACTION_TYPE_DOWNLOAD\x10\x02\x32\xd7\x01\n\x11\x45ngagementService\x12\x66\n\x11RecordInteraction\x12\'.engagement.v1.RecordInteractionRequest\x1a(.engagement.v1.RecordInteractionResponse\x12Z\n\rGetEngagement\x12#.engagement.v1.GetEngagementRequest\x1a$.engagement.v1.GetEngagementResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10\x65ngagement.proto\x12\rengagement.v1\"\\\n\x07\x43omment\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\ncontent_id\x18\x02 \x01(\t\x12\x0f\n\x07user_id\x18\x03 \x01(\t\x12\x0c\n\x04\x62ody\x18\x04 \x01(\t\x12\x12\n\ncreated_at\x18\x05 \x01(\x03\"Z\n\x11\x41\x64\x64\x43ommentRequest\x12\x12\n\ncontent_id\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\t\x12\x0c\n\x04\x62ody\x18\x03 \x01(\t\x12\x12\n\ncreated_at\x18\x04 \x01(\x03\"=\n\x12\x41\x64\x64\x43ommentResponse\x12\'\n\x07\x63omment\x18\x01 \x01(\x0b\x32\x16.engagement.v1.Comment\")\n\x13ListCommentsRequest\x12\x12\n\ncontent_id\x18\x01 \x01(\t\"@\n\x14ListCommentsResponse\x12(\n\x08\x63omments\x18\x01 \x03(\x0b\x32\x16.engagement.v1.Comment\"D\n\x0eSetLikeRequest\x12\x12\n\ncontent_id\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\t\x12\r\n\x05liked\x18\x03 \x01(\x08\"/\n\x0fSetLikeResponse\x12\r\n\x05likes\x18\x01 \x01(\x03\x12\r\n\x05liked\x18\x02 \x01(\x08\";\n\x14GetEngagementRequest\x12\x12\n\ncontent_id\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\t\"O\n\x15GetEngagementResponse\x12\r\n\x05likes\x18\x01 \x01(\x03\x12\x10\n\x08\x63omments\x18\x02 \x01(\x03\x12\x15\n\rliked_by_user\x18\x03 \x01(\x08\x32\xe5\x02\n\x11\x45ngagementService\x12Q\n\nAddComment\x12 .engagement.v1.AddCommentRequest\x1a!.engagement.v1.AddCommentResponse\x12W\n\x0cListComments\x12\".engagement.v1.ListCommentsRequest\x1a#.engagement.v1.ListCommentsResponse\x12H\n\x07SetLike\x12\x1d.engagement.v1.SetLikeRequest\x1a\x1e.engagement.v1.SetLikeResponse\x12Z\n\rGetEngagement\x12#.engagement.v1.GetEngagementRequest\x1a$.engagement.v1.GetEngagementResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'engagement_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_INTERACTIONTYPE']._serialized_start=346
-  _globals['_INTERACTIONTYPE']._serialized_end=455
-  _globals['_RECORDINTERACTIONREQUEST']._serialized_start=36
-  _globals['_RECORDINTERACTIONREQUEST']._serialized_end=166
-  _globals['_RECORDINTERACTIONRESPONSE']._serialized_start=168
-  _globals['_RECORDINTERACTIONRESPONSE']._serialized_end=219
-  _globals['_GETENGAGEMENTREQUEST']._serialized_start=221
-  _globals['_GETENGAGEMENTREQUEST']._serialized_end=263
-  _globals['_GETENGAGEMENTRESPONSE']._serialized_start=265
-  _globals['_GETENGAGEMENTRESPONSE']._serialized_end=344
-  _globals['_ENGAGEMENTSERVICE']._serialized_start=458
-  _globals['_ENGAGEMENTSERVICE']._serialized_end=673
+  _globals['_COMMENT']._serialized_start=35
+  _globals['_COMMENT']._serialized_end=127
+  _globals['_ADDCOMMENTREQUEST']._serialized_start=129
+  _globals['_ADDCOMMENTREQUEST']._serialized_end=219
+  _globals['_ADDCOMMENTRESPONSE']._serialized_start=221
+  _globals['_ADDCOMMENTRESPONSE']._serialized_end=282
+  _globals['_LISTCOMMENTSREQUEST']._serialized_start=284
+  _globals['_LISTCOMMENTSREQUEST']._serialized_end=325
+  _globals['_LISTCOMMENTSRESPONSE']._serialized_start=327
+  _globals['_LISTCOMMENTSRESPONSE']._serialized_end=391
+  _globals['_SETLIKEREQUEST']._serialized_start=393
+  _globals['_SETLIKEREQUEST']._serialized_end=461
+  _globals['_SETLIKERESPONSE']._serialized_start=463
+  _globals['_SETLIKERESPONSE']._serialized_end=510
+  _globals['_GETENGAGEMENTREQUEST']._serialized_start=512
+  _globals['_GETENGAGEMENTREQUEST']._serialized_end=571
+  _globals['_GETENGAGEMENTRESPONSE']._serialized_start=573
+  _globals['_GETENGAGEMENTRESPONSE']._serialized_end=652
+  _globals['_ENGAGEMENTSERVICE']._serialized_start=655
+  _globals['_ENGAGEMENTSERVICE']._serialized_end=1012
 # @@protoc_insertion_point(module_scope)

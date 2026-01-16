@@ -34,10 +34,20 @@ class EngagementServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.RecordInteraction = channel.unary_unary(
-                '/engagement.v1.EngagementService/RecordInteraction',
-                request_serializer=engagement__pb2.RecordInteractionRequest.SerializeToString,
-                response_deserializer=engagement__pb2.RecordInteractionResponse.FromString,
+        self.AddComment = channel.unary_unary(
+                '/engagement.v1.EngagementService/AddComment',
+                request_serializer=engagement__pb2.AddCommentRequest.SerializeToString,
+                response_deserializer=engagement__pb2.AddCommentResponse.FromString,
+                _registered_method=True)
+        self.ListComments = channel.unary_unary(
+                '/engagement.v1.EngagementService/ListComments',
+                request_serializer=engagement__pb2.ListCommentsRequest.SerializeToString,
+                response_deserializer=engagement__pb2.ListCommentsResponse.FromString,
+                _registered_method=True)
+        self.SetLike = channel.unary_unary(
+                '/engagement.v1.EngagementService/SetLike',
+                request_serializer=engagement__pb2.SetLikeRequest.SerializeToString,
+                response_deserializer=engagement__pb2.SetLikeResponse.FromString,
                 _registered_method=True)
         self.GetEngagement = channel.unary_unary(
                 '/engagement.v1.EngagementService/GetEngagement',
@@ -49,7 +59,19 @@ class EngagementServiceStub(object):
 class EngagementServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def RecordInteraction(self, request, context):
+    def AddComment(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListComments(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetLike(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -64,10 +86,20 @@ class EngagementServiceServicer(object):
 
 def add_EngagementServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'RecordInteraction': grpc.unary_unary_rpc_method_handler(
-                    servicer.RecordInteraction,
-                    request_deserializer=engagement__pb2.RecordInteractionRequest.FromString,
-                    response_serializer=engagement__pb2.RecordInteractionResponse.SerializeToString,
+            'AddComment': grpc.unary_unary_rpc_method_handler(
+                    servicer.AddComment,
+                    request_deserializer=engagement__pb2.AddCommentRequest.FromString,
+                    response_serializer=engagement__pb2.AddCommentResponse.SerializeToString,
+            ),
+            'ListComments': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListComments,
+                    request_deserializer=engagement__pb2.ListCommentsRequest.FromString,
+                    response_serializer=engagement__pb2.ListCommentsResponse.SerializeToString,
+            ),
+            'SetLike': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetLike,
+                    request_deserializer=engagement__pb2.SetLikeRequest.FromString,
+                    response_serializer=engagement__pb2.SetLikeResponse.SerializeToString,
             ),
             'GetEngagement': grpc.unary_unary_rpc_method_handler(
                     servicer.GetEngagement,
@@ -86,7 +118,7 @@ class EngagementService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def RecordInteraction(request,
+    def AddComment(request,
             target,
             options=(),
             channel_credentials=None,
@@ -99,9 +131,63 @@ class EngagementService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/engagement.v1.EngagementService/RecordInteraction',
-            engagement__pb2.RecordInteractionRequest.SerializeToString,
-            engagement__pb2.RecordInteractionResponse.FromString,
+            '/engagement.v1.EngagementService/AddComment',
+            engagement__pb2.AddCommentRequest.SerializeToString,
+            engagement__pb2.AddCommentResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListComments(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/engagement.v1.EngagementService/ListComments',
+            engagement__pb2.ListCommentsRequest.SerializeToString,
+            engagement__pb2.ListCommentsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetLike(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/engagement.v1.EngagementService/SetLike',
+            engagement__pb2.SetLikeRequest.SerializeToString,
+            engagement__pb2.SetLikeResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -1,29 +1,36 @@
-from __future__ import annotations
-
 import threading
 
-from domain.models import EngagementSummary, Interaction, InteractionType
+from domain.models import Comment, EngagementSummary
 from domain.repository import EngagementRepository
 
 
 class InMemoryEngagementRepository(EngagementRepository):
     def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._views: dict[str, int] = {}
-        self._downloads: dict[str, int] = {}
-        self._users: dict[str, set[str]] = {}
+        self._comments: dict[str, list[Comment]] = {}
+        self._likes: dict[str, set[str]] = {}
 
-    def record(self, interaction: Interaction) -> None:
+    def add_comment(self, comment: Comment) -> None:
         with self._lock:
-            if interaction.interaction_type == InteractionType.VIEW:
-                self._views[interaction.content_id] = self._views.get(interaction.content_id, 0) + 1
-            elif interaction.interaction_type == InteractionType.DOWNLOAD:
-                self._downloads[interaction.content_id] = self._downloads.get(interaction.content_id, 0) + 1
-            self._users.setdefault(interaction.content_id, set()).add(interaction.user_id)
+            self._comments.setdefault(comment.content_id, []).append(comment)
 
-    def summary(self, content_id: str) -> EngagementSummary:
+    def list_comments(self, content_id: str) -> list[Comment]:
         with self._lock:
-            views = self._views.get(content_id, 0)
-            downloads = self._downloads.get(content_id, 0)
-            unique_users = len(self._users.get(content_id, set()))
-        return EngagementSummary(views=views, downloads=downloads, unique_users=unique_users)
+            return list(self._comments.get(content_id, []))
+
+    def set_like(self, content_id: str, user_id: str, liked: bool) -> int:
+        with self._lock:
+            likes = self._likes.setdefault(content_id, set())
+            if liked:
+                likes.add(user_id)
+            else:
+                likes.discard(user_id)
+            return len(likes)
+
+    def summary(self, content_id: str, user_id: str | None) -> EngagementSummary:
+        with self._lock:
+            likes = self._likes.get(content_id, set())
+            comments = len(self._comments.get(content_id, []))
+            liked_by_user = user_id in likes if user_id else False
+            likes_count = len(likes)
+        return EngagementSummary(likes=likes_count, comments=comments, liked_by_user=liked_by_user)

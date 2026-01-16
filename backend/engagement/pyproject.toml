@@ -8,4 +8,5 @@ dependencies = [
     "grpcio-tools>=1.76.0",
     "kafka-python>=2.3.0",
     "pymongo>=4.16.0",
+    "pytest>=8.0.0",
 ]

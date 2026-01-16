@@ -1,9 +1,6 @@
-from __future__ import annotations
-
 import grpc
 
 from application.service import EngagementService
-from domain.models import InteractionType
 from proto import engagement_pb2, engagement_pb2_grpc
 
 
@@ -11,22 +8,47 @@ class EngagementGrpcService(engagement_pb2_grpc.EngagementServiceServicer):
     def __init__(self, service: EngagementService) -> None:
         self._service = service
 
-    def RecordInteraction(
+    def AddComment(
         self,
-        request: engagement_pb2.RecordInteractionRequest,
+        request: engagement_pb2.AddCommentRequest,
         context: grpc.ServicerContext,
-    ) -> engagement_pb2.RecordInteractionResponse:
+    ) -> engagement_pb2.AddCommentResponse:
         try:
-            interaction_type = _map_interaction_type(request.type)
-            interaction_id = self._service.record(
+            comment = self._service.add_comment(
                 content_id=request.content_id,
                 user_id=request.user_id,
-                interaction_type=interaction_type,
-                occurred_at=request.occurred_at,
+                body=request.body,
+                created_at=request.created_at,
             )
         except ValueError as exc:
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(exc))
-        return engagement_pb2.RecordInteractionResponse(interaction_id=interaction_id)
+        return engagement_pb2.AddCommentResponse(comment=_to_comment_pb(comment))
+
+    def ListComments(
+        self,
+        request: engagement_pb2.ListCommentsRequest,
+        context: grpc.ServicerContext,
+    ) -> engagement_pb2.ListCommentsResponse:
+        try:
+            comments = self._service.list_comments(request.content_id)
+        except ValueError as exc:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(exc))
+        return engagement_pb2.ListCommentsResponse(comments=[_to_comment_pb(comment) for comment in comments])
+
+    def SetLike(
+        self,
+        request: engagement_pb2.SetLikeRequest,
+        context: grpc.ServicerContext,
+    ) -> engagement_pb2.SetLikeResponse:
+        try:
+            likes = self._service.set_like(
+                content_id=request.content_id,
+                user_id=request.user_id,
+                liked=request.liked,
+            )
+        except ValueError as exc:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(exc))
+        return engagement_pb2.SetLikeResponse(likes=likes, liked=request.liked)
 
     def GetEngagement(
         self,
@@ -34,20 +56,22 @@ class EngagementGrpcService(engagement_pb2_grpc.EngagementServiceServicer):
         context: grpc.ServicerContext,
     ) -> engagement_pb2.GetEngagementResponse:
         try:
-            summary = self._service.summary(request.content_id)
+            summary = self._service.summary(request.content_id, request.user_id)
         except ValueError as exc:
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(exc))
 
         return engagement_pb2.GetEngagementResponse(
-            views=summary.views,
-            downloads=summary.downloads,
-            unique_users=summary.unique_users,
+            likes=summary.likes,
+            comments=summary.comments,
+            liked_by_user=summary.liked_by_user,
         )
 
 
-def _map_interaction_type(pb_type: int) -> InteractionType:
-    if pb_type == engagement_pb2.INTERACTION_TYPE_VIEW:
-        return InteractionType.VIEW
-    if pb_type == engagement_pb2.INTERACTION_TYPE_DOWNLOAD:
-        return InteractionType.DOWNLOAD
-    raise ValueError("unsupported interaction type")
+def _to_comment_pb(comment) -> engagement_pb2.Comment:
+    return engagement_pb2.Comment(
+        id=comment.id,
+        content_id=comment.content_id,
+        user_id=comment.user_id,
+        body=comment.body,
+        created_at=comment.created_at,
+    )
