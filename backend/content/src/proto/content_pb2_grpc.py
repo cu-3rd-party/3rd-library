@@ -34,17 +34,39 @@ class ContentServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.Ping = channel.unary_unary(
-                '/content.v1.ContentService/Ping',
-                request_serializer=content__pb2.PingRequest.SerializeToString,
-                response_deserializer=content__pb2.PingResponse.FromString,
+        self.Upload = channel.unary_unary(
+                '/content.v1.ContentService/Upload',
+                request_serializer=content__pb2.UploadRequest.SerializeToString,
+                response_deserializer=content__pb2.UploadResponse.FromString,
+                _registered_method=True)
+        self.Get = channel.unary_unary(
+                '/content.v1.ContentService/Get',
+                request_serializer=content__pb2.GetRequest.SerializeToString,
+                response_deserializer=content__pb2.GetResponse.FromString,
+                _registered_method=True)
+        self.List = channel.unary_unary(
+                '/content.v1.ContentService/List',
+                request_serializer=content__pb2.ListRequest.SerializeToString,
+                response_deserializer=content__pb2.ListResponse.FromString,
                 _registered_method=True)
 
 
 class ContentServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def Ping(self, request, context):
+    def Upload(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Get(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def List(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -53,10 +75,20 @@ class ContentServiceServicer(object):
 
 def add_ContentServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'Ping': grpc.unary_unary_rpc_method_handler(
-                    servicer.Ping,
-                    request_deserializer=content__pb2.PingRequest.FromString,
-                    response_serializer=content__pb2.PingResponse.SerializeToString,
+            'Upload': grpc.unary_unary_rpc_method_handler(
+                    servicer.Upload,
+                    request_deserializer=content__pb2.UploadRequest.FromString,
+                    response_serializer=content__pb2.UploadResponse.SerializeToString,
+            ),
+            'Get': grpc.unary_unary_rpc_method_handler(
+                    servicer.Get,
+                    request_deserializer=content__pb2.GetRequest.FromString,
+                    response_serializer=content__pb2.GetResponse.SerializeToString,
+            ),
+            'List': grpc.unary_unary_rpc_method_handler(
+                    servicer.List,
+                    request_deserializer=content__pb2.ListRequest.FromString,
+                    response_serializer=content__pb2.ListResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -70,7 +102,7 @@ class ContentService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def Ping(request,
+    def Upload(request,
             target,
             options=(),
             channel_credentials=None,
@@ -83,9 +115,63 @@ class ContentService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/content.v1.ContentService/Ping',
-            content__pb2.PingRequest.SerializeToString,
-            content__pb2.PingResponse.FromString,
+            '/content.v1.ContentService/Upload',
+            content__pb2.UploadRequest.SerializeToString,
+            content__pb2.UploadResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Get(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/content.v1.ContentService/Get',
+            content__pb2.GetRequest.SerializeToString,
+            content__pb2.GetResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def List(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/content.v1.ContentService/List',
+            content__pb2.ListRequest.SerializeToString,
+            content__pb2.ListResponse.FromString,
             options,
             channel_credentials,
             insecure,

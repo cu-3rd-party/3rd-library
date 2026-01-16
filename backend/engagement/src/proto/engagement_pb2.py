@@ -24,17 +24,23 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10\x65ngagement.proto\x12\rengagement.v1\"\x1e\n\x0bPingRequest\x12\x0f\n\x07message\x18\x01 \x01(\t\"\x1f\n\x0cPingResponse\x12\x0f\n\x07message\x18\x01 \x01(\t2T\n\x11\x45ngagementService\x12?\n\x04Ping\x12\x1a.engagement.v1.PingRequest\x1a\x1b.engagement.v1.PingResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10\x65ngagement.proto\x12\rengagement.v1\"\x82\x01\n\x18RecordInteractionRequest\x12\x12\n\ncontent_id\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\t\x12,\n\x04type\x18\x03 \x01(\x0e\x32\x1e.engagement.v1.InteractionType\x12\x13\n\x0boccurred_at\x18\x04 \x01(\x03\"3\n\x19RecordInteractionResponse\x12\x16\n\x0einteraction_id\x18\x01 \x01(\t\"*\n\x14GetEngagementRequest\x12\x12\n\ncontent_id\x18\x01 \x01(\t\"O\n\x15GetEngagementResponse\x12\r\n\x05views\x18\x01 \x01(\x03\x12\x11\n\tdownloads\x18\x02 \x01(\x03\x12\x14\n\x0cunique_users\x18\x03 \x01(\x03*m\n\x0fInteractionType\x12 \n\x1cINTERACTION_TYPE_UNSPECIFIED\x10\x00\x12\x19\n\x15INTERACTION_TYPE_VIEW\x10\x01\x12\x1d\n\x19INTERACTION_TYPE_DOWNLOAD\x10\x02\x32\xd7\x01\n\x11\x45ngagementService\x12\x66\n\x11RecordInteraction\x12\'.engagement.v1.RecordInteractionRequest\x1a(.engagement.v1.RecordInteractionResponse\x12Z\n\rGetEngagement\x12#.engagement.v1.GetEngagementRequest\x1a$.engagement.v1.GetEngagementResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'engagement_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_PINGREQUEST']._serialized_start=35
-  _globals['_PINGREQUEST']._serialized_end=65
-  _globals['_PINGRESPONSE']._serialized_start=67
-  _globals['_PINGRESPONSE']._serialized_end=98
-  _globals['_ENGAGEMENTSERVICE']._serialized_start=100
-  _globals['_ENGAGEMENTSERVICE']._serialized_end=184
+  _globals['_INTERACTIONTYPE']._serialized_start=346
+  _globals['_INTERACTIONTYPE']._serialized_end=455
+  _globals['_RECORDINTERACTIONREQUEST']._serialized_start=36
+  _globals['_RECORDINTERACTIONREQUEST']._serialized_end=166
+  _globals['_RECORDINTERACTIONRESPONSE']._serialized_start=168
+  _globals['_RECORDINTERACTIONRESPONSE']._serialized_end=219
+  _globals['_GETENGAGEMENTREQUEST']._serialized_start=221
+  _globals['_GETENGAGEMENTREQUEST']._serialized_end=263
+  _globals['_GETENGAGEMENTRESPONSE']._serialized_start=265
+  _globals['_GETENGAGEMENTRESPONSE']._serialized_end=344
+  _globals['_ENGAGEMENTSERVICE']._serialized_start=458
+  _globals['_ENGAGEMENTSERVICE']._serialized_end=673
 # @@protoc_insertion_point(module_scope)

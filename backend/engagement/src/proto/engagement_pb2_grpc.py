@@ -34,17 +34,28 @@ class EngagementServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.Ping = channel.unary_unary(
-                '/engagement.v1.EngagementService/Ping',
-                request_serializer=engagement__pb2.PingRequest.SerializeToString,
-                response_deserializer=engagement__pb2.PingResponse.FromString,
+        self.RecordInteraction = channel.unary_unary(
+                '/engagement.v1.EngagementService/RecordInteraction',
+                request_serializer=engagement__pb2.RecordInteractionRequest.SerializeToString,
+                response_deserializer=engagement__pb2.RecordInteractionResponse.FromString,
+                _registered_method=True)
+        self.GetEngagement = channel.unary_unary(
+                '/engagement.v1.EngagementService/GetEngagement',
+                request_serializer=engagement__pb2.GetEngagementRequest.SerializeToString,
+                response_deserializer=engagement__pb2.GetEngagementResponse.FromString,
                 _registered_method=True)
 
 
 class EngagementServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def Ping(self, request, context):
+    def RecordInteraction(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetEngagement(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -53,10 +64,15 @@ class EngagementServiceServicer(object):
 
 def add_EngagementServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'Ping': grpc.unary_unary_rpc_method_handler(
-                    servicer.Ping,
-                    request_deserializer=engagement__pb2.PingRequest.FromString,
-                    response_serializer=engagement__pb2.PingResponse.SerializeToString,
+            'RecordInteraction': grpc.unary_unary_rpc_method_handler(
+                    servicer.RecordInteraction,
+                    request_deserializer=engagement__pb2.RecordInteractionRequest.FromString,
+                    response_serializer=engagement__pb2.RecordInteractionResponse.SerializeToString,
+            ),
+            'GetEngagement': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetEngagement,
+                    request_deserializer=engagement__pb2.GetEngagementRequest.FromString,
+                    response_serializer=engagement__pb2.GetEngagementResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -70,7 +86,7 @@ class EngagementService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def Ping(request,
+    def RecordInteraction(request,
             target,
             options=(),
             channel_credentials=None,
@@ -83,9 +99,36 @@ class EngagementService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/engagement.v1.EngagementService/Ping',
-            engagement__pb2.PingRequest.SerializeToString,
-            engagement__pb2.PingResponse.FromString,
+            '/engagement.v1.EngagementService/RecordInteraction',
+            engagement__pb2.RecordInteractionRequest.SerializeToString,
+            engagement__pb2.RecordInteractionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetEngagement(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/engagement.v1.EngagementService/GetEngagement',
+            engagement__pb2.GetEngagementRequest.SerializeToString,
+            engagement__pb2.GetEngagementResponse.FromString,
             options,
             channel_credentials,
             insecure,

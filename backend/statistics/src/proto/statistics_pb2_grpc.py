@@ -34,17 +34,28 @@ class StatisticsServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.Ping = channel.unary_unary(
-                '/statistics.v1.StatisticsService/Ping',
-                request_serializer=statistics__pb2.PingRequest.SerializeToString,
-                response_deserializer=statistics__pb2.PingResponse.FromString,
+        self.RecordInteraction = channel.unary_unary(
+                '/statistics.v1.StatisticsService/RecordInteraction',
+                request_serializer=statistics__pb2.RecordInteractionRequest.SerializeToString,
+                response_deserializer=statistics__pb2.RecordInteractionResponse.FromString,
+                _registered_method=True)
+        self.GetContentStats = channel.unary_unary(
+                '/statistics.v1.StatisticsService/GetContentStats',
+                request_serializer=statistics__pb2.GetContentStatsRequest.SerializeToString,
+                response_deserializer=statistics__pb2.GetContentStatsResponse.FromString,
                 _registered_method=True)
 
 
 class StatisticsServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def Ping(self, request, context):
+    def RecordInteraction(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetContentStats(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -53,10 +64,15 @@ class StatisticsServiceServicer(object):
 
 def add_StatisticsServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'Ping': grpc.unary_unary_rpc_method_handler(
-                    servicer.Ping,
-                    request_deserializer=statistics__pb2.PingRequest.FromString,
-                    response_serializer=statistics__pb2.PingResponse.SerializeToString,
+            'RecordInteraction': grpc.unary_unary_rpc_method_handler(
+                    servicer.RecordInteraction,
+                    request_deserializer=statistics__pb2.RecordInteractionRequest.FromString,
+                    response_serializer=statistics__pb2.RecordInteractionResponse.SerializeToString,
+            ),
+            'GetContentStats': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetContentStats,
+                    request_deserializer=statistics__pb2.GetContentStatsRequest.FromString,
+                    response_serializer=statistics__pb2.GetContentStatsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -70,7 +86,7 @@ class StatisticsService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def Ping(request,
+    def RecordInteraction(request,
             target,
             options=(),
             channel_credentials=None,
@@ -83,9 +99,36 @@ class StatisticsService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/statistics.v1.StatisticsService/Ping',
-            statistics__pb2.PingRequest.SerializeToString,
-            statistics__pb2.PingResponse.FromString,
+            '/statistics.v1.StatisticsService/RecordInteraction',
+            statistics__pb2.RecordInteractionRequest.SerializeToString,
+            statistics__pb2.RecordInteractionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetContentStats(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/statistics.v1.StatisticsService/GetContentStats',
+            statistics__pb2.GetContentStatsRequest.SerializeToString,
+            statistics__pb2.GetContentStatsResponse.FromString,
             options,
             channel_credentials,
             insecure,

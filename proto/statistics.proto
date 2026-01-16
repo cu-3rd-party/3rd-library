@@ -3,13 +3,38 @@ syntax = "proto3";
 package statistics.v1;
 
 service StatisticsService {
-  rpc Ping(PingRequest) returns (PingResponse);
+  rpc RecordInteraction(RecordInteractionRequest) returns (RecordInteractionResponse);
+  rpc GetContentStats(GetContentStatsRequest) returns (GetContentStatsResponse);
 }
 
-message PingRequest {
-  string message = 1;
+enum InteractionType {
+  INTERACTION_TYPE_UNSPECIFIED = 0;
+  INTERACTION_TYPE_VIEW = 1;
+  INTERACTION_TYPE_DOWNLOAD = 2;
 }
 
-message PingResponse {
-  string message = 1;
+message RecordInteractionRequest {
+  string content_id = 1;
+  string user_id = 2;
+  InteractionType type = 3;
+  int64 occurred_at = 4;
+}
+
+message RecordInteractionResponse {
+  string recorded_id = 1;
+}
+
+message ContentStats {
+  int64 views = 1;
+  int64 downloads = 2;
+  int64 unique_users = 3;
+  int64 last_interaction_at = 4;
+}
+
+message GetContentStatsRequest {
+  string content_id = 1;
+}
+
+message GetContentStatsResponse {
+  ContentStats stats = 1;
 }

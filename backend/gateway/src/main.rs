@@ -1,9 +1,18 @@
-use axum::{routing::get, Router};
+use axum::{Router, routing::get, routing::post};
 use tokio::net::TcpListener;
-
-#[allow(dead_code)]
-mod proto;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+mod clients;
+mod config;
+mod errors;
+mod handlers;
+mod models;
+mod proto;
+
+use crate::clients::Clients;
+use crate::config::GatewayConfig;
+use crate::handlers::{AppState, auth, content};
 
 #[tokio::main]
 async fn main() {
@@ -15,37 +24,33 @@ async fn main() {
     let config = GatewayConfig::from_env();
     tracing::info!(?config, "gateway starting");
 
-    // Placeholder: initialize gRPC clients with tonic once proto stubs are generated.
-    let app = Router::new().route("/health", get(health));
+    let clients = Clients::new(&config)
+        .await
+        .expect("failed to connect to gRPC services");
+    let state = std::sync::Arc::new(AppState::new(clients, config.max_upload_bytes));
+
+    let app = Router::new()
+        .route("/health", get(health))
+        .route("/auth/register", post(auth::register))
+        .route("/auth/login", post(auth::login))
+        .route(
+            "/contents",
+            get(content::list_contents).post(content::upload_content),
+        )
+        .route("/contents/:id", get(content::get_content))
+        .route("/contents/:id/download", get(content::download_content))
+        .route("/contents/:id/stats", get(content::get_stats))
+        .with_state(state)
+        .layer(CorsLayer::permissive())
+        .layer(TraceLayer::new_for_http());
 
     let addr = "0.0.0.0:8080";
     let listener = TcpListener::bind(addr)
         .await
         .expect("failed to bind address");
-    axum::serve(listener, app)
-        .await
-        .expect("server failed");
+    axum::serve(listener, app).await.expect("server failed");
 }
 
 async fn health() -> &'static str {
     "ok"
-}
-
-#[derive(Debug)]
-struct GatewayConfig {
-    redis_url: String,
-    kafka_brokers: String,
-}
-
-impl GatewayConfig {
-    fn from_env() -> Self {
-        Self {
-            redis_url: env_or_default("REDIS_URL", "redis://localhost:6379/0"),
-            kafka_brokers: env_or_default("KAFKA_BROKERS", "localhost:9092"),
-        }
-    }
-}
-
-fn env_or_default(key: &str, default_value: &str) -> String {
-    std::env::var(key).unwrap_or_else(|_| default_value.to_string())
 }
