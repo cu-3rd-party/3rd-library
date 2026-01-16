@@ -1,6 +1,30 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: nginx-config
+  namespace: third-library
+data:
+  nginx.conf: |-
+    events {}
+    http {
+      upstream gateway {
+        server gateway:8080;
+      }
+      server {
+        listen 80;
+        location / {
+          proxy_pass http://gateway;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: gateway-config
   namespace: third-library
 data:
@@ -14,7 +38,7 @@ metadata:
   name: auth-config
   namespace: third-library
 data:
-  DATABASE_URL: postgres://auth:auth@postgres:5432/auth
+  DATABASE_URL: postgres://auth:auth@postgres-auth:5432/auth
   KAFKA_BROKERS: kafka:9092
 ---
 apiVersion: v1
@@ -32,7 +56,7 @@ metadata:
   name: notification-config
   namespace: third-library
 data:
-  MONGODB_URI: mongodb://mongo:27017/notification
+  MONGODB_URI: mongodb://mongo-notification:27017/notification
   KAFKA_BROKERS: kafka:9092
 ---
 apiVersion: v1
@@ -41,7 +65,7 @@ metadata:
   name: engagement-config
   namespace: third-library
 data:
-  MONGODB_URI: mongodb://mongo:27017/engagement
+  DATABASE_URL: postgres://engagement:engagement@postgres-engagement:5432/engagement
   KAFKA_BROKERS: kafka:9092
 ---
 apiVersion: v1
@@ -50,5 +74,5 @@ metadata:
   name: content-config
   namespace: third-library
 data:
-  MONGODB_URI: mongodb://mongo:27017/content
+  MONGODB_URI: mongodb://mongo-content:27017/content
   KAFKA_BROKERS: kafka:9092

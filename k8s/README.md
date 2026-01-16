@@ -13,9 +13,9 @@ Quick start (Minikube)
 
 3) Open services:
    minikube service frontend -n third-library
-   minikube service gateway -n third-library
+   minikube service nginx -n third-library
    minikube service minio -n third-library
 
 Notes
 - Images are referenced as local tags: 3rd-library-<service>:latest.
-- Services use ClusterIP internally, NodePort for frontend/gateway/minio.
+- Services use ClusterIP internally, NodePort for frontend/nginx/minio.

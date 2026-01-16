@@ -1,6 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: nginx
+  namespace: third-library
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: nginx-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: gateway
   namespace: third-library
 spec:
@@ -173,31 +202,61 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: postgres
+  name: postgres-auth
   namespace: third-library
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: postgres
+      app: postgres-auth
   template:
     metadata:
       labels:
-        app: postgres
+        app: postgres-auth
     spec:
       containers:
-        - name: postgres
+        - name: postgres-auth
           image: postgres:16
           envFrom:
             - secretRef:
-                name: postgres-secret
+                name: postgres-auth-secret
           ports:
             - containerPort: 5432
           volumeMounts:
-            - name: postgres-data
+            - name: postgres-auth-data
               mountPath: /var/lib/postgresql/data
       volumes:
-        - name: postgres-data
+        - name: postgres-auth-data
+          emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-engagement
+  namespace: third-library
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-engagement
+  template:
+    metadata:
+      labels:
+        app: postgres-engagement
+    spec:
+      containers:
+        - name: postgres-engagement
+          image: postgres:16
+          envFrom:
+            - secretRef:
+                name: postgres-engagement-secret
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-engagement-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-engagement-data
           emptyDir: {}
 ---
 apiVersion: apps/v1
@@ -231,28 +290,55 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mongo
+  name: mongo-notification
   namespace: third-library
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mongo
+      app: mongo-notification
   template:
     metadata:
       labels:
-        app: mongo
+        app: mongo-notification
     spec:
       containers:
-        - name: mongo
+        - name: mongo-notification
           image: mongo:7
           ports:
             - containerPort: 27017
           volumeMounts:
-            - name: mongo-data
+            - name: mongo-notification-data
               mountPath: /data/db
       volumes:
-        - name: mongo-data
+        - name: mongo-notification-data
+          emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-content
+  namespace: third-library
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo-content
+  template:
+    metadata:
+      labels:
+        app: mongo-content
+    spec:
+      containers:
+        - name: mongo-content
+          image: mongo:7
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: mongo-content-data
+              mountPath: /data/db
+      volumes:
+        - name: mongo-content-data
           emptyDir: {}
 ---
 apiVersion: apps/v1
