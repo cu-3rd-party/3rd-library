@@ -1,7 +1,6 @@
-use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use tokio::sync::Mutex;
+use sqlx::{FromRow, PgPool};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -23,18 +22,17 @@ pub struct EngagementSummary {
 #[derive(Debug)]
 pub enum EngagementError {
     InvalidInput(String),
+    Db(String),
 }
 
 #[derive(Clone)]
 pub struct EngagementService {
-    store: std::sync::Arc<Mutex<EngagementStore>>,
+    pool: PgPool,
 }
 
 impl EngagementService {
-    pub fn new() -> Self {
-        Self {
-            store: std::sync::Arc::new(Mutex::new(EngagementStore::default())),
-        }
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
     }
 
     pub async fn add_comment(
@@ -61,14 +59,27 @@ impl EngagementService {
 
         let comment = Comment {
             id: Uuid::new_v4().simple().to_string(),
-            content_id: content_id.clone(),
+            content_id,
             user_id,
             body,
             created_at,
         };
 
-        let mut store = self.store.lock().await;
-        store.comments.entry(content_id).or_default().push(comment.clone());
+        sqlx::query(
+            r#"
+            INSERT INTO comments (id, content_id, user_id, body, created_at)
+            VALUES ($1, $2, $3, $4, $5)
+            "#,
+        )
+        .bind(&comment.id)
+        .bind(&comment.content_id)
+        .bind(&comment.user_id)
+        .bind(&comment.body)
+        .bind(comment.created_at)
+        .execute(&self.pool)
+        .await
+        .map_err(|err| EngagementError::Db(err.to_string()))?;
+
         Ok(comment)
     }
 
@@ -77,8 +88,20 @@ impl EngagementService {
         if content_id.is_empty() {
             return Err(EngagementError::InvalidInput("content_id required".to_string()));
         }
-        let store = self.store.lock().await;
-        Ok(store.comments.get(&content_id).cloned().unwrap_or_default())
+        let rows = sqlx::query_as::<_, CommentRow>(
+            r#"
+            SELECT id, content_id, user_id, body, created_at
+            FROM comments
+            WHERE content_id = $1
+            ORDER BY created_at ASC, id ASC
+            "#,
+        )
+        .bind(&content_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|err| EngagementError::Db(err.to_string()))?;
+
+        Ok(rows.into_iter().map(CommentRow::into_comment).collect())
     }
 
     pub async fn set_like(
@@ -95,14 +118,44 @@ impl EngagementService {
             ));
         }
 
-        let mut store = self.store.lock().await;
-        let likes = store.likes.entry(content_id).or_default();
         if liked {
-            likes.insert(user_id);
+            sqlx::query(
+                r#"
+                INSERT INTO likes (content_id, user_id)
+                VALUES ($1, $2)
+                ON CONFLICT (content_id, user_id) DO NOTHING
+                "#,
+            )
+            .bind(&content_id)
+            .bind(&user_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|err| EngagementError::Db(err.to_string()))?;
         } else {
-            likes.remove(&user_id);
+            sqlx::query(
+                r#"
+                DELETE FROM likes
+                WHERE content_id = $1 AND user_id = $2
+                "#,
+            )
+            .bind(&content_id)
+            .bind(&user_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|err| EngagementError::Db(err.to_string()))?;
         }
-        Ok(likes.len() as i64)
+
+        let likes = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT COUNT(*) FROM likes WHERE content_id = $1
+            "#,
+        )
+        .bind(&content_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|err| EngagementError::Db(err.to_string()))?;
+
+        Ok(likes)
     }
 
     pub async fn summary(&self, content_id: String, user_id: Option<String>) -> Result<EngagementSummary, EngagementError> {
@@ -119,26 +172,70 @@ impl EngagementService {
             }
         });
 
-        let store = self.store.lock().await;
-        let likes = store.likes.get(&content_id);
-        let comments = store.comments.get(&content_id).map(|items| items.len()).unwrap_or(0);
-        let liked_by_user = user_id
-            .as_ref()
-            .and_then(|user_id| likes.map(|set| set.contains(user_id)))
-            .unwrap_or(false);
-        let likes_count = likes.map(|set| set.len()).unwrap_or(0);
+        let likes = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT COUNT(*) FROM likes WHERE content_id = $1
+            "#,
+        )
+        .bind(&content_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|err| EngagementError::Db(err.to_string()))?;
+
+        let comments = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT COUNT(*) FROM comments WHERE content_id = $1
+            "#,
+        )
+        .bind(&content_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|err| EngagementError::Db(err.to_string()))?;
+
+        let liked_by_user = if let Some(user_id) = user_id {
+            sqlx::query_scalar::<_, bool>(
+                r#"
+                SELECT EXISTS(
+                    SELECT 1 FROM likes WHERE content_id = $1 AND user_id = $2
+                )
+                "#,
+            )
+            .bind(&content_id)
+            .bind(&user_id)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|err| EngagementError::Db(err.to_string()))?
+        } else {
+            false
+        };
+
         Ok(EngagementSummary {
-            likes: likes_count as i64,
-            comments: comments as i64,
+            likes,
+            comments,
             liked_by_user,
         })
     }
 }
 
-#[derive(Default)]
-struct EngagementStore {
-    comments: HashMap<String, Vec<Comment>>,
-    likes: HashMap<String, HashSet<String>>,
+#[derive(Debug, FromRow)]
+struct CommentRow {
+    id: String,
+    content_id: String,
+    user_id: String,
+    body: String,
+    created_at: i64,
+}
+
+impl CommentRow {
+    fn into_comment(self) -> Comment {
+        Comment {
+            id: self.id,
+            content_id: self.content_id,
+            user_id: self.user_id,
+            body: self.body,
+            created_at: self.created_at,
+        }
+    }
 }
 
 fn now_timestamp() -> i64 {

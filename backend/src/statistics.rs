@@ -1,7 +1,6 @@
-use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use tokio::sync::Mutex;
+use sqlx::{FromRow, PgPool};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy)]
@@ -21,18 +20,17 @@ pub struct ContentStats {
 #[derive(Debug)]
 pub enum StatisticsError {
     InvalidInput(String),
+    Db(String),
 }
 
 #[derive(Clone)]
 pub struct StatisticsService {
-    store: std::sync::Arc<Mutex<StatisticsStore>>,
+    pool: PgPool,
 }
 
 impl StatisticsService {
-    pub fn new() -> Self {
-        Self {
-            store: std::sync::Arc::new(Mutex::new(StatisticsStore::default())),
-        }
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
     }
 
     pub async fn record(
@@ -55,25 +53,28 @@ impl StatisticsService {
             occurred_at
         };
 
-        let mut store = self.store.lock().await;
-        match interaction_type {
-            InteractionType::View => {
-                *store.views.entry(content_id.clone()).or_insert(0) += 1;
-            }
-            InteractionType::Download => {
-                *store.downloads.entry(content_id.clone()).or_insert(0) += 1;
-            }
-        }
-        store
-            .users
-            .entry(content_id.clone())
-            .or_default()
-            .insert(user_id);
-        let previous = store.last_seen.get(&content_id).copied().unwrap_or(0);
-        store
-            .last_seen
-            .insert(content_id, previous.max(occurred_at));
-        Ok(Uuid::new_v4().simple().to_string())
+        let interaction = match interaction_type {
+            InteractionType::View => "view",
+            InteractionType::Download => "download",
+        };
+
+        let recorded_id = Uuid::new_v4().simple().to_string();
+        sqlx::query(
+            r#"
+            INSERT INTO interactions (id, content_id, user_id, interaction_type, occurred_at)
+            VALUES ($1, $2, $3, $4, $5)
+            "#,
+        )
+        .bind(&recorded_id)
+        .bind(&content_id)
+        .bind(&user_id)
+        .bind(interaction)
+        .bind(occurred_at)
+        .execute(&self.pool)
+        .await
+        .map_err(|err| StatisticsError::Db(err.to_string()))?;
+
+        Ok(recorded_id)
     }
 
     pub async fn stats_for(&self, content_id: String) -> Result<ContentStats, StatisticsError> {
@@ -81,22 +82,38 @@ impl StatisticsService {
         if content_id.is_empty() {
             return Err(StatisticsError::InvalidInput("content_id required".to_string()));
         }
-        let store = self.store.lock().await;
+
+        let row = sqlx::query_as::<_, StatsRow>(
+            r#"
+            SELECT
+                COUNT(*) FILTER (WHERE interaction_type = 'view') AS views,
+                COUNT(*) FILTER (WHERE interaction_type = 'download') AS downloads,
+                COUNT(DISTINCT user_id) AS unique_users,
+                COALESCE(MAX(occurred_at), 0) AS last_interaction_at
+            FROM interactions
+            WHERE content_id = $1
+            "#,
+        )
+        .bind(&content_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|err| StatisticsError::Db(err.to_string()))?;
+
         Ok(ContentStats {
-            views: *store.views.get(&content_id).unwrap_or(&0),
-            downloads: *store.downloads.get(&content_id).unwrap_or(&0),
-            unique_users: store.users.get(&content_id).map(|set| set.len()).unwrap_or(0) as i64,
-            last_interaction_at: *store.last_seen.get(&content_id).unwrap_or(&0),
+            views: row.views,
+            downloads: row.downloads,
+            unique_users: row.unique_users,
+            last_interaction_at: row.last_interaction_at,
         })
     }
 }
 
-#[derive(Default)]
-struct StatisticsStore {
-    views: HashMap<String, i64>,
-    downloads: HashMap<String, i64>,
-    users: HashMap<String, HashSet<String>>,
-    last_seen: HashMap<String, i64>,
+#[derive(Debug, FromRow)]
+struct StatsRow {
+    views: i64,
+    downloads: i64,
+    unique_users: i64,
+    last_interaction_at: i64,
 }
 
 fn now_timestamp() -> i64 {

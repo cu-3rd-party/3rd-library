@@ -1,10 +1,9 @@
-use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use bcrypt::{DEFAULT_COST, hash, verify};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
+use sqlx::{FromRow, PgPool};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -28,14 +27,14 @@ pub enum AuthError {
 
 #[derive(Clone)]
 pub struct AuthService {
-    store: std::sync::Arc<Mutex<AuthStore>>,
+    pool: PgPool,
     token_manager: TokenManager,
 }
 
 impl AuthService {
-    pub fn new(secret: String, ttl: Duration) -> Self {
+    pub fn new(pool: PgPool, secret: String, ttl: Duration) -> Self {
         Self {
-            store: std::sync::Arc::new(Mutex::new(AuthStore::default())),
+            pool,
             token_manager: TokenManager::new(secret, ttl),
         }
     }
@@ -45,11 +44,6 @@ impl AuthService {
         let email = email.trim().to_lowercase();
         if name.is_empty() || email.is_empty() || password.is_empty() || !email.contains('@') {
             return Err(AuthError::InvalidInput);
-        }
-
-        let mut store = self.store.lock().await;
-        if store.by_email.contains_key(&email) {
-            return Err(AuthError::EmailTaken);
         }
 
         let password_hash = hash(password, DEFAULT_COST)
@@ -63,8 +57,25 @@ impl AuthService {
             created_at,
         };
 
-        store.by_email.insert(email, user.id.clone());
-        store.by_id.insert(user.id.clone(), user.clone());
+        let result = sqlx::query(
+            r#"
+            INSERT INTO users (id, name, email, password_hash, created_at)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (email) DO NOTHING
+            "#,
+        )
+        .bind(&user.id)
+        .bind(&user.name)
+        .bind(&user.email)
+        .bind(&user.password_hash)
+        .bind(user.created_at)
+        .execute(&self.pool)
+        .await
+        .map_err(map_sqlx_error)?;
+
+        if result.rows_affected() == 0 {
+            return Err(AuthError::EmailTaken);
+        }
 
         let token = self.token_manager.issue(&user)?;
         Ok((user, token))
@@ -76,18 +87,20 @@ impl AuthService {
             return Err(AuthError::InvalidCredentials);
         }
 
-        let store = self.store.lock().await;
-        let user_id = store
-            .by_email
-            .get(&email)
-            .ok_or(AuthError::InvalidCredentials)?;
-        let user = store
-            .by_id
-            .get(user_id)
-            .ok_or(AuthError::InvalidCredentials)?
-            .clone();
-        drop(store);
+        let row = sqlx::query_as::<_, UserRow>(
+            r#"
+            SELECT id, name, email, password_hash, created_at
+            FROM users
+            WHERE email = $1
+            "#,
+        )
+        .bind(&email)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_sqlx_error)?
+        .ok_or(AuthError::InvalidCredentials)?;
 
+        let user = row.into_user();
         if !verify(password, &user.password_hash).map_err(|err| AuthError::Internal(err.to_string()))? {
             return Err(AuthError::InvalidCredentials);
         }
@@ -102,16 +115,42 @@ impl AuthService {
             return Err(AuthError::TokenInvalid);
         }
         let user_id = self.token_manager.parse(token)?;
-        let store = self.store.lock().await;
-        let user = store.by_id.get(&user_id).cloned().ok_or(AuthError::UserNotFound)?;
-        Ok(user)
+
+        let row = sqlx::query_as::<_, UserRow>(
+            r#"
+            SELECT id, name, email, password_hash, created_at
+            FROM users
+            WHERE id = $1
+            "#,
+        )
+        .bind(&user_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_sqlx_error)?
+        .ok_or(AuthError::UserNotFound)?;
+        Ok(row.into_user())
     }
 }
 
-#[derive(Default)]
-struct AuthStore {
-    by_id: HashMap<String, User>,
-    by_email: HashMap<String, String>,
+#[derive(Debug, FromRow)]
+struct UserRow {
+    id: String,
+    name: String,
+    email: String,
+    password_hash: String,
+    created_at: i64,
+}
+
+impl UserRow {
+    fn into_user(self) -> User {
+        User {
+            id: self.id,
+            name: self.name,
+            email: self.email,
+            password_hash: self.password_hash,
+            created_at: self.created_at,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -156,6 +195,10 @@ struct Claims {
     sub: String,
     exp: usize,
     iat: usize,
+}
+
+fn map_sqlx_error(err: sqlx::Error) -> AuthError {
+    AuthError::Internal(err.to_string())
 }
 
 fn now_timestamp() -> i64 {

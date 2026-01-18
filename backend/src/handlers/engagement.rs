@@ -104,6 +104,7 @@ fn to_comment_response(comment: Comment) -> CommentResponse {
 fn map_engagement_error(err: EngagementError) -> ApiError {
     match err {
         EngagementError::InvalidInput(msg) => ApiError::BadRequest(msg),
+        EngagementError::Db(msg) => ApiError::Internal(msg),
     }
 }
 

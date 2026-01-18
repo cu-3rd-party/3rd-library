@@ -10,3 +10,4 @@ data:
   JWT_SECRET: dev-secret
   JWT_TTL: 24h
   CONTENT_STORAGE_DIR: /tmp/3rd-library/content
+  DATABASE_URL: postgres://backend:backend@postgres:5432/backend

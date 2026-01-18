@@ -1,8 +1,7 @@
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use tokio::sync::Mutex;
+use sqlx::{FromRow, PgPool};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -21,22 +20,23 @@ pub enum ContentError {
     InvalidInput(String),
     NotFound,
     Io(String),
+    Db(String),
 }
 
 #[derive(Clone)]
 pub struct ContentService {
     storage_dir: PathBuf,
-    store: std::sync::Arc<Mutex<ContentStore>>,
+    pool: PgPool,
 }
 
 impl ContentService {
-    pub async fn new(storage_dir: String) -> Result<Self, ContentError> {
+    pub async fn new(pool: PgPool, storage_dir: String) -> Result<Self, ContentError> {
         tokio::fs::create_dir_all(&storage_dir)
             .await
             .map_err(|err| ContentError::Io(err.to_string()))?;
         Ok(Self {
             storage_dir: PathBuf::from(storage_dir),
-            store: std::sync::Arc::new(Mutex::new(ContentStore::default())),
+            pool,
         })
     }
 
@@ -73,9 +73,26 @@ impl ContentService {
             .await
             .map_err(|err| ContentError::Io(err.to_string()))?;
 
-        let mut store = self.store.lock().await;
-        store.items.insert(item.id.clone(), item.clone());
-        store.order.push(item.id.clone());
+        if let Err(err) = sqlx::query(
+            r#"
+            INSERT INTO contents (id, owner_id, title, description, filename, size_bytes, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            "#,
+        )
+        .bind(&item.id)
+        .bind(&item.owner_id)
+        .bind(&item.title)
+        .bind(&item.description)
+        .bind(&item.filename)
+        .bind(item.size_bytes)
+        .bind(item.created_at)
+        .execute(&self.pool)
+        .await
+        {
+            let _ = tokio::fs::remove_file(&file_path).await;
+            return Err(ContentError::Db(err.to_string()));
+        }
+
         Ok(item)
     }
 
@@ -85,12 +102,20 @@ impl ContentService {
             return Err(ContentError::InvalidInput("content_id required".to_string()));
         }
 
-        let item = {
-            let store = self.store.lock().await;
-            store.items.get(&content_id).cloned()
-        }
+        let row = sqlx::query_as::<_, ContentRow>(
+            r#"
+            SELECT id, owner_id, title, description, filename, size_bytes, created_at
+            FROM contents
+            WHERE id = $1
+            "#,
+        )
+        .bind(&content_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|err| ContentError::Db(err.to_string()))?
         .ok_or(ContentError::NotFound)?;
 
+        let item = row.into_item();
         let file_path = self.file_path(&item.id, &item.filename);
         let bytes = tokio::fs::read(&file_path)
             .await
@@ -103,23 +128,39 @@ impl ContentService {
         if page_size > 100 {
             page_size = 100;
         }
-        let mut offset = 0usize;
+        let mut offset = 0i64;
         if !page_token.is_empty() {
             offset = page_token
-                .parse::<usize>()
+                .parse::<i64>()
                 .map_err(|_| ContentError::InvalidInput("invalid page_token".to_string()))?;
+            if offset < 0 {
+                offset = 0;
+            }
         }
 
-        let store = self.store.lock().await;
-        let offset = offset.min(store.order.len());
-        let slice_end = (offset + page_size as usize).min(store.order.len());
-        let items = store.order[offset..slice_end]
-            .iter()
-            .filter_map(|id| store.items.get(id))
-            .cloned()
+        let rows = sqlx::query_as::<_, ContentRow>(
+            r#"
+            SELECT id, owner_id, title, description, filename, size_bytes, created_at
+            FROM contents
+            ORDER BY created_at ASC, id ASC
+            OFFSET $1
+            LIMIT $2
+            "#,
+        )
+        .bind(offset)
+        .bind((page_size + 1) as i64)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|err| ContentError::Db(err.to_string()))?;
+
+        let has_more = rows.len() > page_size as usize;
+        let items = rows
+            .into_iter()
+            .take(page_size as usize)
+            .map(ContentRow::into_item)
             .collect::<Vec<_>>();
-        let next_token = if slice_end < store.order.len() {
-            slice_end.to_string()
+        let next_token = if has_more {
+            (offset + page_size as i64).to_string()
         } else {
             String::new()
         };
@@ -132,10 +173,29 @@ impl ContentService {
     }
 }
 
-#[derive(Default)]
-struct ContentStore {
-    items: HashMap<String, ContentItem>,
-    order: Vec<String>,
+#[derive(Debug, FromRow)]
+struct ContentRow {
+    id: String,
+    owner_id: String,
+    title: String,
+    description: String,
+    filename: String,
+    size_bytes: i64,
+    created_at: i64,
+}
+
+impl ContentRow {
+    fn into_item(self) -> ContentItem {
+        ContentItem {
+            id: self.id,
+            owner_id: self.owner_id,
+            title: self.title,
+            description: self.description,
+            filename: self.filename,
+            size_bytes: self.size_bytes,
+            created_at: self.created_at,
+        }
+    }
 }
 
 fn now_timestamp() -> i64 {

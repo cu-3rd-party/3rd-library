@@ -209,12 +209,14 @@ fn map_content_error(err: ContentError) -> ApiError {
         ContentError::InvalidInput(msg) => ApiError::BadRequest(msg),
         ContentError::NotFound => ApiError::NotFound("content not found".to_string()),
         ContentError::Io(msg) => ApiError::Internal(msg),
+        ContentError::Db(msg) => ApiError::Internal(msg),
     }
 }
 
 fn map_statistics_error(err: crate::statistics::StatisticsError) -> ApiError {
     match err {
         crate::statistics::StatisticsError::InvalidInput(msg) => ApiError::BadRequest(msg),
+        crate::statistics::StatisticsError::Db(msg) => ApiError::Internal(msg),
     }
 }
 

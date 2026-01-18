@@ -1,6 +1,6 @@
 Kubernetes Deployment
 
-Single Rust backend with a Vue frontend. The backend uses in-memory stores plus local
+Single Rust backend with a Vue frontend backed by Postgres for persistence and local
 disk for content storage, so this setup is intended for development/demo use.
 
 Quick start (Minikube)
@@ -17,4 +17,4 @@ Quick start (Minikube)
 
 Notes
 - Images are referenced as local tags: 3rd-library-backend:latest and 3rd-library-frontend:latest.
-- The backend service is ClusterIP, consumed by the frontend over the cluster network.
+- The backend and postgres services are ClusterIP, consumed by the frontend over the cluster network.

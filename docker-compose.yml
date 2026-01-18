@@ -5,8 +5,12 @@ services:
       dockerfile: backend/Dockerfile
     env_file:
       - ./env/backend.env
+    environment:
+      DATABASE_URL: postgres://backend:backend@postgres:5432/backend
     ports:
       - "8080:8080"
+    depends_on:
+      - postgres
 
   frontend:
     build:
@@ -15,3 +19,17 @@ services:
       - "5173:5173"
     depends_on:
       - backend
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: backend
+      POSTGRES_PASSWORD: backend
+      POSTGRES_DB: backend
+    ports:
+      - "5432:5432"
+    volumes:
+      - backend-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  backend-postgres-data:

@@ -7,6 +7,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod auth;
 mod config;
 mod content;
+mod db;
 mod engagement;
 mod errors;
 mod handlers;
@@ -16,6 +17,7 @@ mod statistics;
 use crate::auth::AuthService;
 use crate::config::AppConfig;
 use crate::content::ContentService;
+use crate::db::init_db;
 use crate::engagement::EngagementService;
 use crate::handlers::{AppState, auth as auth_handlers, content as content_handlers, engagement as engagement_handlers};
 use crate::statistics::StatisticsService;
@@ -30,15 +32,24 @@ async fn main() {
     let config = AppConfig::from_env();
     info!(?config, "backend starting");
 
-    let content_service = ContentService::new(config.content_storage_dir.clone())
+    let pool = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&config.database_url)
+        .await
+        .expect("failed to connect to postgres");
+    init_db(&pool)
+        .await
+        .expect("failed to initialize database schema");
+
+    let content_service = ContentService::new(pool.clone(), config.content_storage_dir.clone())
         .await
         .expect("failed to initialize content storage");
 
     let state = std::sync::Arc::new(AppState {
-        auth: AuthService::new(config.jwt_secret.clone(), config.jwt_ttl),
+        auth: AuthService::new(pool.clone(), config.jwt_secret.clone(), config.jwt_ttl),
         content: content_service,
-        engagement: EngagementService::new(),
-        statistics: StatisticsService::new(),
+        engagement: EngagementService::new(pool.clone()),
+        statistics: StatisticsService::new(pool.clone()),
         max_upload_bytes: config.max_upload_bytes,
     });
 
