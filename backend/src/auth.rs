@@ -212,6 +212,13 @@ fn now_timestamp() -> i64 {
 mod tests {
     use super::*;
 
+    fn test_service() -> AuthService {
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .connect_lazy("postgres://postgres@localhost/postgres")
+            .expect("lazy pool");
+        AuthService::new(pool, "secret".to_string(), Duration::from_secs(60))
+    }
+
     fn sample_user() -> User {
         User {
             id: "user-123".to_string(),
@@ -235,6 +242,36 @@ mod tests {
     fn invalid_token_rejected() {
         let manager = TokenManager::new("secret".to_string(), Duration::from_secs(60));
         let err = manager.parse("not-a-jwt").expect_err("invalid token rejected");
+        assert!(matches!(err, AuthError::TokenInvalid));
+    }
+
+    #[tokio::test]
+    async fn register_rejects_invalid_input() {
+        let service = test_service();
+        let err = service
+            .register("".to_string(), "nope".to_string(), "".to_string())
+            .await
+            .expect_err("invalid input rejected");
+        assert!(matches!(err, AuthError::InvalidInput));
+    }
+
+    #[tokio::test]
+    async fn login_rejects_missing_credentials() {
+        let service = test_service();
+        let err = service
+            .login("".to_string(), "".to_string())
+            .await
+            .expect_err("invalid credentials rejected");
+        assert!(matches!(err, AuthError::InvalidCredentials));
+    }
+
+    #[tokio::test]
+    async fn validate_rejects_empty_token() {
+        let service = test_service();
+        let err = service
+            .validate("")
+            .await
+            .expect_err("empty token rejected");
         assert!(matches!(err, AuthError::TokenInvalid));
     }
 }
