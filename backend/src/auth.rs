@@ -207,3 +207,34 @@ fn now_timestamp() -> i64 {
         .unwrap_or_default()
         .as_secs() as i64
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_user() -> User {
+        User {
+            id: "user-123".to_string(),
+            name: "Ada".to_string(),
+            email: "ada@example.com".to_string(),
+            password_hash: "hash".to_string(),
+            created_at: 1_700_000_000,
+        }
+    }
+
+    #[test]
+    fn token_round_trip() {
+        let manager = TokenManager::new("secret".to_string(), Duration::from_secs(60));
+        let user = sample_user();
+        let token = manager.issue(&user).expect("token issued");
+        let parsed = manager.parse(&token).expect("token parsed");
+        assert_eq!(parsed, user.id);
+    }
+
+    #[test]
+    fn invalid_token_rejected() {
+        let manager = TokenManager::new("secret".to_string(), Duration::from_secs(60));
+        let err = manager.parse("not-a-jwt").expect_err("invalid token rejected");
+        assert!(matches!(err, AuthError::TokenInvalid));
+    }
+}
