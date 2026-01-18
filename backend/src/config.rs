@@ -47,3 +47,73 @@ struct AppConfigEnv {
     )]
     database_url: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+    use std::sync::{Mutex, OnceLock};
+
+    fn env_lock() -> std::sync::MutexGuard<'static, ()> {
+        static ENV_MUTEX: OnceLock<Mutex<()>> = OnceLock::new();
+        ENV_MUTEX
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .expect("env mutex")
+    }
+
+    fn with_env(vars: &[(&str, Option<&str>)], f: impl FnOnce()) {
+        let _guard = env_lock();
+        let mut prev = Vec::with_capacity(vars.len());
+        for (key, value) in vars {
+            prev.push((*key, env::var(*key).ok()));
+            match value {
+                Some(val) => unsafe { env::set_var(*key, val) },
+                None => unsafe { env::remove_var(*key) },
+            }
+        }
+
+        f();
+
+        for (key, value) in prev {
+            match value {
+                Some(val) => unsafe { env::set_var(key, val) },
+                None => unsafe { env::remove_var(key) },
+            }
+        }
+    }
+
+    #[test]
+    fn from_env_uses_defaults_on_invalid_jwt_ttl() {
+        with_env(
+            &[("JWT_TTL", Some("not-a-duration"))],
+            || {
+                let config = AppConfig::from_env();
+                assert_eq!(config.jwt_ttl, Duration::from_secs(24 * 60 * 60));
+            },
+        );
+    }
+
+    #[test]
+    fn from_env_respects_overrides() {
+        with_env(
+            &[
+                ("BACKEND_ADDR", Some("127.0.0.1:9999")),
+                ("MAX_UPLOAD_BYTES", Some("123")),
+                ("JWT_SECRET", Some("test-secret")),
+                ("JWT_TTL", Some("2h")),
+                ("CONTENT_STORAGE_DIR", Some("/tmp/3rd-library-test")),
+                ("DATABASE_URL", Some("postgres://user:pass@localhost:5432/testdb")),
+            ],
+            || {
+                let config = AppConfig::from_env();
+                assert_eq!(config.listen_addr, "127.0.0.1:9999");
+                assert_eq!(config.max_upload_bytes, 123);
+                assert_eq!(config.jwt_secret, "test-secret");
+                assert_eq!(config.jwt_ttl, Duration::from_secs(2 * 60 * 60));
+                assert_eq!(config.content_storage_dir, "/tmp/3rd-library-test");
+                assert_eq!(config.database_url, "postgres://user:pass@localhost:5432/testdb");
+            },
+        );
+    }
+}

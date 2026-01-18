@@ -225,6 +225,78 @@ mod tests {
         let path = service.file_path("content123", "file.txt");
         assert!(path.ends_with("content123-file.txt"));
     }
+
+    #[tokio::test]
+    async fn upload_rejects_missing_fields() {
+        let service = test_service();
+        let err = service
+            .upload(
+                "".to_string(),
+                "title".to_string(),
+                "desc".to_string(),
+                "file.txt".to_string(),
+                vec![1, 2, 3],
+            )
+            .await
+            .expect_err("missing owner_id rejected");
+        assert!(matches!(err, ContentError::InvalidInput(_)));
+
+        let err = service
+            .upload(
+                "owner".to_string(),
+                "".to_string(),
+                "desc".to_string(),
+                "file.txt".to_string(),
+                vec![1, 2, 3],
+            )
+            .await
+            .expect_err("missing title rejected");
+        assert!(matches!(err, ContentError::InvalidInput(_)));
+
+        let err = service
+            .upload(
+                "owner".to_string(),
+                "title".to_string(),
+                "desc".to_string(),
+                "".to_string(),
+                vec![1, 2, 3],
+            )
+            .await
+            .expect_err("missing filename rejected");
+        assert!(matches!(err, ContentError::InvalidInput(_)));
+
+        let err = service
+            .upload(
+                "owner".to_string(),
+                "title".to_string(),
+                "desc".to_string(),
+                "file.txt".to_string(),
+                Vec::new(),
+            )
+            .await
+            .expect_err("missing file bytes rejected");
+        assert!(matches!(err, ContentError::InvalidInput(_)));
+    }
+
+    #[tokio::test]
+    async fn get_rejects_empty_content_id() {
+        let service = test_service();
+        let err = service
+            .get("".to_string())
+            .await
+            .expect_err("empty content_id rejected");
+        assert!(matches!(err, ContentError::InvalidInput(_)));
+    }
+
+    #[tokio::test]
+    async fn list_items_rejects_invalid_page_token() {
+        let service = test_service();
+        let err = service
+            .list_items(10, "nope".to_string())
+            .await
+            .expect_err("invalid page token rejected");
+        assert!(matches!(err, ContentError::InvalidInput(_)));
+    }
 }
 
 fn now_timestamp() -> i64 {

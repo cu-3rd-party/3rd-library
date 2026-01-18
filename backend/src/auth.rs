@@ -245,6 +245,31 @@ mod tests {
         assert!(matches!(err, AuthError::TokenInvalid));
     }
 
+    #[test]
+    fn expired_token_rejected() {
+        let manager = TokenManager::new("secret".to_string(), Duration::from_secs(60));
+        let user = sample_user();
+        let claims = Claims {
+            sub: user.id,
+            exp: 0,
+            iat: 0,
+        };
+        let token = encode(&Header::default(), &claims, &manager.encoding)
+            .expect("token issued");
+        let err = manager.parse(&token).expect_err("expired token rejected");
+        assert!(matches!(err, AuthError::TokenInvalid));
+    }
+
+    #[test]
+    fn token_with_wrong_signature_rejected() {
+        let manager = TokenManager::new("secret".to_string(), Duration::from_secs(60));
+        let other = TokenManager::new("other-secret".to_string(), Duration::from_secs(60));
+        let user = sample_user();
+        let token = other.issue(&user).expect("token issued");
+        let err = manager.parse(&token).expect_err("wrong signature rejected");
+        assert!(matches!(err, AuthError::TokenInvalid));
+    }
+
     #[tokio::test]
     async fn register_rejects_invalid_input() {
         let service = test_service();
