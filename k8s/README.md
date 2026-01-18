@@ -1,6 +1,7 @@
 Kubernetes Deployment
 
-Mikroservisnoe prilozhenie razvernutoye v Minikube Kubernetes klastere. Vklyuchaet frontend na Vue.js, backend na FastAPI, bazy dannykh MongoDB/PostgreSQL, Kafka dlya asinkhronnoy kommunikatsii i MinIO dlya khraneniya faylov.
+Single Rust backend with a Vue frontend backed by Postgres for persistence and local
+disk for content storage, so this setup is intended for development/demo use.
 
 Quick start (Minikube)
 
@@ -11,11 +12,9 @@ Quick start (Minikube)
 2) Apply manifests:
    kubectl apply -k k8s
 
-3) Open services:
+3) Open the frontend:
    minikube service frontend -n third-library
-   minikube service nginx -n third-library
-   minikube service minio -n third-library
 
 Notes
-- Images are referenced as local tags: 3rd-library-<service>:latest.
-- Services use ClusterIP internally, NodePort for frontend/nginx/minio.
+- Images are referenced as local tags: 3rd-library-backend:latest and 3rd-library-frontend:latest.
+- The backend and postgres services are ClusterIP, consumed by the frontend over the cluster network.

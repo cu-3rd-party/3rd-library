@@ -1,142 +1,38 @@
 services:
-  gateway:
+  backend:
     build:
-      context: ./backend/gateway
+      context: .
+      dockerfile: backend/Dockerfile
     env_file:
-      - ./env/gateway.env
+      - ./env/backend.env
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://backend:backend@postgres:5432/backend
     ports:
       - "8080:8080"
     depends_on:
-      - redis
-      - kafka
-
-  auth:
-    build:
-      context: ./backend/auth
-    env_file:
-      - ./env/auth.env
-    depends_on:
-      - auth-postgres
-      - kafka
-
-  statistics:
-    build:
-      context: ./backend/statistics
-    env_file:
-      - ./env/statistics.env
-    depends_on:
-      - clickhouse
-      - kafka
-
-  notification:
-    build:
-      context: ./backend/notification
-    env_file:
-      - ./env/notification.env
-    depends_on:
-      - notification-mongo
-      - kafka
-
-  engagement:
-    build:
-      context: ./backend/engagement
-    env_file:
-      - ./env/engagement.env
-    depends_on:
-      - engagement-mongo
-      - kafka
-
-  content:
-    build:
-      context: ./backend/content
-    env_file:
-      - ./env/content.env
-    depends_on:
-      - content-mongo
-      - kafka
+      - postgres
 
   frontend:
     build:
       context: ./frontend
     ports:
       - "5173:5173"
+    restart: unless-stopped
     depends_on:
-      - gateway
+      - backend
 
-  auth-postgres:
+  postgres:
     image: postgres:16
-    env_file:
-      - ./env/postgres.env
+    environment:
+      POSTGRES_USER: backend
+      POSTGRES_PASSWORD: backend
+      POSTGRES_DB: backend
     ports:
       - "5432:5432"
     volumes:
-      - auth-postgres-data:/var/lib/postgresql/data
-
-  notification-mongo:
-    image: mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - notification-mongo-data:/data/db
-
-  engagement-mongo:
-    image: mongo
-    ports:
-      - "27018:27017"
-    volumes:
-      - engagement-mongo-data:/data/db
-
-  content-mongo:
-    image: mongo
-    ports:
-      - "27019:27017"
-    volumes:
-      - content-mongo-data:/data/db
-
-  clickhouse:
-    image: clickhouse/clickhouse-server
-    env_file:
-      - ./env/clickhouse.env
-    ports:
-      - "9000:9000"
-      - "8123:8123"
-    volumes:
-      - clickhouse-data:/var/lib/clickhouse
-
-  redis:
-    image: redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-
-  kafka:
-    image: apache/kafka:4.1.0
-    env_file:
-      - ./env/kafka.env
+      - backend-postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
-    ports:
-      - "9092:9092"
-    volumes:
-      - kafka-data:/var/lib/kafka/data
-
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
-    env_file:
-      - ./env/minio.env
-    ports:
-      - "9001:9001"
-      - "9002:9000"
-    volumes:
-      - minio-data:/data
 
 volumes:
-  auth-postgres-data:
-  notification-mongo-data:
-  engagement-mongo-data:
-  content-mongo-data:
-  clickhouse-data:
-  redis-data:
-  kafka-data:
-  minio-data:
+  backend-postgres-data:
