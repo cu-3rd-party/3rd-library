@@ -198,6 +198,35 @@ impl ContentRow {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_service() -> ContentService {
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .connect_lazy("postgres://postgres@localhost/postgres")
+            .expect("lazy pool");
+        ContentService {
+            storage_dir: PathBuf::from("/tmp/content-service-test"),
+            pool,
+        }
+    }
+
+    #[test]
+    fn file_path_sanitizes_slashes() {
+        let service = test_service();
+        let path = service.file_path("content123", "folder/file.txt");
+        assert!(path.ends_with("content123-folder_file.txt"));
+    }
+
+    #[test]
+    fn file_path_preserves_name() {
+        let service = test_service();
+        let path = service.file_path("content123", "file.txt");
+        assert!(path.ends_with("content123-file.txt"));
+    }
+}
+
 fn now_timestamp() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
