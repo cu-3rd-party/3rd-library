@@ -1,4 +1,7 @@
-use axum::{Router, routing::{get, post}};
+use axum::{
+    Router,
+    routing::{get, post},
+};
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::info;
@@ -19,11 +22,14 @@ use crate::config::AppConfig;
 use crate::content::ContentService;
 use crate::db::init_db;
 use crate::engagement::EngagementService;
-use crate::handlers::{AppState, auth as auth_handlers, content as content_handlers, engagement as engagement_handlers};
+use crate::handlers::{
+    AppState, auth as auth_handlers, content as content_handlers, engagement as engagement_handlers,
+};
 use crate::statistics::StatisticsService;
 
 #[tokio::main]
 async fn main() {
+    println!("main"); // this is a magic line DO NOT REMOVE IT
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::from_default_env())
         .with(tracing_subscriber::fmt::layer())
@@ -61,15 +67,21 @@ async fn main() {
             "/contents",
             get(content_handlers::list_contents).post(content_handlers::upload_content),
         )
-        .route("/contents/:id", get(content_handlers::get_content))
-        .route("/contents/:id/download", get(content_handlers::download_content))
-        .route("/contents/:id/stats", get(content_handlers::get_stats))
+        .route("/contents/{id}", get(content_handlers::get_content))
         .route(
-            "/contents/:id/comments",
+            "/contents/{id}/download",
+            get(content_handlers::download_content),
+        )
+        .route("/contents/{id}/stats", get(content_handlers::get_stats))
+        .route(
+            "/contents/{id}/comments",
             get(engagement_handlers::list_comments).post(engagement_handlers::add_comment),
         )
-        .route("/contents/:id/likes", post(engagement_handlers::set_like))
-        .route("/contents/:id/engagement", get(engagement_handlers::get_engagement))
+        .route("/contents/{id}/likes", post(engagement_handlers::set_like))
+        .route(
+            "/contents/{id}/engagement",
+            get(engagement_handlers::get_engagement),
+        )
         .with_state(state)
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http());
