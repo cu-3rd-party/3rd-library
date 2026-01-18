@@ -212,15 +212,15 @@ mod tests {
         }
     }
 
-    #[test]
-    fn file_path_sanitizes_slashes() {
+    #[tokio::test]
+    async fn file_path_sanitizes_slashes() {
         let service = test_service();
         let path = service.file_path("content123", "folder/file.txt");
         assert!(path.ends_with("content123-folder_file.txt"));
     }
 
-    #[test]
-    fn file_path_preserves_name() {
+    #[tokio::test]
+    async fn file_path_preserves_name() {
         let service = test_service();
         let path = service.file_path("content123", "file.txt");
         assert!(path.ends_with("content123-file.txt"));
