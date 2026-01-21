@@ -12,7 +12,6 @@ RUN cargo build -p backend --release
 
 FROM gcr.io/distroless/cc-debian12
 COPY --from=builder /app/target/release/backend /backend
-RUN mkdir -p /var/app/upload
 EXPOSE 8080
 ENV RUST_LOG=debug
 CMD ["/backend"]
