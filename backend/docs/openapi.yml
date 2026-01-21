@@ -10,6 +10,7 @@ tags:
   - name: Profiles
   - name: Articles
   - name: Comments
+  - name: Attachments
   - name: Tags
 paths:
   /api/users:
@@ -387,6 +388,88 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+  /api/articles/{slug}/attachments:
+    get:
+      tags: [Attachments]
+      summary: List article attachments
+      parameters:
+        - $ref: "#/components/parameters/Slug"
+      responses:
+        "200":
+          description: Attachment list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachmentsResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [Attachments]
+      summary: Add attachment to article
+      parameters:
+        - $ref: "#/components/parameters/Slug"
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Attachment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachmentResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /api/articles/{slug}/attachments/{attachment_id}:
+    get:
+      tags: [Attachments]
+      summary: Download attachment
+      parameters:
+        - $ref: "#/components/parameters/Slug"
+        - $ref: "#/components/parameters/AttachmentId"
+      responses:
+        "200":
+          description: Attachment file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Attachments]
+      summary: Delete attachment
+      parameters:
+        - $ref: "#/components/parameters/Slug"
+        - $ref: "#/components/parameters/AttachmentId"
+      security:
+        - TokenAuth: []
+      responses:
+        "200":
+          description: Attachment deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/tags:
     get:
       tags: [Tags]
@@ -418,6 +501,13 @@ components:
       required: true
       schema:
         type: string
+    AttachmentId:
+      name: attachment_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   responses:
     Unauthorized:
       description: Unauthorized
@@ -665,6 +755,35 @@ components:
           properties:
             body:
               type: string
+    AttachmentResponse:
+      type: object
+      required: [attachment]
+      properties:
+        attachment:
+          $ref: "#/components/schemas/Attachment"
+    AttachmentsResponse:
+      type: object
+      required: [attachments]
+      properties:
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Attachment"
+    Attachment:
+      type: object
+      required: [attachmentId, fileName, createdAt, updatedAt]
+      properties:
+        attachmentId:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     TagsResponse:
       type: object
       required: [tags]
