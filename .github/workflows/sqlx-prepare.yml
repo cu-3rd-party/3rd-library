@@ -3,7 +3,13 @@ name: sqlx-prepare
 on:
   push:
     branches: ["**"]
+    paths:
+      - "backend/**"
+      - ".sqlx/**"
   pull_request:
+    paths:
+      - "backend/**"
+      - ".sqlx/**"
 
 jobs:
   sqlx-prepare:
