@@ -1,5 +1,5 @@
 use anyhow::Context;
-use clap::Parser;
+use envconfig::Envconfig;
 use sqlx::postgres::PgPoolOptions;
 
 use backend::config::Config;
@@ -9,7 +9,7 @@ use backend::http;
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
 
-    let config = Config::parse();
+    let config = Config::init_from_env()?;
 
     let db = PgPoolOptions::new()
         .max_connections(50)

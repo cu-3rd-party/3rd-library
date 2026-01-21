@@ -1,8 +1,9 @@
-#[derive(clap::Parser)]
-pub struct Config {
-    #[clap(long, env)]
-    pub database_url: String,
+use envconfig::Envconfig;
 
-    #[clap(long, env)]
+#[derive(envconfig::Envconfig)]
+pub struct Config {
+    #[envconfig(from = "DATABASE_URL")]
+    pub database_url: String,
+    #[envconfig(from = "HMAC_KEY")]
     pub hmac_key: String,
 }
