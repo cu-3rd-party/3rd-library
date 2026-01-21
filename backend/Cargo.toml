@@ -9,7 +9,7 @@ authors = ["Igor Mamaev <igor.mamaev1@gmail.com>"]
 # Core dependencies: runtime, HTTP framework and database client.
 futures = "0.3"
 tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread"] }
-axum = { version = "0.8.8", features = ["tower-log"] }
+axum = { version = "0.8.8", features = ["tower-log", "multipart"] }
 sqlx = { version = "0.8.6", features = [
 	"runtime-tokio-native-tls",
 	"postgres",
@@ -32,7 +32,7 @@ sha2 = "0.10.9"
 
 time = "0.3.45"
 
-uuid = { version = "1.19.0", features = ["serde"] }
+uuid = { version = "1.19.0", features = ["serde", "v4"] }
 
 # Utility Crates
 anyhow = "1.0.48"
