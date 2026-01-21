@@ -1,0 +1,687 @@
+openapi: 3.0.3
+info:
+  title: Library Backend API
+  version: 1.0.0
+  description: |
+    REST API for the Library backend. Provides authentication, content upload and retrieval,
+    engagement (likes/comments), and content statistics. Authentication uses bearer JWTs.
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://api.example.com
+    description: Production (placeholder)
+
+tags:
+  - name: Health
+    description: Service liveness checks
+  - name: Auth
+    description: User registration and login
+  - name: Contents
+    description: Content listing, upload, and retrieval
+  - name: Engagement
+    description: Likes and comments
+  - name: Statistics
+    description: Content interaction statistics
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns a simple `ok` string to indicate the service is running.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: ok
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: |
+        Creates a new user account and returns a JWT token. Email addresses are normalized to
+        lowercase and must contain `@`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              sample:
+                summary: Example registration payload
+                value:
+                  name: Ada Lovelace
+                  email: ada@example.com
+                  password: S3cureP@ss
+      responses:
+        '200':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                success:
+                  summary: Registration response
+                  value:
+                    token: eyJhbGciOi...
+                    user:
+                      id: user_123
+                      name: Ada Lovelace
+                      email: ada@example.com
+                      created_at: 1700000000
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in
+      description: |
+        Validates user credentials and returns a JWT token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              sample:
+                summary: Example login payload
+                value:
+                  email: ada@example.com
+                  password: S3cureP@ss
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /contents:
+    get:
+      tags: [Contents]
+      summary: List content items
+      description: |
+        Returns a paginated list of content metadata. Pagination uses a numeric offset stored in
+        `page_token`.
+      parameters:
+        - in: query
+          name: page_size
+          description: Maximum number of items to return (default 20, max 100).
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+          example: 20
+        - in: query
+          name: page_token
+          description: Offset token from a previous list response. Leave empty for first page.
+          schema:
+            type: string
+          example: "0"
+      responses:
+        '200':
+          description: Page of content items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Contents]
+      summary: Upload content
+      description: |
+        Uploads a PDF document with a title and optional description. The request must include
+        a bearer token. File size is limited by the server configuration (`max_upload_bytes`).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, file]
+              properties:
+                title:
+                  type: string
+                  description: Human-readable title of the content.
+                description:
+                  type: string
+                  description: Optional description.
+                file:
+                  type: string
+                  format: binary
+                  description: PDF file bytes. Filename is used for downloads.
+            encoding:
+              file:
+                contentType: application/pdf
+      responses:
+        '200':
+          description: Content stored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentMetadata'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /contents/{id}:
+    get:
+      tags: [Contents]
+      summary: Retrieve content (inline)
+      description: |
+        Streams the PDF file inline. If an `Authorization` header is present, the token is
+        validated; otherwise an anonymous ID is recorded for statistics. Invalid tokens return
+        `401`.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Content ID
+          schema:
+            type: string
+        - in: header
+          name: x-anonymous-id
+          required: false
+          description: Identifier used for anonymous statistics tracking.
+          schema:
+            type: string
+            default: anonymous
+      responses:
+        '200':
+          description: PDF file
+          headers:
+            Content-Disposition:
+              description: inline; filename="{original filename}"
+              schema:
+                type: string
+            Content-Type:
+              schema:
+                type: string
+                example: application/pdf
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /contents/{id}/download:
+    get:
+      tags: [Contents]
+      summary: Download content
+      description: |
+        Streams the PDF file with attachment disposition. If an `Authorization` header is present,
+        the token is validated; otherwise an anonymous ID is recorded for statistics. Invalid tokens
+        return `401`.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Content ID
+          schema:
+            type: string
+        - in: header
+          name: x-anonymous-id
+          required: false
+          description: Identifier used for anonymous statistics tracking.
+          schema:
+            type: string
+            default: anonymous
+      responses:
+        '200':
+          description: PDF file download
+          headers:
+            Content-Disposition:
+              description: attachment; filename="{original filename}"
+              schema:
+                type: string
+            Content-Type:
+              schema:
+                type: string
+                example: application/pdf
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /contents/{id}/stats:
+    get:
+      tags: [Statistics]
+      summary: Fetch content statistics
+      description: |
+        Returns aggregated counts for views, downloads, and unique users. If no interactions have
+        occurred, counts are zero and `last_interaction_at` is 0.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Content ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Content statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /contents/{id}/comments:
+    get:
+      tags: [Engagement]
+      summary: List comments
+      description: Returns all comments for the content, ordered by creation time.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Content ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Comment list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Engagement]
+      summary: Add a comment
+      description: Adds a comment for the specified content. Requires bearer authentication.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Content ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentRequest'
+            examples:
+              sample:
+                summary: Example comment
+                value:
+                  body: Great read!
+      responses:
+        '200':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /contents/{id}/likes:
+    post:
+      tags: [Engagement]
+      summary: Set like status
+      description: |
+        Sets the like status for the authenticated user. Send `liked: true` to like, or
+        `liked: false` to remove the like. Returns the current total like count.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Content ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LikeRequest'
+            examples:
+              like:
+                summary: Like the content
+                value:
+                  liked: true
+              unlike:
+                summary: Remove the like
+                value:
+                  liked: false
+      responses:
+        '200':
+          description: Like status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LikeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /contents/{id}/engagement:
+    get:
+      tags: [Engagement]
+      summary: Fetch engagement summary
+      description: |
+        Returns total likes and comments for the content. If a bearer token is supplied, the
+        response includes whether the user has liked the content.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Content ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Engagement summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EngagementResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Invalid input or malformed request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorBody'
+          example:
+            error: invalid input
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorBody'
+          example:
+            error: invalid credentials
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorBody'
+          example:
+            error: content not found
+    Conflict:
+      description: Resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorBody'
+          example:
+            error: email already registered
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorBody'
+          example:
+            error: unexpected error
+
+  schemas:
+    ErrorBody:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Error message
+
+    RegisterRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          description: Display name
+        email:
+          type: string
+          format: email
+          description: User email address
+        password:
+          type: string
+          format: password
+          description: User password
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    UserResponse:
+      type: object
+      required: [id, name, email, created_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        created_at:
+          type: integer
+          format: int64
+          description: Unix timestamp (seconds)
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+          description: JWT bearer token
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    ContentMetadata:
+      type: object
+      required:
+        - id
+        - owner_id
+        - title
+        - description
+        - filename
+        - size_bytes
+        - created_at
+      properties:
+        id:
+          type: string
+        owner_id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        filename:
+          type: string
+        size_bytes:
+          type: integer
+          format: int64
+        created_at:
+          type: integer
+          format: int64
+          description: Unix timestamp (seconds)
+
+    ContentListResponse:
+      type: object
+      required: [items, next_page_token]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentMetadata'
+        next_page_token:
+          type: string
+          description: Empty string when there are no more pages
+
+    StatsResponse:
+      type: object
+      required: [views, downloads, unique_users, last_interaction_at]
+      properties:
+        views:
+          type: integer
+          format: int64
+        downloads:
+          type: integer
+          format: int64
+        unique_users:
+          type: integer
+          format: int64
+        last_interaction_at:
+          type: integer
+          format: int64
+          description: Unix timestamp (seconds), or 0 when no interactions
+
+    CommentRequest:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+          description: Comment text
+
+    CommentResponse:
+      type: object
+      required: [id, content_id, user_id, body, created_at]
+      properties:
+        id:
+          type: string
+        content_id:
+          type: string
+        user_id:
+          type: string
+        body:
+          type: string
+        created_at:
+          type: integer
+          format: int64
+
+    CommentListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommentResponse'
+
+    LikeRequest:
+      type: object
+      required: [liked]
+      properties:
+        liked:
+          type: boolean
+          description: Whether the content should be liked by the user
+
+    LikeResponse:
+      type: object
+      required: [likes, liked]
+      properties:
+        likes:
+          type: integer
+          format: int64
+        liked:
+          type: boolean
+
+    EngagementResponse:
+      type: object
+      required: [likes, comments, liked_by_user]
+      properties:
+        likes:
+          type: integer
+          format: int64
+        comments:
+          type: integer
+          format: int64
+        liked_by_user:
+          type: boolean

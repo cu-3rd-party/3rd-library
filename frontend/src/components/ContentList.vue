@@ -7,7 +7,7 @@ defineProps({
   loading: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['view', 'download'])
+const emit = defineEmits(['open'])
 </script>
 
 <template>
@@ -19,8 +19,7 @@ const emit = defineEmits(['view', 'download'])
       :key="item.id"
       :item="item"
       :active="item.id === selectedId"
-      @view="emit('view', $event)"
-      @download="emit('download', $event)"
+      @open="emit('open', $event)"
     />
   </div>
 </template>
