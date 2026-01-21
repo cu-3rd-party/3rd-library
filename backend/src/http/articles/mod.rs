@@ -10,6 +10,7 @@ use crate::http::profiles::Profile;
 use crate::http::types::Timestamptz;
 use crate::http::{ApiContext, Error, Result, ResultExt};
 
+mod attachments;
 mod comments;
 mod listing;
 
@@ -30,6 +31,7 @@ pub fn router() -> Router<ApiContext> {
         )
         .route("/api/tags", get(get_tags))
         .merge(comments::router())
+        .merge(attachments::router())
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
