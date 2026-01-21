@@ -306,6 +306,13 @@ fn sanitize_filename(name: &str) -> String {
         .to_string()
 }
 
+#[test]
+fn test_sanitize_filename() {
+    assert_eq!(sanitize_filename("../../text.txt"), "text.txt");
+    assert_eq!(sanitize_filename("./test/text.txt"), "text.txt");
+    assert_eq!(sanitize_filename("/dev/null"), "null");
+}
+
 async fn delete_attachment(
     auth_user: AuthUser,
     State(ctx): State<ApiContext>,
