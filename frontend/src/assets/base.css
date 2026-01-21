@@ -1,7 +1,7 @@
 :root {
   color-scheme: light;
-  --font-body: "Space Grotesk", "Segoe UI", sans-serif;
-  --font-display: "Fraunces", "Times New Roman", serif;
+  --font-body: "Inter", "Segoe UI", sans-serif;
+  --font-display: "Inter", "Fraunces", "Times New Roman", serif;
   --text-strong: #1d1b16;
   --text-muted: #4b463e;
   --text-soft: #7a7369;
