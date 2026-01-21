@@ -36,7 +36,7 @@ jobs:
       - name: Run migrations
         run: cargo sqlx migrate run --source backend/migrations
       - name: Validate sqlx cache
-        run: cargo sqlx prepare --check -p backend
+        run: cargo sqlx prepare --check --workspace
       - name: Commit sqlx cache updates
         if: github.event_name == 'push'
         env:
