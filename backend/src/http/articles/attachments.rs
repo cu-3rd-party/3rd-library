@@ -4,7 +4,8 @@ use crate::http::types::Timestamptz;
 use crate::http::{Error, Result};
 use anyhow::Context;
 use axum::extract::{Multipart, Path, State};
-use axum::routing::{delete, get};
+use axum::http::{HeaderMap, HeaderValue, header};
+use axum::routing::get;
 use axum::{Json, Router};
 use futures::TryStreamExt;
 use serde::Serialize;
@@ -22,7 +23,7 @@ pub fn router() -> Router<ApiContext> {
         )
         .route(
             "/api/articles/{slug}/attachments/{attachment_id}",
-            delete(delete_attachment),
+            get(get_attachment).delete(delete_attachment),
         )
 }
 
@@ -93,6 +94,59 @@ async fn get_attachments(
     .await?;
 
     Ok(Json(MultipleAttachments { attachments }))
+}
+
+async fn get_attachment(
+    _maybe_auth_user: MaybeAuthUser,
+    State(ctx): State<ApiContext>,
+    Path((slug, attachment_id)): Path<(String, Uuid)>,
+) -> Result<(HeaderMap, Vec<u8>)> {
+    let attachment = sqlx::query!(
+        r#"
+            select attachment.file_path, attachment.file_name
+            from attachment
+            inner join article using (article_id)
+            where attachment_id = $1 and slug = $2
+        "#,
+        attachment_id,
+        slug
+    )
+    .fetch_optional(&ctx.db)
+    .await?
+    .ok_or(Error::NotFound)?;
+
+    let file_path = attachment.file_path;
+    let file_name = sanitize_filename(&attachment.file_name);
+
+    let read_result = tokio::task::spawn_blocking(move || std::fs::read(&file_path)).await;
+    let file_bytes = match read_result {
+        Ok(Ok(bytes)) => bytes,
+        Ok(Err(err)) if err.kind() == std::io::ErrorKind::NotFound => return Err(Error::NotFound),
+        Ok(Err(err)) => {
+            return Err(anyhow::anyhow!(err)
+                .context("failed to read attachment file")
+                .into());
+        }
+        Err(err) => {
+            return Err(anyhow::Error::from(err)
+                .context("failed to join attachment read task")
+                .into());
+        }
+    };
+
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("application/octet-stream"),
+    );
+    let disposition = format!("attachment; filename=\"{}\"", file_name.replace('"', "_"));
+    headers.insert(
+        header::CONTENT_DISPOSITION,
+        HeaderValue::from_str(&disposition)
+            .context("failed to build content-disposition header")?,
+    );
+
+    Ok((headers, file_bytes))
 }
 
 async fn create_attachment(
