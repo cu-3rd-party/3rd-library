@@ -8,6 +8,7 @@ use crate::statistics::StatisticsService;
 
 pub mod auth;
 pub mod content;
+pub mod docs;
 pub mod engagement;
 
 #[derive(Clone)]
@@ -17,6 +18,7 @@ pub struct AppState {
     pub engagement: EngagementService,
     pub statistics: StatisticsService,
     pub max_upload_bytes: usize,
+    pub docs_html: String,
 }
 
 pub type SharedState = Arc<AppState>;
