@@ -6,6 +6,8 @@ RUN mkdir -p backend/src
 RUN printf "fn main() {}\n" > backend/src/main.rs
 RUN cargo build --manifest-path backend/Cargo.toml --release
 COPY backend/src backend/src
+COPY .sqlx .sqlx
+COPY backend/migrations backend/migrations
 RUN cargo build -p backend --release
 
 FROM gcr.io/distroless/cc-debian12
