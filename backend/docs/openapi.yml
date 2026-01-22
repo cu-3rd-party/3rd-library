@@ -606,6 +606,7 @@ components:
             image:
               type: string
               nullable: true
+              description: base64-encoded profile picture
     ProfileResponse:
       type: object
       required: [profile]
@@ -623,6 +624,7 @@ components:
         image:
           type: string
           nullable: true
+          description: base64-encoded profile picture
         following:
           type: boolean
     ArticleResponse:
