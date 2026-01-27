@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+    "baseUrl": ".",
+		"composite": true,
+		"skipLibCheck": true,
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"allowSyntheticDefaultImports": true
+	},
+  "include": [
+    "vite.config.ts",
+    "manifest.ts",
+    "workbox.config.ts"
+  ]
+}

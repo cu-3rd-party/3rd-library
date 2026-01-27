@@ -1,7 +1,14 @@
-FROM node:22-alpine
+# !IMPORTANT
+FROM node:22-alpine AS build
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN npm install -g pnpm@latest && \
+pnpm install --frozen-lockfile
 COPY . .
-EXPOSE 5173
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+RUN pnpm build
+
+FROM nginx:alpine
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80  
+CMD ["nginx", "-g", "daemon off;"]
