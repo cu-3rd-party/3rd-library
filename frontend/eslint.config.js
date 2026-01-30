@@ -23,21 +23,28 @@ export default defineConfig({
     "react-hooks": reactHooksPlugin,
   },
   settings: {
-    react: { 
+    react: {
       version: "detect",
-      runtime: "automatic"
+      runtime: "automatic",
     },
     "import/resolver": {
       typescript: { project: `${import.meta.dirname}/tsconfig.json` },
     },
-    "import/core-modules": ["uuid"],  // prevent unresolved reference
+    "import/core-modules": ["uuid"], // prevent unresolved reference
   },
   rules: {
     "react/react-in-jsx-scope": "off",
     "import/order": [
       "error",
       {
-        groups: ["builtin", "external", "internal", "parent", "sibling", "index"],
+        groups: [
+          "builtin",
+          "external",
+          "internal",
+          "parent",
+          "sibling",
+          "index",
+        ],
         "newlines-between": "always",
         alphabetize: {
           order: "asc",
@@ -64,5 +71,12 @@ export default defineConfig({
       },
     ],
   },
-  ignores: ["node_modules/**", "dist/**", "eslint.config.js", "manifest.ts", "vite.config.js", "workbox.config.ts"],
+  ignores: [
+    "node_modules/**",
+    "dist/**",
+    "eslint.config.js",
+    "manifest.ts",
+    "vite.config.js",
+    "workbox.config.ts",
+  ],
 });

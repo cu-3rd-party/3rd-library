@@ -1,34 +1,30 @@
 {
   // files to compile (type-check only, since noEmit: true)
-	"include": [
-    "src",
-    "lingui.config.ts",
-    "types/**/*.d.ts",
+  "include": ["src", "lingui.config.ts", "types/**/*.d.ts"],
+  "exclude": ["node_modules", "public/mockServiceWorker.js"],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
   ],
-	"exclude": ["node_modules", "public/mockServiceWorker.js"],
-	"references": [
-		{
-			"path": "./tsconfig.node.json"
-		}
-	],
-	"compilerOptions": {
+  "compilerOptions": {
     "baseUrl": ".",
-		"target": "ES2022",
-		"lib": ["DOM", "DOM.Iterable", "ESNext"],
-		"module": "ESNext",
-		"skipLibCheck": true,
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "ESNext",
+    "skipLibCheck": true,
     // Bundler mode
-		"moduleResolution": "bundler",
-		"esModuleInterop": true,
-		"allowImportingTsExtensions": true,
-		"resolveJsonModule": true,
-		"isolatedModules": true,
-		"noEmit": true,
-		"jsx": "react-jsx",
-		"strict": true,
-		"types": ["node","vite/client"],
-		"paths": {
-			"@/*": ["src/*"]
-		}
-	}
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "types": ["node", "vite/client"],
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  }
 }
