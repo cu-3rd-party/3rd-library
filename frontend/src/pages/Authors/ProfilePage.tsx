@@ -1,6 +1,6 @@
 import { ShieldCheck, User } from "lucide-react";
 
-import {Material} from "@/common/molecules /Materials/MaterialCard.tsx";
+import {Material} from "@/common/molecules/Materials/MaterialCard.tsx";
 import {MaterialsSection} from "@/common/organisms";
 import { Badge } from "@/components/ui/badge";
 

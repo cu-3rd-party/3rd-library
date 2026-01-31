@@ -2,7 +2,7 @@ import { CircleAlert, SendHorizonal } from "lucide-react";
 import { useState } from "react";
 
 import { FileUploadArea } from "@/common/atoms/";
-import {MaterialAttributesSelector} from "@/common/molecules ";
+import {MaterialAttributesSelector} from "@/common/molecules";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

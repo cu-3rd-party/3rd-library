@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { CourseSelector } from "@/common/atoms";
-import { MaterialCard, MaterialSearchBar } from "@/common/molecules /Materials";
-import { Material } from "@/common/molecules /Materials/MaterialCard.tsx";
+import { MaterialCard, MaterialSearchBar } from "@/common/molecules/Materials";
+import { Material } from "@/common/molecules/Materials/MaterialCard.tsx";
 import { cn } from "@/lib/utils";
 
 type MaterialsSectionProps = {

@@ -2,7 +2,7 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import {Author} from "@/common/molecules /Authors/AuthorCard.tsx";
+import {Author} from "@/common/molecules/Authors/AuthorCard.tsx";
 import {AuthorsGrid} from "@/common/organisms";
 import {Input} from "@/components/ui/input.tsx";
 

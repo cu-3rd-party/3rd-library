@@ -1,5 +1,4 @@
-import {AuthorCard } from "@/common/molecules ";
-import {Author} from "@/common/molecules /Authors/AuthorCard.tsx";
+import { Author, AuthorCard} from "@/common/molecules";
 
 type AuthorsGridProps = {
   authors: Author[];

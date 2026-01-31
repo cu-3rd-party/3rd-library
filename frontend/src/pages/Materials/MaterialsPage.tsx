@@ -1,4 +1,4 @@
-import { Material } from "@/common/molecules /Materials/MaterialCard.tsx";
+import { Material } from "@/common/molecules/Materials/MaterialCard.tsx";
 import {MaterialsSection} from "@/common/organisms";
 
 const MOCK_ALL_MATERIALS: Material[] = [
