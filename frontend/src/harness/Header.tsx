@@ -1,8 +1,10 @@
-import { useLocation, useNavigate } from "react-router-dom";
 import { Moon, Sun, UploadCloud, Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
 import { useTheme } from "@/components/theme-provider";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -10,7 +12,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { useState } from "react";
 
 const NAV_ITEMS = [
   { label: "Материалы", path: "/materials" },
@@ -32,7 +33,6 @@ export const Header = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container w-5/6 m-auto flex h-16 max-w-screen-2xl items-center justify-between">
-
         <div className="md:hidden mr-2">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
@@ -62,8 +62,6 @@ export const Header = () => {
                     </Button>
                   ))}
                 </nav>
-
-
               </div>
             </SheetContent>
           </Sheet>
@@ -83,7 +81,6 @@ export const Header = () => {
         </nav>
 
         <div className="flex flex-1 items-center justify-end space-x-2 md:space-x-4">
-
           <Button
             className="bg-orange-500 hover:bg-orange-600 px-3 md:px-4"
             key="upload-material"
@@ -104,7 +101,12 @@ export const Header = () => {
             <span className="sr-only">Переключить тему</span>
           </Button>
 
-          <Button variant="ghost" size="icon" className="rounded-full" onClick={() => navigate("/authors/1")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            onClick={() => navigate("/authors/1")}
+          >
             <Avatar className="h-9 w-9 md:h-10 md:w-10">
               <AvatarImage src="/pwa-144x144.png" alt="@user" />
               <AvatarFallback>CN</AvatarFallback>

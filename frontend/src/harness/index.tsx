@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+
 import { Header } from "@/harness/Header";
 
 interface MainHarnessProps {
@@ -12,7 +13,7 @@ const MainHarness = ({ children }: MainHarnessProps) => {
       {/* flex-1 заставляет main занимать все доступное место,
          прижимая футер (если будет) вниз
       */}
-      <main >{children}</main>
+      <main>{children}</main>
     </div>
   );
 };

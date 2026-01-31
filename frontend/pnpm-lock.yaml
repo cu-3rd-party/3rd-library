@@ -87,6 +87,9 @@ importers:
         specifier: ^5.0.10
         version: 5.0.10(@types/react@19.2.9)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
     devDependencies:
+      '@eslint/js':
+        specifier: ^9.39.2
+        version: 9.39.2
       '@lingui/babel-plugin-lingui-macro':
         specifier: ^5.6.0
         version: 5.9.0(typescript@5.9.3)

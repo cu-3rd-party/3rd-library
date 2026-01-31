@@ -30,7 +30,7 @@ export default defineConfig({
     "import/resolver": {
       typescript: { project: `${import.meta.dirname}/tsconfig.json` },
     },
-    "import/core-modules": ["uuid"], // prevent unresolved reference
+    "import/core-modules": ["uuid"],
   },
   rules: {
     "react/react-in-jsx-scope": "off",
