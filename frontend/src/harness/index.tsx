@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Header } from "@/harness/Header";
+import { Header } from "@/harness/Navbar";
 
 interface MainHarnessProps {
   children: ReactNode;
@@ -9,11 +9,10 @@ interface MainHarnessProps {
 const MainHarness = ({ children }: MainHarnessProps) => {
   return (
     <div className="relative flex min-h-screen flex-col bg-background text-foreground">
-      <Header />
+      <Header>{children}</Header>
       {/* flex-1 заставляет main занимать все доступное место,
          прижимая футер (если будет) вниз
       */}
-      <main>{children}</main>
     </div>
   );
 };

@@ -1,17 +1,27 @@
 import { Suspense } from "react";
 import { Routes, Route, Outlet, Navigate } from "react-router-dom";
 
+import { MATERIALS_PREFIX } from "@/constants";
 import MainHarness from "@/harness";
-import { AuthorsPage } from "@/pages/Authors/AuthorsPage.tsx";
-import { ProfilePage } from "@/pages/Authors/ProfilePage.tsx";
-import { MaterialDetailPage } from "@/pages/Materials/MaterialDetailPage.tsx";
-import { MaterialsPage } from "@/pages/Materials/MaterialsPage.tsx";
-import { UploadMaterialPage } from "@/pages/Materials/UploadMaterialPage.tsx";
+import { AppRoute } from "@/models";
 
-const AboutPage = () => <div>О нас</div>;
+import { aboutRoutes } from "./about";
+import { authorizationRoutes } from "./authorization";
+import { authorsRoutes } from "./authors";
+import { fallbackRoutes } from "./fallback";
+import { materialsRoutes } from "./materials";
+
 const PageLoader = () => <div className="p-10 text-center">Загрузка...</div>;
 
 export const AppRouter = () => {
+  const withHarnessRoutes: AppRoute[] = [
+    ...aboutRoutes,
+    ...authorsRoutes,
+    ...materialsRoutes,
+  ];
+
+  const plainRoutes = [...authorizationRoutes, ...fallbackRoutes];
+
   const HarnessLayout = () => (
     <MainHarness>
       <Suspense fallback={<PageLoader />}>
@@ -23,22 +33,17 @@ export const AppRouter = () => {
   return (
     <Routes>
       <Route element={<HarnessLayout />}>
-        <Route path="/" element={<Navigate to="/materials" replace />} />
-
-        <Route path="/materials" element={<MaterialsPage />} />
-        <Route path="/materials/:id" element={<MaterialDetailPage />} />
         <Route
-          path="/materials/upload-material"
-          element={<UploadMaterialPage />}
+          path="/"
+          element={<Navigate to={`${MATERIALS_PREFIX}`} replace />}
         />
-        <Route path="/authors/:id" element={<ProfilePage />} />
-        <Route path="/authors" element={<AuthorsPage />} />
-        <Route path="/about" element={<AboutPage />} />
+        {withHarnessRoutes.map(({ path, element }) => (
+          <Route key={path} element={element} path={path} />
+        ))}
       </Route>
-
-      <Route path="/login" element={<div>Страница логина</div>} />
-
-      <Route path="*" element={<div>404 Not Found</div>} />
+      {plainRoutes.map(({ path, element }) => (
+        <Route key={path} element={element} path={path} />
+      ))}
     </Routes>
   );
 };

@@ -11,7 +11,11 @@ type FileUploadAreaProps = {
   onFileRemove: () => void;
 };
 
-export const FileUploadArea = ({ file, onFileSelect, onFileRemove }: FileUploadAreaProps) => {
+export const FileUploadArea = ({
+  file,
+  onFileSelect,
+  onFileRemove,
+}: FileUploadAreaProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -19,7 +23,14 @@ export const FileUploadArea = ({ file, onFileSelect, onFileRemove }: FileUploadA
       const selectedFile = e.target.files[0];
       const fileName = selectedFile.name.toLowerCase();
 
-      const allowedExtensions = [".pdf", ".doc", ".docx", ".ppt", ".pptx", ".ipynb"];
+      const allowedExtensions = [
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".ppt",
+        ".pptx",
+        ".ipynb",
+      ];
       const isValid = allowedExtensions.some((ext) => fileName.endsWith(ext));
 
       if (isValid) {
@@ -37,8 +48,10 @@ export const FileUploadArea = ({ file, onFileSelect, onFileRemove }: FileUploadA
   const getFileIconStyles = (fileName: string) => {
     const name = fileName.toLowerCase();
     if (name.endsWith(".pdf")) return "bg-red-500/10 text-red-500";
-    if (name.endsWith(".doc") || name.endsWith(".docx")) return "bg-blue-500/10 text-blue-500";
-    if (name.endsWith(".ppt") || name.endsWith(".pptx")) return "bg-orange-500/10 text-orange-500";
+    if (name.endsWith(".doc") || name.endsWith(".docx"))
+      return "bg-blue-500/10 text-blue-500";
+    if (name.endsWith(".ppt") || name.endsWith(".pptx"))
+      return "bg-orange-500/10 text-orange-500";
     if (name.endsWith(".ipynb")) return "bg-yellow-500/10 text-yellow-600";
     return "bg-muted text-muted-foreground";
   };
@@ -70,13 +83,19 @@ export const FileUploadArea = ({ file, onFileSelect, onFileRemove }: FileUploadA
             <FileText className="h-6 w-6 text-muted-foreground" />
           </div>
           <div>
-            <span className="font-semibold text-primary block mb-1">Загрузить файл</span>
-            <span className="text-xs text-muted-foreground">PDF, DOCX, PPTX, IPYNB</span>
+            <span className="font-semibold text-primary block mb-1">
+              Загрузить файл
+            </span>
+            <span className="text-xs text-muted-foreground">
+              PDF, DOCX, PPTX, IPYNB
+            </span>
           </div>
         </div>
       ) : (
         <div className="flex items-center gap-3 p-4 border border-border rounded-lg bg-background overflow-hidden">
-          <div className={cn("p-2 rounded shrink-0", getFileIconStyles(file.name))}>
+          <div
+            className={cn("p-2 rounded shrink-0", getFileIconStyles(file.name))}
+          >
             {getFileIcon(file.name)}
           </div>
           <div className="flex flex-col flex-1 min-w-0">
@@ -85,7 +104,12 @@ export const FileUploadArea = ({ file, onFileSelect, onFileRemove }: FileUploadA
               {(file.size / 1024 / 1024).toFixed(2)} MB
             </span>
           </div>
-          <Button variant="ghost" size="icon" onClick={onFileRemove} className="shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onFileRemove}
+            className="shrink-0"
+          >
             <X className="h-5 w-5" />
           </Button>
         </div>

@@ -2,13 +2,17 @@ import { CircleAlert, SendHorizonal } from "lucide-react";
 import { useState } from "react";
 
 import { FileUploadArea } from "@/common/atoms/";
-import {MaterialAttributesSelector} from "@/common/molecules";
+import { MaterialAttributesSelector } from "@/common/molecules";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const UploadMaterialForm = () => {
   const [title, setTitle] = useState("");
@@ -19,7 +23,11 @@ export const UploadMaterialForm = () => {
   const [subjects, setSubjects] = useState<string[]>([]);
   const [difficulties, setDifficulties] = useState<string[]>(["none"]);
 
-  const toggleSelection = (item: string, currentList: string[], setList: (l: string[]) => void) => {
+  const toggleSelection = (
+    item: string,
+    currentList: string[],
+    setList: (l: string[]) => void,
+  ) => {
     if (currentList.includes(item)) {
       setList(currentList.filter((i) => i !== item));
     } else {
@@ -31,7 +39,8 @@ export const UploadMaterialForm = () => {
     setDifficulties((prev) => {
       if (value === "none") return ["none"];
       let newSelection = [...prev];
-      if (newSelection.includes("none")) newSelection = newSelection.filter((i) => i !== "none");
+      if (newSelection.includes("none"))
+        newSelection = newSelection.filter((i) => i !== "none");
       if (newSelection.includes(value)) {
         newSelection = newSelection.filter((i) => i !== value);
       } else {
@@ -51,7 +60,9 @@ export const UploadMaterialForm = () => {
     <div className="space-y-4 md:space-y-8">
       {/* Название */}
       <div className="space-y-3">
-        <Label htmlFor="title" className="text-lg font-semibold">Название</Label>
+        <Label htmlFor="title" className="text-lg font-semibold">
+          Название
+        </Label>
         <Input
           id="title"
           value={title}
@@ -71,13 +82,15 @@ export const UploadMaterialForm = () => {
       />
 
       <div className="space-y-3">
-        <Label htmlFor="description" className="text-lg font-semibold">Описание</Label>
+        <Label htmlFor="description" className="text-lg font-semibold">
+          Описание
+        </Label>
         <Textarea
           id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Краткое содержание..."
-          className="bg-background min-h-[150px] text-base resize-y"
+          className="bg-background min-h-37.5 text-base resize-y"
         />
       </div>
 
@@ -96,8 +109,14 @@ export const UploadMaterialForm = () => {
                 <CircleAlert className="h-6 w-6" />
               </div>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[200px] text-center md:text-left">
-              <p>Все материалы проходят предварительную проверку модератором перед публикацией.</p>
+            <TooltipContent
+              side="top"
+              className="max-w-50 text-center md:text-left"
+            >
+              <p>
+                Все материалы проходят предварительную проверку модератором
+                перед публикацией.
+              </p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

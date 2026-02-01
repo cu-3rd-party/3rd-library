@@ -2,8 +2,4 @@ import { MaterialAttributesSelector } from "@/common/molecules/Materials/Materia
 import { MaterialCard } from "@/common/molecules/Materials/MaterialCard.tsx";
 import { MaterialSearchBar } from "@/common/molecules/Materials/MaterialSearchBar.tsx";
 
-export {
-    MaterialCard, 
-    MaterialSearchBar,
-    MaterialAttributesSelector
-};
+export { MaterialCard, MaterialSearchBar, MaterialAttributesSelector };

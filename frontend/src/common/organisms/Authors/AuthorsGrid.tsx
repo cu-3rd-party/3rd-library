@@ -1,4 +1,4 @@
-import { Author, AuthorCard} from "@/common/molecules";
+import { Author, AuthorCard } from "@/common/molecules";
 
 type AuthorsGridProps = {
   authors: Author[];
@@ -17,11 +17,7 @@ export const AuthorsGrid = ({ authors, onAuthorClick }: AuthorsGridProps) => {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
       {authors.map((author) => (
-        <AuthorCard
-          key={author.id}
-          author={author}
-          onClick={onAuthorClick}
-        />
+        <AuthorCard key={author.id} author={author} onClick={onAuthorClick} />
       ))}
     </div>
   );

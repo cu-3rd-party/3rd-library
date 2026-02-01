@@ -2,10 +2,9 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import {Author} from "@/common/molecules/Authors/AuthorCard.tsx";
-import {AuthorsGrid} from "@/common/organisms";
-import {Input} from "@/components/ui/input.tsx";
-
+import { Author } from "@/common/molecules/Authors/AuthorCard.tsx";
+import { AuthorsGrid } from "@/common/organisms";
+import { Input } from "@/components/ui/input.tsx";
 
 const MOCK_AUTHORS: Author[] = [
   { id: 1, name: "Матан Матанович" },
@@ -18,7 +17,7 @@ const MOCK_AUTHORS: Author[] = [
   { id: 8, name: "Матан Матанович" },
 ];
 
-export const AuthorsPage = () => {
+const AuthorsPage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -51,3 +50,5 @@ export const AuthorsPage = () => {
     </div>
   );
 };
+
+export default AuthorsPage;

@@ -17,7 +17,7 @@ export const MaterialsSection = ({
 }: MaterialsSectionProps) => {
   const navigate = useNavigate();
 
-  const [selectedCourse, setSelectedCourse] = useState<1 | 2>(1);
+  const [selectedCourse, setSelectedCourse] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
 

@@ -1,7 +1,7 @@
 import { ShieldCheck, User } from "lucide-react";
 
-import {Material} from "@/common/molecules/Materials/MaterialCard.tsx";
-import {MaterialsSection} from "@/common/organisms";
+import { Material } from "@/common/molecules/Materials/MaterialCard.tsx";
+import { MaterialsSection } from "@/common/organisms";
 import { Badge } from "@/components/ui/badge";
 
 type UserProfile = {
@@ -87,10 +87,9 @@ const AUTHOR_MATERIALS: Material[] = [
   },
 ];
 
-export const ProfilePage = () => {
+const ProfilePage = () => {
   return (
     <div className="container mx-auto max-w-screen-xl px-4 md:px-8 py-10 space-y-10">
-
       <div className="flex flex-col md:flex-row items-start gap-6 md:gap-10">
         <div className="shrink-0">
           <div className="w-32 h-32 md:w-40 md:h-40 bg-secondary/30 rounded-xl overflow-hidden flex items-center justify-center border border-border/50 shadow-sm">
@@ -130,9 +129,13 @@ export const ProfilePage = () => {
       </div>
 
       <div className="border-t border-border/40 pt-8">
-        <h2 className="text-2xl font-bold mb-6 hidden md:block">Материалы автора</h2>
+        <h2 className="text-2xl font-bold mb-6 hidden md:block">
+          Материалы автора
+        </h2>
         <MaterialsSection materials={AUTHOR_MATERIALS} />
       </div>
     </div>
   );
 };
+
+export default ProfilePage;

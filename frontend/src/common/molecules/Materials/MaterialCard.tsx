@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx";
-import { DIFFICULTY_CONFIG } from "@/const/difficulty.ts";
+import { DIFFICULTY_CONFIG } from "@/constants/difficulty";
 import { cn } from "@/lib/utils.ts";
 
 export type Material = {
@@ -40,7 +40,7 @@ export const MaterialCard = ({ material, onClick }: MaterialCardProps) => {
         <p className="text-xs text-muted-foreground mt-1">{material.date}</p>
       </CardHeader>
 
-      <CardContent className="flex-grow pt-0">
+      <CardContent className="grow pt-0">
         <p className="text-sm text-muted-foreground line-clamp-6 leading-relaxed">
           {material.previewText}
         </p>

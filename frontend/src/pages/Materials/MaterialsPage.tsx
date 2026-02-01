@@ -1,5 +1,5 @@
 import { Material } from "@/common/molecules/Materials/MaterialCard.tsx";
-import {MaterialsSection} from "@/common/organisms";
+import { MaterialsSection } from "@/common/organisms";
 
 const MOCK_ALL_MATERIALS: Material[] = [
   {
@@ -38,17 +38,18 @@ const MOCK_ALL_MATERIALS: Material[] = [
     title: "Пределы последовательностей",
     date: "30.01.2026",
     previewText: "Определение предела по Коши...",
-      tags: ["Матан", "1 курс"],
+    tags: ["Матан", "1 курс"],
     author: "Даниил Матанович",
     difficulty: "black",
   },
 ];
 
-export const MaterialsPage = () => {
+const MaterialsPage = () => {
   return (
     <div className="container w-5/6 m-auto max-w-screen-2xl py-6">
-      <h1 className="text-3xl font-bold mb-6">Все материалы</h1>
       <MaterialsSection materials={MOCK_ALL_MATERIALS} />
     </div>
   );
 };
+
+export default MaterialsPage;
