@@ -300,10 +300,6 @@ paths:
       responses:
         "200":
           description: Favorited article
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ArticleResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -318,10 +314,6 @@ paths:
       responses:
         "200":
           description: Unfavorited article
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ArticleResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
