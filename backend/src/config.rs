@@ -3,6 +3,7 @@ use envconfig::Envconfig;
 pub struct Config {
     pub db: DbConfig,
     pub jwt: JwtConfig,
+    pub redis: RedisConfig,
 }
 
 impl Config {
@@ -10,6 +11,7 @@ impl Config {
         Ok(Self {
             db: DbConfig::init_from_env()?,
             jwt: JwtConfig::init_from_env()?,
+            redis: RedisConfig::init_from_env()?,
         })
     }
 }
@@ -36,6 +38,12 @@ pub struct DbConfig {
 
     #[envconfig(from = "POSTGRES_PASSWORD")]
     pub db_password: String,
+}
+
+#[derive(envconfig::Envconfig)]
+pub struct RedisConfig {
+    #[envconfig(from = "REDIS_URL")]
+    pub url: String,
 }
 
 impl DbConfig {

@@ -4,8 +4,9 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     env_file:
-      - ./env/db.env
       - ./env/backend.env
+      - ./env/db.env
+      - ./env/redis.env
     restart: unless-stopped
     volumes:
       - ./uploads:/var/app/upload
@@ -13,6 +14,7 @@ services:
       - "8080:8080"
     depends_on:
       - db
+      - redis
 
   frontend:
     build:
@@ -34,5 +36,14 @@ services:
       - backend-postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    volumes:
+      - backend-redis-data:/data
+    restart: unless-stopped
+
 volumes:
   backend-postgres-data:
+  backend-redis-data:
