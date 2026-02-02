@@ -10,10 +10,9 @@ use prometheus::{
 };
 use sqlx::PgPool;
 use std::time::Instant;
-use tokio::time::{Duration, sleep};
+use tokio::time::sleep;
 
-const BUSINESS_REFRESH_INTERVAL: Duration = Duration::from_secs(30);
-const UPLOAD_DIR: &str = "/var/app/upload";
+use crate::constants::{BUSINESS_REFRESH_INTERVAL, UPLOAD_DIR};
 
 static REGISTRY: Lazy<Registry> = Lazy::new(Registry::new);
 
