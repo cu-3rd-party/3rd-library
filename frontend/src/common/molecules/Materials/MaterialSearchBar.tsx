@@ -1,7 +1,7 @@
 import { Search, Filter } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge.tsx";
-import { Button } from "@/components/ui/button.tsx";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -9,8 +9,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu.tsx";
-import { Input } from "@/components/ui/input.tsx";
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 
 export const ALL_SUBJECTS = ["Матан", "Линал", "Диффуры"];
 

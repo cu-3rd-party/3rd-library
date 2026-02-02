@@ -1,5 +1,4 @@
-import { MaterialAttributesSelector } from "@/common/molecules/Materials/MaterialAttributesSelector.tsx";
-import { MaterialCard } from "@/common/molecules/Materials/MaterialCard.tsx";
-import { MaterialSearchBar } from "@/common/molecules/Materials/MaterialSearchBar.tsx";
+export { MaterialAttributesSelector } from "./MaterialAttributesSelector";
+export { MaterialCard } from "./MaterialCard";
+export { MaterialSearchBar } from "./MaterialSearchBar";
 
-export { MaterialCard, MaterialSearchBar, MaterialAttributesSelector };

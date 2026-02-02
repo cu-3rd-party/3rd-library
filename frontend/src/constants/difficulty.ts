@@ -1,5 +1,7 @@
+import { Difficulty } from "@/models/material";
+
 export const DIFFICULTY_CONFIG: Record<
-  string,
+  Difficulty,
   { label: string; className: string }
 > = {
   none: {

@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge.tsx";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -6,26 +6,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx";
-import { DIFFICULTY_CONFIG } from "@/constants/difficulty";
+import { DIFFICULTY_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils.ts";
-
-export type Material = {
-  id: number;
-  course: 1 | 2;
-  title: string;
-  date: string;
-  previewText: string;
-  tags: string[];
-  author: string;
-  difficulty: "none" | "blue" | "red" | "black";
-};
+import { Material } from "@/models/material";
 
 type MaterialCardProps = {
   material: Material;
-  onClick: (id: number) => void;
+  onClick: (id: string) => void;
+  showAuthor?: boolean;
 };
 
-export const MaterialCard = ({ material, onClick }: MaterialCardProps) => {
+export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProps) => {
   const difficultyData = DIFFICULTY_CONFIG[material.difficulty];
 
   return (
@@ -37,19 +28,18 @@ export const MaterialCard = ({ material, onClick }: MaterialCardProps) => {
         <CardTitle className="text-xl font-bold leading-tight group-hover:text-orange-500 transition-colors line-clamp-2">
           {material.title}
         </CardTitle>
-        <p className="text-xs text-muted-foreground mt-1">{material.date}</p>
+        <p className="text-xs text-muted-foreground mt-1">{material.pubDate}</p>
       </CardHeader>
 
       <CardContent className="grow pt-0">
         <p className="text-sm text-muted-foreground line-clamp-6 leading-relaxed">
-          {material.previewText}
+          {material.description}
         </p>
       </CardContent>
 
       <CardFooter className="flex items-center justify-between pt-4">
         <div className="flex flex-wrap gap-2">
-          {/* Теги */}
-          {material.tags.map((tag, idx) => (
+          {[material.subject, material.type].map((tag, idx) => (
             <Badge
               key={idx}
               variant="secondary"
@@ -74,10 +64,12 @@ export const MaterialCard = ({ material, onClick }: MaterialCardProps) => {
             </Badge>
           )}
         </div>
-
-        <span className="text-sm font-medium text-foreground ml-auto shrink-0">
-          {material.author}
-        </span>
+          
+        {showAuthor && (
+          <span className="text-sm font-medium text-foreground ml-auto shrink-0">
+            {material.authorName}
+          </span>
+        )}
       </CardFooter>
     </Card>
   );

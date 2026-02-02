@@ -1,0 +1,1 @@
+export { getFileIcon, getFileIconStyles } from "./style/getStyleByFile"

@@ -17,18 +17,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { DIFFICULTY_LEVELS } from "@/constants/difficulty";
+import { SUBJECTS, DIFFICULTY_LEVELS, COURSE_NAMES} from "@/constants";
 import { cn } from "@/lib/utils";
-
-const COURSES = ["1 курс", "2 курс"];
-const SUBJECTS = [
-  "Матан",
-  "Линал",
-  "Диффуры",
-  "Английский",
-  "Алгоритмы",
-  "Физика",
-];
 
 type AttributesSelectorProps = {
   courses: string[];
@@ -87,7 +77,7 @@ export const MaterialAttributesSelector = ({
               <CommandList>
                 <CommandEmpty>Курс не найден.</CommandEmpty>
                 <CommandGroup>
-                  {COURSES.map((c) => (
+                  {COURSE_NAMES.map((c) => (
                     <CommandItem
                       key={c}
                       value={c}

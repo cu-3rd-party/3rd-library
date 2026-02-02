@@ -1,10 +1,5 @@
-import {
-  type Author,
-  AuthorCard,
-} from "@/common/molecules/Authors/AuthorCard.tsx";
-import {
+export { AuthorCard } from "./Authors"
+export {
   MaterialCard,
   MaterialAttributesSelector,
-} from "@/common/molecules/Materials";
-
-export { MaterialCard, AuthorCard, MaterialAttributesSelector, Author };
+} from "./Materials";

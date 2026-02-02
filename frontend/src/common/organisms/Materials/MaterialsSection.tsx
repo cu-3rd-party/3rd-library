@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 import { CourseSelector } from "@/common/atoms";
 import { MaterialCard, MaterialSearchBar } from "@/common/molecules/Materials";
-import { Material } from "@/common/molecules/Materials/MaterialCard.tsx";
 import { cn } from "@/lib/utils";
+import { Material } from "@/models/material";
 
 type MaterialsSectionProps = {
   materials: Material[];
@@ -29,27 +29,25 @@ export const MaterialsSection = ({
     );
   };
 
-  const handleCardClick = (id: number) => {
+  const handleCardClick = (id: string) => {
     navigate(`/materials/${id}`);
   };
 
   const filteredMaterials = materials.filter((item) => {
-    const matchCourse = item.course === selectedCourse;
+    const matchCourse = item.courses.includes(selectedCourse);
 
     const matchSearch =
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.previewText.toLowerCase().includes(searchQuery.toLowerCase());
+      item.title.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchSubject =
       selectedSubjects.length === 0 ||
-      item.tags.some((tag) => selectedSubjects.includes(tag));
+      selectedSubjects.includes(item.subject)
 
     return matchCourse && matchSearch && matchSubject;
   });
 
   return (
     <div className={cn("space-y-8", className)}>
-      {/* Upper Control Bar (Molecules) */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <CourseSelector
           selectedCourse={selectedCourse}

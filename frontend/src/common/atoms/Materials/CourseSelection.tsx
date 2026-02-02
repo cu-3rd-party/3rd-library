@@ -1,11 +1,10 @@
 import { Button } from "@/components/ui/button";
+import { COURSES } from "@/constants";
 
 type CourseSelectorProps = {
   selectedCourse: number;
   onSelect: (course: number) => void;
 };
-
-const COURSES = [1, 2];
 
 export const CourseSelector = ({
   selectedCourse,
