@@ -1,0 +1,356 @@
+{
+  "info": {
+    "name": "3rd Library API",
+    "_postman_id": "a6c3f1b1-6b8e-4a28-9d0b-1c7e8c2b0e61",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "username", "value": "postman-user" },
+    { "key": "email", "value": "postman@example.com" },
+    { "key": "password", "value": "password123" },
+    { "key": "slug", "value": "" },
+    { "key": "comment_id", "value": "" },
+    { "key": "attachment_id", "value": "" },
+    { "key": "attachment_file", "value": "" },
+    { "key": "tag", "value": "" },
+    { "key": "author", "value": "" },
+    { "key": "favorited", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create user",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"username\": \"{{username}}\",\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/api/users"
+          }
+        },
+        {
+          "name": "Login user",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/api/users/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.user && json.user.token) {",
+                  "  pm.collectionVariables.set('token', json.user.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get current user",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/user"
+          }
+        },
+        {
+          "name": "Update current user",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"email\": \"{{email}}\",\n    \"username\": \"{{username}}\",\n    \"bio\": \"Updated from Postman\",\n    \"image\": null\n  }\n}"
+            },
+            "url": "{{baseUrl}}/api/user"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profiles",
+      "item": [
+        {
+          "name": "Get profile",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/profiles/{{username}}"
+          }
+        },
+        {
+          "name": "Follow user",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/profiles/{{username}}/follow"
+          }
+        },
+        {
+          "name": "Unfollow user",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/profiles/{{username}}/follow"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Articles",
+      "item": [
+        {
+          "name": "List articles",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/articles?tag={{tag}}&author={{author}}&favorited={{favorited}}&limit=20&offset=0"
+          }
+        },
+        {
+          "name": "Create article",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"article\": {\n    \"title\": \"Postman Article {{$timestamp}}\",\n    \"description\": \"Article created from Postman\",\n    \"body\": \"Postman body content\",\n    \"tagList\": [\"postman\", \"testing\"]\n  }\n}"
+            },
+            "url": "{{baseUrl}}/api/articles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.article && json.article.slug) {",
+                  "  pm.collectionVariables.set('slug', json.article.slug);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Feed articles",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/articles/feed?limit=20&offset=0"
+          }
+        },
+        {
+          "name": "Get article",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/articles/{{slug}}"
+          }
+        },
+        {
+          "name": "Update article",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"article\": {\n    \"title\": \"Updated title\",\n    \"description\": \"Updated description\",\n    \"body\": \"Updated body\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/api/articles/{{slug}}"
+          }
+        },
+        {
+          "name": "Delete article",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/articles/{{slug}}"
+          }
+        },
+        {
+          "name": "Favorite article",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/articles/{{slug}}/favorite"
+          }
+        },
+        {
+          "name": "Unfavorite article",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/articles/{{slug}}/favorite"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "List comments",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/articles/{{slug}}/comments"
+          }
+        },
+        {
+          "name": "Add comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": {\n    \"body\": \"Postman comment {{$timestamp}}\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/api/articles/{{slug}}/comments"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.comment && json.comment.id) {",
+                  "  pm.collectionVariables.set('comment_id', json.comment.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/articles/{{slug}}/comments/{{comment_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attachments",
+      "item": [
+        {
+          "name": "List attachments",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/articles/{{slug}}/attachments"
+          }
+        },
+        {
+          "name": "Add attachment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{attachment_file}}"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/articles/{{slug}}/attachments"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.attachment && json.attachment.attachmentId) {",
+                  "  pm.collectionVariables.set('attachment_id', json.attachment.attachmentId);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download attachment",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/articles/{{slug}}/attachments/{{attachment_id}}"
+          }
+        },
+        {
+          "name": "Delete attachment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/articles/{{slug}}/attachments/{{attachment_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tags",
+      "item": [
+        {
+          "name": "List tags",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/tags"
+          }
+        }
+      ]
+    }
+  ]
+}
