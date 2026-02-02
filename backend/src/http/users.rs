@@ -8,6 +8,7 @@ use axum::{Json, Router};
 
 use crate::http::error::{Error, ResultExt};
 use crate::http::extractor::AuthUser;
+use uuid::Uuid;
 
 pub fn router() -> Router<ApiContext> {
     Router::new()
@@ -77,7 +78,12 @@ async fn create_user(
     Ok(Json(UserBody {
         user: User {
             email: req.user.email,
-            token: AuthUser { user_id }.to_jwt(&ctx),
+            token: AuthUser {
+                user_id,
+                session_id: Uuid::new_v4(),
+            }
+            .to_jwt(&ctx)
+            .await?,
             username: req.user.username,
             bio: "".to_string(),
             image: None,
@@ -107,8 +113,10 @@ async fn login_user(
             email: user.email,
             token: AuthUser {
                 user_id: user.user_id,
+                session_id: Uuid::new_v4(),
             }
-            .to_jwt(&ctx),
+            .to_jwt(&ctx)
+            .await?,
             username: user.username,
             bio: user.bio,
             image: user.image,
@@ -130,7 +138,7 @@ async fn get_current_user(
     Ok(Json(UserBody {
         user: User {
             email: user.email,
-            token: auth_user.to_jwt(&ctx),
+            token: auth_user.to_jwt(&ctx).await?,
             username: user.username,
             bio: user.bio,
             image: user.image,
@@ -183,7 +191,7 @@ async fn update_user(
     Ok(Json(UserBody {
         user: User {
             email: user.email,
-            token: auth_user.to_jwt(&ctx),
+            token: auth_user.to_jwt(&ctx).await?,
             username: user.username,
             bio: user.bio,
             image: user.image,

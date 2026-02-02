@@ -42,3 +42,4 @@ itertools = "0.14.0"
 log = "0.4.14"
 thiserror = "2.0.18"
 envconfig = "0.11.1"
+redis = { version = "1.0.3", features = ["tokio-comp", "connection-manager"] }
