@@ -14,7 +14,7 @@ use std::path::Path as StdPath;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-const UPLOAD_DIR: &str = "/var/app/upload";
+use crate::constants::UPLOAD_DIR;
 
 pub fn router() -> Router<ApiContext> {
     Router::new()

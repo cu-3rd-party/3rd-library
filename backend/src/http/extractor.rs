@@ -12,9 +12,7 @@ use sha2::Sha384;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-const DEFAULT_SESSION_LENGTH: time::Duration = time::Duration::weeks(2);
-
-const SCHEME_PREFIX: &str = "Token ";
+use crate::constants::{DEFAULT_SESSION_LENGTH, SCHEME_PREFIX};
 
 pub struct AuthUser {
     pub user_id: Uuid,
