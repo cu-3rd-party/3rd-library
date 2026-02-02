@@ -53,7 +53,9 @@ const ProfilePage = () => {
         <h2 className="text-2xl font-bold mb-6 hidden md:block">
           Материалы автора
         </h2>
-        <MaterialsSection materials={MOCK_USER.materials} />
+        { MOCK_USER.materials && (
+          <MaterialsSection materials={MOCK_USER.materials} />
+        )}
       </div>
     </div>
   );

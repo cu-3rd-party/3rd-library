@@ -2,20 +2,9 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { Author } from "@/common/molecules/Authors/AuthorCard.tsx";
 import { AuthorsGrid } from "@/common/organisms";
-import { Input } from "@/components/ui/input.tsx";
-
-const MOCK_AUTHORS: Author[] = [
-  { id: 1, name: "Матан Матанович" },
-  { id: 2, name: "Линал Линалович" },
-  { id: 3, name: "Это Дима Трушин" },
-  { id: 4, name: "Это магадан" },
-  { id: 5, name: "Горо горо)" },
-  { id: 6, name: "Матан Матанович" },
-  { id: 7, name: "Матан Матанович" },
-  { id: 8, name: "Матан Матанович" },
-];
+import { Input } from "@/components/ui/input";
+import { MOCK_AUTHORS } from "@/mocks/mockData";
 
 const AuthorsPage = () => {
   const navigate = useNavigate();
@@ -25,7 +14,7 @@ const AuthorsPage = () => {
     author.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleAuthorClick = (id: number) => {
+  const handleAuthorClick = (id: string) => {
     navigate(`/authors/${id}`);
   };
 

@@ -1,8 +1,9 @@
-import { Author, AuthorCard } from "@/common/molecules";
+import { AuthorCard } from "@/common/molecules";
+import { User } from "@/models/user";
 
 type AuthorsGridProps = {
-  authors: Author[];
-  onAuthorClick: (id: number) => void;
+  authors: User[];
+  onAuthorClick: (id: string) => void;
 };
 
 export const AuthorsGrid = ({ authors, onAuthorClick }: AuthorsGridProps) => {

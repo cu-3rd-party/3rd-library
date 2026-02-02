@@ -6,5 +6,5 @@ export interface User {
   name: string;
   bio: string;
   verified: boolean;
-  materials: Material[];
+  materials?: Material[];
 }
