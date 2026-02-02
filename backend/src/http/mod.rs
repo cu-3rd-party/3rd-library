@@ -46,6 +46,18 @@ pub async fn serve(config: Config, db: PgPool, redis: ConnectionManager) -> anyh
         .layer(axum::middleware::from_fn(metrics::metrics_middleware))
         .layer(TraceLayer::new_for_http());
 
+    let metrics_app = Router::new().route("/metrics", get(metrics::metrics_handler));
+    tokio::spawn(async move {
+        let listener = tokio::net::TcpListener::bind("0.0.0.0:9091")
+            .await
+            .context("failed to bind metrics server")
+            .expect("metrics bind");
+
+        if let Err(err) = axum::serve(listener, metrics_app).await {
+            log::error!("metrics server stopped: {err}");
+        }
+    });
+
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080")
         .await
         .context("failed to bind HTTP server")?;
@@ -59,5 +71,4 @@ fn api_router() -> Router<ApiContext> {
     users::router()
         .merge(profiles::router())
         .merge(articles::router())
-        .route("/metrics", get(metrics::metrics_handler))
 }

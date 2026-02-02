@@ -12,6 +12,7 @@ services:
       - ./uploads:/var/app/upload
     ports:
       - "8080:8080"
+      - "9091:9091"
     depends_on:
       - db
       - redis
