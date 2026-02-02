@@ -1,12 +1,12 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select email, username, bio, image from \"user\" where user_id = $1",
+  "query": "select user_id, username, bio, pfp_id from \"user\" where username = $1",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "email",
-        "type_info": "Text"
+        "name": "user_id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 1,
@@ -20,13 +20,13 @@
       },
       {
         "ordinal": 3,
-        "name": "image",
-        "type_info": "Text"
+        "name": "pfp_id",
+        "type_info": "Uuid"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Text"
       ]
     },
     "nullable": [
@@ -36,5 +36,5 @@
       true
     ]
   },
-  "hash": "451959cee173c4765280a8a002a6f69ec8fd59c1e84165d429482596376353d4"
+  "hash": "4ef7e37f12c4155bb7fb307d9a129efc4aa44ec4959026499a071a78ab938f1f"
 }

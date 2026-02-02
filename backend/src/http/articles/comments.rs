@@ -54,7 +54,7 @@ struct CommentFromQuery {
     body: String,
     author_username: String,
     author_bio: String,
-    author_image: Option<String>,
+    author_image: Option<uuid::Uuid>,
     following_author: bool,
 }
 
@@ -97,7 +97,7 @@ async fn get_article_comments(
                 comment.body,
                 author.username author_username,
                 author.bio author_bio,
-                author.image author_image,
+                author.pfp_id author_image,
                 exists(select 1 from follow where followed_user_id = author.user_id and following_user_id = $1) "following_author!"
             from article_comment comment
             inner join "user" author using (user_id)
@@ -139,7 +139,7 @@ async fn add_comment(
                 body,
                 author.username author_username,
                 author.bio author_bio,
-                author.image author_image,
+                author.pfp_id author_image,
                 false "following_author!"
             from inserted_comment comment
             inner join "user" author on user_id = $1

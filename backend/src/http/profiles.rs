@@ -26,7 +26,7 @@ struct ProfileBody {
 pub struct Profile {
     pub username: String,
     pub bio: String,
-    pub image: Option<String>,
+    pub image: Option<uuid::Uuid>,
     pub following: bool,
 }
 
@@ -42,7 +42,7 @@ async fn get_user_profile(
             select
                 username,
                 bio,
-                image,
+                pfp_id as "image?",
                 exists(
                     select 1 from follow 
                     where followed_user_id = "user".user_id and following_user_id = $2
@@ -69,7 +69,7 @@ async fn follow_user(
 
     metrics::observe_db_query();
     let user = sqlx::query!(
-        r#"select user_id, username, bio, image from "user" where username = $1"#,
+        r#"select user_id, username, bio, pfp_id from "user" where username = $1"#,
         username
     )
     .fetch_optional(&mut *tx)
@@ -93,7 +93,7 @@ async fn follow_user(
         profile: Profile {
             username: user.username,
             bio: user.bio,
-            image: user.image,
+            image: user.pfp_id,
             // We just made sure of this.
             following: true,
         },
@@ -109,7 +109,7 @@ async fn unfollow_user(
 
     metrics::observe_db_query();
     let user = sqlx::query!(
-        r#"select user_id, username, bio, image from "user" where username = $1"#,
+        r#"select user_id, username, bio, pfp_id from "user" where username = $1"#,
         username
     )
     .fetch_optional(&mut *tx)
@@ -131,7 +131,7 @@ async fn unfollow_user(
         profile: Profile {
             username: user.username,
             bio: user.bio,
-            image: user.image,
+            image: user.pfp_id,
             following: false,
         },
     }))
