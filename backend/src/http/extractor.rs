@@ -30,7 +30,7 @@ struct AuthUserClaims {
 
 impl AuthUser {
     pub(in crate::http) fn to_jwt(&self, ctx: &ApiContext) -> String {
-        let hmac = Hmac::<Sha384>::new_from_slice(ctx.config.hmac_key.as_bytes())
+        let hmac = Hmac::<Sha384>::new_from_slice(ctx.config.jwt.hmac_key.as_bytes())
             .expect("HMAC-SHA-384 can accept any key length");
 
         AuthUserClaims {
@@ -67,7 +67,7 @@ impl AuthUser {
                 Error::Unauthorized
             })?;
 
-        let hmac = Hmac::<Sha384>::new_from_slice(ctx.config.hmac_key.as_bytes())
+        let hmac = Hmac::<Sha384>::new_from_slice(ctx.config.jwt.hmac_key.as_bytes())
             .expect("HMAC-SHA-384 can accept any key length");
 
         let jwt = jwt.verify_with_key(&hmac).map_err(|e| {
