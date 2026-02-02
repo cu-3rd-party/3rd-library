@@ -6,7 +6,9 @@ use crate::http;
 use crate::http::ApiContext;
 use crate::http::articles::{Article, ArticleFromQuery};
 use crate::http::extractor::{AuthUser, MaybeAuthUser};
+#[allow(unused_imports)]
 use crate::http::types::Timestamptz;
+use crate::metrics;
 
 #[derive(serde::Deserialize, Default)]
 #[serde(default)]
@@ -52,6 +54,7 @@ pub(in crate::http) async fn list_articles(
     State(ctx): State<ApiContext>,
     query: Query<ListArticlesQuery>,
 ) -> http::Result<Json<MultipleArticlesBody>> {
+    metrics::observe_db_query();
     let articles: Vec<_> = sqlx::query_as!(
         ArticleFromQuery,
         r#"
@@ -123,6 +126,7 @@ pub(in crate::http) async fn feed_articles(
     State(ctx): State<ApiContext>,
     query: Query<FeedArticlesQuery>,
 ) -> http::Result<Json<MultipleArticlesBody>> {
+    metrics::observe_db_query();
     let articles: Vec<_> = sqlx::query_as!(
         ArticleFromQuery,
         r#"

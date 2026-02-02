@@ -9,6 +9,7 @@ use crate::http::extractor::{AuthUser, MaybeAuthUser};
 use crate::http::profiles::Profile;
 use crate::http::types::Timestamptz;
 use crate::http::{ApiContext, Error, Result, ResultExt};
+use crate::metrics;
 
 mod attachments;
 mod comments;
@@ -122,6 +123,7 @@ async fn create_article(
 
     req.article.tag_list.sort();
 
+    metrics::observe_db_query();
     let article = sqlx::query_as!(
         ArticleFromQuery,
         r#"
@@ -166,6 +168,8 @@ async fn create_article(
         Error::unprocessable_entity([("slug", format!("duplicate article slug: {}", slug))])
     })?;
 
+    metrics::record_article_created();
+
     Ok(Json(ArticleBody {
         article: article.into_article(),
     }))
@@ -181,6 +185,7 @@ async fn update_article(
 
     let new_slug = req.article.title.as_deref().map(slugify);
 
+    metrics::observe_db_query();
     let article_meta = sqlx::query!(
         "select article_id, user_id from article where slug = $1 for update",
         slug
@@ -193,6 +198,7 @@ async fn update_article(
         return Err(Error::Forbidden);
     }
 
+    metrics::observe_db_query();
     let article = sqlx::query_as!(
         ArticleFromQuery,
         r#"
@@ -257,6 +263,7 @@ async fn delete_article(
     State(ctx): State<ApiContext>,
     Path(slug): Path<String>,
 ) -> Result<()> {
+    metrics::observe_db_query();
     let result = sqlx::query!(
         r#"
             -- The main query cannot observe side-effects of data-modifying CTEs and 
@@ -299,6 +306,7 @@ async fn get_article(
     State(ctx): State<ApiContext>,
     Path(slug): Path<String>,
 ) -> Result<Json<ArticleBody>> {
+    metrics::observe_db_query();
     let article = sqlx::query_as!(
         ArticleFromQuery,
         r#"
@@ -341,6 +349,7 @@ async fn favorite_article(
     State(ctx): State<ApiContext>,
     Path(slug): Path<String>,
 ) -> Result<()> {
+    metrics::observe_db_query();
     sqlx::query_scalar!(
         r#"
             with selected_article as (
@@ -370,6 +379,7 @@ async fn unfavorite_article(
     State(ctx): State<ApiContext>,
     Path(slug): Path<String>,
 ) -> Result<()> {
+    metrics::observe_db_query();
     sqlx::query_scalar!(
         r#"
             with selected_article as (
@@ -393,6 +403,7 @@ async fn unfavorite_article(
 }
 
 async fn get_tags(State(ctx): State<ApiContext>) -> Result<Json<TagsBody>> {
+    metrics::observe_db_query();
     let tags = sqlx::query_scalar!(
         r#"
             select distinct tag "tag!"
@@ -411,6 +422,7 @@ async fn _article_by_id(
     user_id: Uuid,
     article_id: Uuid,
 ) -> Result<Article> {
+    metrics::observe_db_query();
     let article = sqlx::query_as!(
         ArticleFromQuery,
         r#"
