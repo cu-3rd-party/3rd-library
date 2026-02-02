@@ -4,6 +4,7 @@ pub struct Config {
     pub db: DbConfig,
     pub jwt: JwtConfig,
     pub redis: RedisConfig,
+    pub cors: CorsConfig,
 }
 
 impl Config {
@@ -12,6 +13,7 @@ impl Config {
             db: DbConfig::init_from_env()?,
             jwt: JwtConfig::init_from_env()?,
             redis: RedisConfig::init_from_env()?,
+            cors: CorsConfig::init_from_env()?,
         })
     }
 }
@@ -44,6 +46,12 @@ pub struct DbConfig {
 pub struct RedisConfig {
     #[envconfig(from = "REDIS_URL")]
     pub url: String,
+}
+
+#[derive(envconfig::Envconfig)]
+pub struct CorsConfig {
+    #[envconfig(from = "CORS_ALLOWED_ORIGIN")]
+    pub allowed_origin: Option<String>,
 }
 
 impl DbConfig {

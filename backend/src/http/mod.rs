@@ -24,8 +24,9 @@ pub use error::{Error, ResultExt};
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 use crate::metrics;
+use axum::http::HeaderValue;
 use axum::routing::get;
-use tower_http::trace::TraceLayer;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 #[derive(Clone)]
 struct ApiContext {
@@ -37,12 +38,26 @@ struct ApiContext {
 pub async fn serve(config: Config, db: PgPool, redis: ConnectionManager) -> anyhow::Result<()> {
     metrics::start_business_metrics_updater(db.clone());
 
+    let cors = match config.cors.allowed_origin.as_deref() {
+        Some(origin) if !origin.is_empty() => CorsLayer::new()
+            .allow_origin(
+                HeaderValue::from_str(origin).expect("CORS_ALLOWED_ORIGIN must be a valid origin"),
+            )
+            .allow_methods(tower_http::cors::Any)
+            .allow_headers(tower_http::cors::Any),
+        _ => CorsLayer::new()
+            .allow_origin(tower_http::cors::Any)
+            .allow_methods(tower_http::cors::Any)
+            .allow_headers(tower_http::cors::Any),
+    };
+
     let app = api_router()
         .with_state(ApiContext {
             config: Arc::new(config),
             db,
             redis: redis,
         })
+        .layer(cors)
         .layer(axum::middleware::from_fn(metrics::metrics_middleware))
         .layer(TraceLayer::new_for_http());
 
