@@ -23,6 +23,8 @@ pub use error::{Error, ResultExt};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
+use crate::metrics;
+use axum::routing::get;
 use tower_http::trace::TraceLayer;
 
 #[derive(Clone)]
@@ -33,12 +35,15 @@ struct ApiContext {
 }
 
 pub async fn serve(config: Config, db: PgPool, redis: ConnectionManager) -> anyhow::Result<()> {
+    metrics::start_business_metrics_updater(db.clone());
+
     let app = api_router()
         .with_state(ApiContext {
             config: Arc::new(config),
             db,
             redis: redis,
         })
+        .layer(axum::middleware::from_fn(metrics::metrics_middleware))
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080")
@@ -54,4 +59,5 @@ fn api_router() -> Router<ApiContext> {
     users::router()
         .merge(profiles::router())
         .merge(articles::router())
+        .route("/metrics", get(metrics::metrics_handler))
 }

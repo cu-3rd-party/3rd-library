@@ -2,6 +2,7 @@ use crate::http::ApiContext;
 use crate::http::error::ResultExt;
 use crate::http::extractor::{AuthUser, MaybeAuthUser};
 use crate::http::{Error, Result};
+use crate::metrics;
 use axum::extract::{Path, State};
 use axum::routing::{get, post};
 use axum::{Json, Router};
@@ -34,6 +35,7 @@ async fn get_user_profile(
     State(ctx): State<ApiContext>,
     Path(username): Path<String>,
 ) -> Result<Json<ProfileBody>> {
+    metrics::observe_db_query();
     let profile = sqlx::query_as!(
         Profile,
         r#"
@@ -65,6 +67,7 @@ async fn follow_user(
 ) -> Result<Json<ProfileBody>> {
     let mut tx = ctx.db.begin().await?;
 
+    metrics::observe_db_query();
     let user = sqlx::query!(
         r#"select user_id, username, bio, image from "user" where username = $1"#,
         username
@@ -73,6 +76,7 @@ async fn follow_user(
     .await?
     .ok_or(Error::NotFound)?;
 
+    metrics::observe_db_query();
     sqlx::query!(
         "insert into follow(following_user_id, followed_user_id) values ($1, $2) \
          on conflict do nothing", // If the row already exists, we don't need to do anything.
@@ -103,6 +107,7 @@ async fn unfollow_user(
 ) -> Result<Json<ProfileBody>> {
     let mut tx = ctx.db.begin().await?;
 
+    metrics::observe_db_query();
     let user = sqlx::query!(
         r#"select user_id, username, bio, image from "user" where username = $1"#,
         username
@@ -111,6 +116,7 @@ async fn unfollow_user(
     .await?
     .ok_or(Error::NotFound)?;
 
+    metrics::observe_db_query();
     sqlx::query!(
         "delete from follow where following_user_id = $1 and followed_user_id = $2",
         auth_user.user_id,

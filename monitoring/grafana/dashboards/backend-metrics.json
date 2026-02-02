@@ -1,0 +1,204 @@
+{
+  "uid": "backend-metrics",
+  "title": "Backend Metrics",
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "HTTP Requests Per Second (Total)",
+      "id": 1,
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m]))",
+          "legendFormat": "rps",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP Requests Per Second (By Method)",
+      "id": 2,
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m])) by (method)",
+          "legendFormat": "{{method}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP Requests Per Second (By Route)",
+      "id": 12,
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m])) by (route)",
+          "legendFormat": "{{route}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP Latency (p50/p95/p99)",
+      "id": 3,
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "DB Queries Per Second",
+      "id": 4,
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(db_queries_total[1m])",
+          "legendFormat": "qps",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Users (Total)",
+      "id": 5,
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "users_total",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Articles (Total)",
+      "id": 6,
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 16 },
+      "targets": [
+        {
+          "expr": "articles_total",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Comments (Total)",
+      "id": 7,
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 22 },
+      "targets": [
+        {
+          "expr": "comments_total",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Attachments (Total)",
+      "id": 8,
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 22 },
+      "targets": [
+        {
+          "expr": "attachments_total",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Attachment Bytes (Total)",
+      "id": 9,
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 8, "x": 12, "y": 22 },
+      "targets": [
+        {
+          "expr": "attachments_total_bytes",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Users Created (per minute)",
+      "id": 10,
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 28 },
+      "targets": [
+        {
+          "expr": "rate(users_created_total[1m]) * 60",
+          "legendFormat": "users/min",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Articles/Comments/Attachments Created (per minute)",
+      "id": 11,
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 16, "x": 8, "y": 28 },
+      "targets": [
+        {
+          "expr": "rate(articles_created_total[1m]) * 60",
+          "legendFormat": "articles/min",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(comments_created_total[1m]) * 60",
+          "legendFormat": "comments/min",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(attachments_created_total[1m]) * 60",
+          "legendFormat": "attachments/min",
+          "refId": "C"
+        }
+      ]
+    }
+  ],
+  "time": { "from": "now-6h", "to": "now" }
+}

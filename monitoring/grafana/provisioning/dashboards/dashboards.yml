@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: backend-metrics
+    orgId: 1
+    folder: Backend
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

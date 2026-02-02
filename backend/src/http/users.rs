@@ -1,4 +1,5 @@
 use crate::http::{ApiContext, Result};
+use crate::metrics;
 use anyhow::Context;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash};
@@ -60,6 +61,7 @@ async fn create_user(
 ) -> Result<Json<UserBody<User>>> {
     let password_hash = hash_password(req.user.password).await?;
 
+    metrics::observe_db_query();
     let user_id = sqlx::query_scalar!(
         r#"insert into "user" (username, email, password_hash) values ($1, $2, $3) returning user_id"#,
         req.user.username,
@@ -74,6 +76,8 @@ async fn create_user(
     .on_constraint("user_email_key", |_| {
         Error::unprocessable_entity([("email", "email taken")])
     })?;
+
+    metrics::record_user_created();
 
     Ok(Json(UserBody {
         user: User {
@@ -95,6 +99,7 @@ async fn login_user(
     State(ctx): State<ApiContext>,
     Json(req): Json<UserBody<LoginUser>>,
 ) -> Result<Json<UserBody<User>>> {
+    metrics::observe_db_query();
     let user = sqlx::query!(
         r#"
             select user_id, email, username, bio, image, password_hash 
@@ -128,6 +133,7 @@ async fn get_current_user(
     auth_user: AuthUser,
     State(ctx): State<ApiContext>,
 ) -> Result<Json<UserBody<User>>> {
+    metrics::observe_db_query();
     let user = sqlx::query!(
         r#"select email, username, bio, image from "user" where user_id = $1"#,
         auth_user.user_id
@@ -161,6 +167,7 @@ async fn update_user(
         None
     };
 
+    metrics::observe_db_query();
     let user = sqlx::query!(
         r#"
             update "user"
