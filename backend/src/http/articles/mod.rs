@@ -340,8 +340,8 @@ async fn favorite_article(
     auth_user: AuthUser,
     State(ctx): State<ApiContext>,
     Path(slug): Path<String>,
-) -> Result<Json<ArticleBody>> {
-    let article_id = sqlx::query_scalar!(
+) -> Result<()> {
+    sqlx::query_scalar!(
         r#"
             with selected_article as (
                 select article_id from article where slug = $1
@@ -362,17 +362,15 @@ async fn favorite_article(
     .await?
     .ok_or(Error::NotFound)?;
 
-    Ok(Json(ArticleBody {
-        article: article_by_id(&ctx.db, auth_user.user_id, article_id).await?,
-    }))
+    Ok(())
 }
 
 async fn unfavorite_article(
     auth_user: AuthUser,
     State(ctx): State<ApiContext>,
     Path(slug): Path<String>,
-) -> Result<Json<ArticleBody>> {
-    let article_id = sqlx::query_scalar!(
+) -> Result<()> {
+    sqlx::query_scalar!(
         r#"
             with selected_article as (
                 select article_id from article where slug = $1
@@ -391,9 +389,7 @@ async fn unfavorite_article(
     .await?
     .ok_or(Error::NotFound)?;
 
-    Ok(Json(ArticleBody {
-        article: article_by_id(&ctx.db, auth_user.user_id, article_id).await?,
-    }))
+    Ok(())
 }
 
 async fn get_tags(State(ctx): State<ApiContext>) -> Result<Json<TagsBody>> {
@@ -410,7 +406,7 @@ async fn get_tags(State(ctx): State<ApiContext>) -> Result<Json<TagsBody>> {
     Ok(Json(TagsBody { tags }))
 }
 
-async fn article_by_id(
+async fn _article_by_id(
     e: impl Executor<'_, Database = Postgres>,
     user_id: Uuid,
     article_id: Uuid,
