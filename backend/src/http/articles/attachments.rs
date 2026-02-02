@@ -2,6 +2,7 @@ use crate::http::ApiContext;
 use crate::http::extractor::{AuthUser, MaybeAuthUser};
 use crate::http::types::Timestamptz;
 use crate::http::{Error, Result};
+use crate::metrics;
 use anyhow::Context;
 use axum::extract::{Multipart, Path, State};
 use axum::http::{HeaderMap, HeaderValue, header};
@@ -69,11 +70,13 @@ async fn get_attachments(
     State(ctx): State<ApiContext>,
     Path(slug): Path<String>,
 ) -> Result<Json<MultipleAttachments>> {
+    metrics::observe_db_query();
     let article_id = sqlx::query_scalar!("select article_id from article where slug = $1", slug)
         .fetch_optional(&ctx.db)
         .await?
         .ok_or(Error::NotFound)?;
 
+    metrics::observe_db_query();
     let attachments: Vec<Attachment> = sqlx::query_as!(
         AttachmentFromQuery,
         r#"
@@ -101,6 +104,7 @@ async fn get_attachment(
     State(ctx): State<ApiContext>,
     Path((slug, attachment_id)): Path<(String, Uuid)>,
 ) -> Result<(HeaderMap, Vec<u8>)> {
+    metrics::observe_db_query();
     let attachment = sqlx::query!(
         r#"
             select attachment.file_path, attachment.file_name
@@ -203,6 +207,7 @@ async fn create_attachment(
     };
     let file_path = format!("{}/{}", UPLOAD_DIR, stored_name);
 
+    metrics::observe_db_query();
     let result = sqlx::query!(
         r#"
             with article_match as (
@@ -270,8 +275,11 @@ async fn create_attachment(
     .await;
 
     match write_result {
-        Ok(Ok(())) => {}
+        Ok(Ok(())) => {
+            metrics::record_attachment_created();
+        }
         Ok(Err(err)) => {
+            metrics::observe_db_query();
             let _ = sqlx::query!(
                 "delete from attachment where attachment_id = $1",
                 attachment_id
@@ -283,6 +291,7 @@ async fn create_attachment(
                 .into());
         }
         Err(err) => {
+            metrics::observe_db_query();
             let _ = sqlx::query!(
                 "delete from attachment where attachment_id = $1",
                 attachment_id
@@ -318,6 +327,7 @@ async fn delete_attachment(
     State(ctx): State<ApiContext>,
     Path((slug, attachment_id)): Path<(String, Uuid)>,
 ) -> Result<()> {
+    metrics::observe_db_query();
     let result = sqlx::query!(
         r#"
             with deleted_attachment as (

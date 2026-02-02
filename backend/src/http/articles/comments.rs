@@ -3,6 +3,7 @@ use crate::http::extractor::{AuthUser, MaybeAuthUser};
 use crate::http::profiles::Profile;
 use crate::http::types::Timestamptz;
 use crate::http::{Error, Result};
+use crate::metrics;
 use axum::extract::{Path, State};
 use axum::routing::{delete, get};
 use axum::{Json, Router};
@@ -79,11 +80,13 @@ async fn get_article_comments(
     State(ctx): State<ApiContext>,
     Path(slug): Path<String>,
 ) -> Result<Json<MultipleCommentsBody>> {
+    metrics::observe_db_query();
     let article_id = sqlx::query_scalar!("select article_id from article where slug = $1", slug)
         .fetch_optional(&ctx.db)
         .await?
         .ok_or(Error::NotFound)?;
 
+    metrics::observe_db_query();
     let comments = sqlx::query_as!(
         CommentFromQuery,
         r#"
@@ -118,6 +121,7 @@ async fn add_comment(
     Path(slug): Path<String>,
     req: Json<CommentBody<AddComment>>,
 ) -> Result<Json<CommentBody>> {
+    metrics::observe_db_query();
     let comment = sqlx::query_as!(
         CommentFromQuery,
         r#"
@@ -149,6 +153,8 @@ async fn add_comment(
     .ok_or(Error::NotFound)?
     .into_comment();
 
+    metrics::record_comment_created();
+
     Ok(Json(CommentBody { comment }))
 }
 
@@ -157,6 +163,7 @@ async fn delete_comment(
     State(ctx): State<ApiContext>,
     Path((slug, comment_id)): Path<(String, i64)>,
 ) -> Result<()> {
+    metrics::observe_db_query();
     let result = sqlx::query!(
         r#"
             with deleted_comment as (

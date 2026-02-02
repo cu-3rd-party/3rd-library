@@ -12,6 +12,7 @@ services:
       - ./uploads:/var/app/upload
     ports:
       - "8080:8080"
+      - "9091:9091"
     depends_on:
       - db
       - redis
@@ -42,6 +43,27 @@ services:
       - "6379:6379"
     volumes:
       - backend-redis-data:/data
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./env/grafana.env
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
     restart: unless-stopped
 
 volumes:

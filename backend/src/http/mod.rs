@@ -23,6 +23,8 @@ pub use error::{Error, ResultExt};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
+use crate::metrics;
+use axum::routing::get;
 use tower_http::trace::TraceLayer;
 
 #[derive(Clone)]
@@ -33,13 +35,28 @@ struct ApiContext {
 }
 
 pub async fn serve(config: Config, db: PgPool, redis: ConnectionManager) -> anyhow::Result<()> {
+    metrics::start_business_metrics_updater(db.clone());
+
     let app = api_router()
         .with_state(ApiContext {
             config: Arc::new(config),
             db,
             redis: redis,
         })
+        .layer(axum::middleware::from_fn(metrics::metrics_middleware))
         .layer(TraceLayer::new_for_http());
+
+    let metrics_app = Router::new().route("/metrics", get(metrics::metrics_handler));
+    tokio::spawn(async move {
+        let listener = tokio::net::TcpListener::bind("0.0.0.0:9091")
+            .await
+            .context("failed to bind metrics server")
+            .expect("metrics bind");
+
+        if let Err(err) = axum::serve(listener, metrics_app).await {
+            log::error!("metrics server stopped: {err}");
+        }
+    });
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080")
         .await
