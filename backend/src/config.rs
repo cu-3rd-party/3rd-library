@@ -5,6 +5,7 @@ pub struct Config {
     pub jwt: JwtConfig,
     pub redis: RedisConfig,
     pub cors: CorsConfig,
+    pub storage: StorageConfig,
 }
 
 impl Config {
@@ -14,6 +15,7 @@ impl Config {
             jwt: JwtConfig::init_from_env()?,
             redis: RedisConfig::init_from_env()?,
             cors: CorsConfig::init_from_env()?,
+            storage: StorageConfig::init_from_env()?,
         })
     }
 }
@@ -52,6 +54,12 @@ pub struct RedisConfig {
 pub struct CorsConfig {
     #[envconfig(from = "CORS_ALLOWED_ORIGIN")]
     pub allowed_origin: Option<String>,
+}
+
+#[derive(envconfig::Envconfig)]
+pub struct StorageConfig {
+    #[envconfig(from = "PFP_UPLOAD_DIR")]
+    pub pfp_upload_dir: String,
 }
 
 impl DbConfig {

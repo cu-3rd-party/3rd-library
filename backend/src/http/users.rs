@@ -43,7 +43,7 @@ struct UpdateUser {
     username: Option<String>,
     password: Option<String>,
     bio: Option<String>,
-    image: Option<String>,
+    image: Option<Uuid>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -52,7 +52,7 @@ struct User {
     token: String,
     username: String,
     bio: String,
-    image: Option<String>,
+    image: Option<Uuid>,
 }
 
 async fn create_user(
@@ -102,7 +102,7 @@ async fn login_user(
     metrics::observe_db_query();
     let user = sqlx::query!(
         r#"
-            select user_id, email, username, bio, image, password_hash 
+            select user_id, email, username, bio, pfp_id, password_hash
             from "user" where email = $1
         "#,
         req.user.email,
@@ -124,7 +124,7 @@ async fn login_user(
             .await?,
             username: user.username,
             bio: user.bio,
-            image: user.image,
+            image: user.pfp_id,
         },
     }))
 }
@@ -135,7 +135,7 @@ async fn get_current_user(
 ) -> Result<Json<UserBody<User>>> {
     metrics::observe_db_query();
     let user = sqlx::query!(
-        r#"select email, username, bio, image from "user" where user_id = $1"#,
+        r#"select email, username, bio, pfp_id from "user" where user_id = $1"#,
         auth_user.user_id
     )
     .fetch_one(&ctx.db)
@@ -147,7 +147,7 @@ async fn get_current_user(
             token: auth_user.to_jwt(&ctx).await?,
             username: user.username,
             bio: user.bio,
-            image: user.image,
+            image: user.pfp_id,
         },
     }))
 }
@@ -167,6 +167,27 @@ async fn update_user(
         None
     };
 
+    let requested_pfp_id = req.user.image;
+    if let Some(pfp_id) = requested_pfp_id {
+        let owns_pfp = sqlx::query_scalar!(
+            r#"
+                select exists(
+                    select 1
+                    from profile_picture
+                    where pfp_id = $1 and user_id = $2
+                ) as "exists!"
+            "#,
+            pfp_id,
+            auth_user.user_id
+        )
+        .fetch_one(&ctx.db)
+        .await?;
+
+        if !owns_pfp {
+            return Err(Error::unprocessable_entity([("image", "invalid profile picture")]));
+        }
+    }
+
     metrics::observe_db_query();
     let user = sqlx::query!(
         r#"
@@ -175,15 +196,15 @@ async fn update_user(
                 username = coalesce($2, "user".username),
                 password_hash = coalesce($3, "user".password_hash),
                 bio = coalesce($4, "user".bio),
-                image = coalesce($5, "user".image)
+                pfp_id = coalesce($5, "user".pfp_id)
             where user_id = $6
-            returning email, username, bio, image
+            returning email, username, bio, pfp_id
         "#,
         req.user.email,
         req.user.username,
         password_hash,
         req.user.bio,
-        req.user.image,
+        requested_pfp_id,
         auth_user.user_id
     )
     .fetch_one(&ctx.db)
@@ -201,7 +222,7 @@ async fn update_user(
             token: auth_user.to_jwt(&ctx).await?,
             username: user.username,
             bio: user.bio,
-            image: user.image,
+            image: user.pfp_id,
         },
     }))
 }

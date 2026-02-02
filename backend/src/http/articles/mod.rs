@@ -88,7 +88,7 @@ struct ArticleFromQuery {
     favorites_count: i64,
     author_username: String,
     author_bio: String,
-    author_image: Option<String>,
+    author_image: Option<uuid::Uuid>,
     following_author: bool,
 }
 
@@ -146,7 +146,7 @@ async fn create_article(
                 0::int8 "favorites_count!",
                 username author_username,
                 bio author_bio,
-                image author_image,
+                pfp_id author_image,
                 -- user is forbidden to follow themselves
                 false "following_author!"
             from inserted_article
@@ -228,7 +228,7 @@ async fn update_article(
                 ) "favorites_count!",
                 author.username author_username,
                 author.bio author_bio,
-                author.image author_image,
+                author.pfp_id author_image,
                 -- user not allowed to follow themselves
                 false "following_author!"
             from updated_article
@@ -327,7 +327,7 @@ async fn get_article(
                 ) "favorites_count!",
                 author.username author_username,
                 author.bio author_bio,
-                author.image author_image,
+                author.pfp_id author_image,
                 exists(select 1 from follow where followed_user_id = author.user_id and following_user_id = $1) "following_author!"
             from article
             inner join "user" author using (user_id)
@@ -443,7 +443,7 @@ async fn _article_by_id(
                 ) "favorites_count!",
                 author.username author_username,
                 author.bio author_bio,
-                author.image author_image,
+                author.pfp_id author_image,
                 exists(select 1 from follow where followed_user_id = author.user_id and following_user_id = $1) "following_author!"
             from article
             inner join "user" author using (user_id)

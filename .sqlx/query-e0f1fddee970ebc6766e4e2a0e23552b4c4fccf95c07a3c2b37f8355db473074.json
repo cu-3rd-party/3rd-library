@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            with updated_article as (\n                update article\n                set\n                    slug = coalesce($1, slug),\n                    title = coalesce($2, title),\n                    description = coalesce($3, description),\n                    body = coalesce($4, body)\n                where article_id = $5\n                returning\n                    slug,\n                    title,\n                    description,\n                    body,\n                    tag_list,\n                    article.created_at \"created_at: Timestamptz\",\n                    article.updated_at \"updated_at: Timestamptz\"\n            )\n            select\n                updated_article.*,\n                exists(select 1 from article_favorite where user_id = $6) \"favorited!\",\n                coalesce(\n                    (select count(*) from article_favorite fav where fav.article_id = $5),\n                    0\n                ) \"favorites_count!\",\n                author.username author_username,\n                author.bio author_bio,\n                author.image author_image,\n                -- user not allowed to follow themselves\n                false \"following_author!\"\n            from updated_article\n            -- we've ensured the current user is the article's author so we can assume it here\n            inner join \"user\" author on author.user_id = $6\n        ",
+  "query": "\n            select\n                slug,\n                title,\n                description,\n                body,\n                tag_list,\n                article.created_at \"created_at: Timestamptz\",\n                article.updated_at \"updated_at: Timestamptz\",\n                exists(select 1 from article_favorite where user_id = $1) \"favorited!\",\n                coalesce(\n                    -- `count(*)` returns `NULL` if the query returned zero columns\n                    -- not exactly a fan of that design choice but whatever\n                    (select count(*) from article_favorite fav where fav.article_id = article.article_id),\n                    0\n                ) \"favorites_count!\",\n                author.username author_username,\n                author.bio author_bio,\n                author.pfp_id author_image,\n                exists(select 1 from follow where followed_user_id = author.user_id and following_user_id = $1) \"following_author!\"\n            from article\n            inner join \"user\" author using (user_id)\n            where article_id = $2\n        ",
   "describe": {
     "columns": [
       {
@@ -61,7 +61,7 @@
       {
         "ordinal": 11,
         "name": "author_image",
-        "type_info": "Text"
+        "type_info": "Uuid"
       },
       {
         "ordinal": 12,
@@ -71,10 +71,6 @@
     ],
     "parameters": {
       "Left": [
-        "Text",
-        "Text",
-        "Text",
-        "Text",
         "Uuid",
         "Uuid"
       ]
@@ -95,5 +91,5 @@
       null
     ]
   },
-  "hash": "cff56a533710f95c757fbd0d68e3f94b11482611b9c7182f664ce11d98a56328"
+  "hash": "e0f1fddee970ebc6766e4e2a0e23552b4c4fccf95c07a3c2b37f8355db473074"
 }

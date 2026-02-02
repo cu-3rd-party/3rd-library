@@ -8,6 +8,7 @@ servers:
 tags:
   - name: Users
   - name: Profiles
+  - name: Profile Pictures
   - name: Articles
   - name: Comments
   - name: Attachments
@@ -90,6 +91,50 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
+  /api/user/pfp:
+    post:
+      tags: [Profile Pictures]
+      summary: Upload profile picture
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Profile picture uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PfpResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /api/pfps/{pfpId}:
+    get:
+      tags: [Profile Pictures]
+      summary: Download profile picture
+      parameters:
+        - $ref: "#/components/parameters/PfpId"
+      responses:
+        "200":
+          description: Profile picture bytes
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/profiles/{username}:
     get:
       tags: [Profiles]
@@ -500,6 +545,13 @@ components:
       schema:
         type: string
         format: uuid
+    PfpId:
+      name: pfpId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   responses:
     Unauthorized:
       description: Unauthorized
@@ -551,6 +603,8 @@ components:
         image:
           type: string
           nullable: true
+          description: profile picture id
+          format: uuid
     NewUserRequest:
       type: object
       required: [user]
@@ -598,7 +652,8 @@ components:
             image:
               type: string
               nullable: true
-              description: base64-encoded profile picture
+              description: profile picture id
+              format: uuid
     ProfileResponse:
       type: object
       required: [profile]
@@ -616,9 +671,23 @@ components:
         image:
           type: string
           nullable: true
-          description: base64-encoded profile picture
+          description: profile picture id
+          format: uuid
         following:
           type: boolean
+    PfpResponse:
+      type: object
+      required: [pfp]
+      properties:
+        pfp:
+          $ref: "#/components/schemas/Pfp"
+    Pfp:
+      type: object
+      required: [pfpId]
+      properties:
+        pfpId:
+          type: string
+          format: uuid
     ArticleResponse:
       type: object
       required: [article]

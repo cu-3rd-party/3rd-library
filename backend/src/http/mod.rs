@@ -16,6 +16,7 @@ mod types;
 // Api
 
 mod articles;
+mod pfps;
 mod profiles;
 mod users;
 
@@ -85,5 +86,6 @@ pub async fn serve(config: Config, db: PgPool, redis: ConnectionManager) -> anyh
 fn api_router() -> Router<ApiContext> {
     users::router()
         .merge(profiles::router())
+        .merge(pfps::router())
         .merge(articles::router())
 }

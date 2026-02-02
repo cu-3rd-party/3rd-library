@@ -75,7 +75,7 @@ pub(in crate::http) async fn list_articles(
                 ) "favorites_count!",
                 author.username author_username,
                 author.bio author_bio,
-                author.image author_image,
+                author.pfp_id author_image,
                 exists(select 1 from follow where followed_user_id = author.user_id and following_user_id = $1) "following_author!"
             from article
             inner join "user" author using (user_id)
@@ -145,7 +145,7 @@ pub(in crate::http) async fn feed_articles(
                 ) "favorites_count!",
                 author.username author_username,
                 author.bio author_bio,
-                author.image author_image,
+                author.pfp_id author_image,
                 -- we wouldn't be returning this otherwise
                 true "following_author!"
             from follow

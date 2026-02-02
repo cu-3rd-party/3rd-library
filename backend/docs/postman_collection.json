@@ -5,18 +5,62 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8080" },
-    { "key": "token", "value": "" },
-    { "key": "username", "value": "postman-user" },
-    { "key": "email", "value": "postman@example.com" },
-    { "key": "password", "value": "password123" },
-    { "key": "slug", "value": "" },
-    { "key": "comment_id", "value": "" },
-    { "key": "attachment_id", "value": "" },
-    { "key": "attachment_file", "value": "" },
-    { "key": "tag", "value": "" },
-    { "key": "author", "value": "" },
-    { "key": "favorited", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "username",
+      "value": "postman-user"
+    },
+    {
+      "key": "email",
+      "value": "postman@example.com"
+    },
+    {
+      "key": "password",
+      "value": "password123"
+    },
+    {
+      "key": "slug",
+      "value": ""
+    },
+    {
+      "key": "comment_id",
+      "value": ""
+    },
+    {
+      "key": "attachment_id",
+      "value": ""
+    },
+    {
+      "key": "attachment_file",
+      "value": ""
+    },
+    {
+      "key": "tag",
+      "value": ""
+    },
+    {
+      "key": "author",
+      "value": ""
+    },
+    {
+      "key": "favorited",
+      "value": ""
+    },
+    {
+      "key": "pfp_id",
+      "value": ""
+    },
+    {
+      "key": "pfp_file",
+      "value": ""
+    }
   ],
   "item": [
     {
@@ -27,7 +71,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -41,7 +88,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -69,7 +119,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "url": "{{baseUrl}}/api/user"
           }
@@ -79,8 +132,14 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -106,7 +165,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "url": "{{baseUrl}}/api/profiles/{{username}}/follow"
           }
@@ -116,7 +178,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "url": "{{baseUrl}}/api/profiles/{{username}}/follow"
           }
@@ -138,8 +203,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -167,7 +238,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "url": "{{baseUrl}}/api/articles/feed?limit=20&offset=0"
           }
@@ -184,8 +258,14 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -199,7 +279,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "url": "{{baseUrl}}/api/articles/{{slug}}"
           }
@@ -209,7 +292,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "url": "{{baseUrl}}/api/articles/{{slug}}/favorite"
           }
@@ -219,7 +305,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "url": "{{baseUrl}}/api/articles/{{slug}}/favorite"
           }
@@ -241,8 +330,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -270,7 +365,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "url": "{{baseUrl}}/api/articles/{{slug}}/comments/{{comment_id}}"
           }
@@ -292,7 +390,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "body": {
               "mode": "formdata",
@@ -333,7 +434,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Token {{token}}" }
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
             ],
             "url": "{{baseUrl}}/api/articles/{{slug}}/attachments/{{attachment_id}}"
           }
@@ -348,6 +452,41 @@
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/tags"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile Pictures",
+      "item": [
+        {
+          "name": "Upload profile picture",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Token {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{pfp_file}}"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/user/pfp"
+          }
+        },
+        {
+          "name": "Download profile picture",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/pfps/{{pfp_id}}"
           }
         }
       ]
