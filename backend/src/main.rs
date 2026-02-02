@@ -1,4 +1,6 @@
 use anyhow::Context;
+use redis::aio::ConnectionManager;
+use redis::Client;
 use sqlx::postgres::PgPoolOptions;
 
 use backend::config::Config;
@@ -16,11 +18,17 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("could not connect to database_url")?;
 
+    let redis_client = Client::open(config.redis.url.clone())
+        .context("could not build Redis client")?;
+    let redis = ConnectionManager::new(redis_client)
+        .await
+        .context("could not connect to Redis")?;
+
     if let Err(err) = sqlx::migrate!().run(&db).await {
         log::warn!("skipping migrations: {err}");
     }
 
-    http::serve(config, db).await?;
+    http::serve(config, db, redis).await?;
 
     Ok(())
 }

@@ -1,6 +1,7 @@
 use crate::config::Config;
 use anyhow::Context;
 use axum::Router;
+use redis::aio::ConnectionManager;
 use sqlx::PgPool;
 use std::sync::Arc;
 
@@ -28,13 +29,15 @@ use tower_http::trace::TraceLayer;
 struct ApiContext {
     config: Arc<Config>,
     db: PgPool,
+    redis: ConnectionManager,
 }
 
-pub async fn serve(config: Config, db: PgPool) -> anyhow::Result<()> {
+pub async fn serve(config: Config, db: PgPool, redis: ConnectionManager) -> anyhow::Result<()> {
     let app = api_router()
         .with_state(ApiContext {
             config: Arc::new(config),
             db,
+            redis: redis,
         })
         .layer(TraceLayer::new_for_http());
 
