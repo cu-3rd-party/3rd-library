@@ -5,27 +5,34 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  `text-foreground inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-(--std-duration)
+  ease-in-out disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0
+  [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20
+  dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive`,
   {
     variants: {
       variant: {
+        navActive:
+          "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/80 transition duration-(--std-duration) ease-in-out",
+        navInactive:
+          "hover:text-foreground/60 cursor-pointer transition duration-(--std-duration) ease-in-out",
         primaryActive:
-          "bg-primary text-primary-foreground hover:bg-primary/80 transition duration-300 ease-in-out",
+          "bg-primary text-primary-foreground hover:bg-sidebar-primary/80 transition duration-(--std-duration) ease-in-out",
         primaryInactive:
-          "hover:text-foreground/60 transition duration-300 ease-in-out",
+          "hover:text-foreground/60 transition duration-(--std-duration) ease-in-out",
         secondaryActive:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 transition duration-300 ease-in-out",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 transition duration-(--std-duration) ease-in-out",
         secondaryInactive:
-          "hover:text-foreground/=60 transition duration-300 ease-in-out",
+          "hover:text-foreground/60 transition duration-(--std-duration) ease-in-out",
         default: "bg-primary text-primary-foreground hover:bg-primary/50",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border-1 bg-card hover:border-ring border-border",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+          "hover:bg-muted hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

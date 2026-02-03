@@ -1,4 +1,4 @@
-import { Difficulty } from "@/models/material";
+import { Difficulty, DifficultyBadge } from "@/models/material";
 
 export const DIFFICULTY_CONFIG: Record<
   Difficulty,
@@ -26,31 +26,31 @@ export const DIFFICULTY_CONFIG: Record<
   },
 };
 
-export const DIFFICULTY_LEVELS = [
+export const DIFFICULTY_BADGES: DifficultyBadge[] = [
   {
     value: "none",
-    label: "Без уровня",
+    label: "⚪ Без уровня",
     badgeClass:
-      "bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent",
+      "bg-secondary text-secondary-foreground border-transparent",
     indicatorClass: "border border-foreground/30 bg-transparent",
   },
   {
     value: "blue",
-    label: "Синий",
-    badgeClass: "bg-blue-500 text-white hover:bg-blue-600 border-transparent",
+    label: "🔵 Синий",
+    badgeClass: "bg-blue-500 text-white border-transparent",
     indicatorClass: "bg-blue-500 border-transparent",
   },
   {
     value: "red",
-    label: "Красный",
-    badgeClass: "bg-red-500 text-white hover:bg-red-600 border-transparent",
+    label: "🔴 Красный",
+    badgeClass: "bg-red-500 text-white border-transparent",
     indicatorClass: "bg-red-500 border-transparent",
   },
   {
     value: "black",
-    label: "Черный",
+    label: "⚫️ Черный",
     badgeClass:
-      "bg-black text-white hover:bg-neutral-900 border-transparent dark:border-white/30 dark:border",
+      "bg-black text-white border-transparent dark:border-white/30 dark:border",
     indicatorClass:
       "bg-black border-transparent dark:bg-neutral-950 dark:border-white/30 dark:border",
   },

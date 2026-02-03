@@ -12,8 +12,8 @@ export const MOCK_MATERIALS: Material[] = [
     description:
       "Разбираем определение предела по Коши и Гейне. Почему 0/0 это не всегда единица, и как пользоваться правилом Лопиталя, чтобы вас не выгнали с экзамена. Много примеров с разбором.",
     authorId: DEFAULT_USER_ID,
-    subject: "Матан",
-    type: "Шортрид",
+    subjects: ["Матан"],
+    type: "shortread",
     difficulty: "blue",
     authorName: "Даниил Матанович"
   },
@@ -24,8 +24,8 @@ export const MOCK_MATERIALS: Material[] = [
     pubDate: "28.01.2026",
     description:
       "Что такое ядро и образ? Как найти собственные векторы и собственные значения, не сойдя с ума. Матрица перехода и изменение базиса простыми словами. Включает шпаргалку по свойствам.",
-    subject: "Линал",
-    type: "Шортрид",
+    subjects: ["Линал"],
+    type: "shortread",
     authorId: DEFAULT_USER_ID,
     difficulty: "red",
     authorName: "Даниил Матанович"
@@ -37,8 +37,8 @@ export const MOCK_MATERIALS: Material[] = [
     pubDate: "15.01.2026",
     description:
       "Секретная техника решения неоднородных уравнений. Пошаговый алгоритм Лагранжа. Разбор типовых задач из контрольных прошлых лет.",
-    subject: "Диффуры",
-    type: "Шортрид",
+    subjects: ["Диффуры"],
+    type: "shortread",
     authorId: DEFAULT_USER_ID,
     difficulty: "black",
     authorName: "Даниил Матанович"
@@ -50,8 +50,8 @@ export const MOCK_MATERIALS: Material[] = [
     pubDate: "10.01.2026",
     description:
       "Как выбрать правильную замену и не запутаться в дифференциалах. Тригонометрические подстановки, которые спасают жизни. Таблица основных интегралов прилагается.",
-    subject: "Матан",
-    type: "Шортрид",
+    subjects: ["Матан"],
+    type: "longread",
     authorId: DEFAULT_USER_ID,
     difficulty: "blue",
     authorName: "Даниил Матанович"
@@ -63,8 +63,8 @@ export const MOCK_MATERIALS: Material[] = [
     pubDate: "05.12.2025",
     description:
       "Зачем раскладывать функции в ряд? Условия Дирихле. Четные и нечетные функции. Как это применяется в реальной жизни (спойлер: обработка сигналов).",
-    subject: "Матан",
-    type: "Шортрид",
+    subjects: ["Матан"],
+    type: "shortread",
     authorId: DEFAULT_USER_ID,
     difficulty: "red",
     authorName: "Даниил Матанович"
@@ -76,8 +76,8 @@ export const MOCK_MATERIALS: Material[] = [
     pubDate: "20.11.2025",
     description:
       "Эллипс, гипербола, парабола. Как привести уравнение к каноническому виду и построить график. Инварианты кривых второго порядка.",
-    subject: "Ангем",
-    type: "Шортрид",
+    subjects: ["Ангем"],
+    type: "shortread",
     authorId: DEFAULT_USER_ID,
     difficulty: "none",
     authorName: "Даниил Матанович"

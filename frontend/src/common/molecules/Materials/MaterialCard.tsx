@@ -5,7 +5,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card.tsx";
+} from "@/components/ui/card";
 import { DIFFICULTY_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils.ts";
 import { Material } from "@/models/material";
@@ -22,10 +22,10 @@ export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProp
   return (
     <Card
       onClick={() => onClick(material.id)}
-      className="flex flex-col h-full border-border/50 bg-card hover:border-orange-500/50 transition-colors cursor-pointer group"
+        className="flex flex-col h-full border-border bg-card hover:border-accent transition-colors cursor-pointer group"
     >
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-bold leading-tight group-hover:text-orange-500 transition-colors line-clamp-2">
+        <CardTitle className="text-xl font-bold leading-tight line-clamp-2">
           {material.title}
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-1">{material.pubDate}</p>
@@ -39,7 +39,7 @@ export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProp
 
       <CardFooter className="flex items-center justify-between pt-4">
         <div className="flex flex-wrap gap-2">
-          {[material.subject, material.type].map((tag, idx) => (
+          {[...material.subjects, material.type].map((tag, idx) => (
             <Badge
               key={idx}
               variant="secondary"

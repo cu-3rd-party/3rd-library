@@ -82,7 +82,7 @@ export const MaterialDetailPage = () => {
           className="shrink-0 hover:bg-transparent h-12 w-12 rounded-full"
         >
           <Bookmark
-            className={`h-8 w-8 transition-all duration-300 ${
+            className={`h-8 w-8 transition-all duration-delay ${
               isBookmarked
                 ? "fill-orange-500 text-orange-500"
                 : "text-muted-foreground hover:text-orange-500"
@@ -97,7 +97,7 @@ export const MaterialDetailPage = () => {
 
       <div
         onClick={handleDownload}
-        className="mt-8 w-full h-64 bg-card border-2 border-dashed border-border/50 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-secondary/50 hover:border-orange-500/50 transition-all group"
+        className="mt-8 w-full h-64 bg-card border-1 border-dashed border-border/50 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-secondary/50 hover:border-orange-500/50 transition-all group"
       >
         <div className="flex flex-col items-center gap-4 text-muted-foreground group-hover:text-foreground transition-colors">
           <div className="p-4 bg-background rounded-full shadow-sm">

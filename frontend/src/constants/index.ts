@@ -1,4 +1,5 @@
-export { DIFFICULTY_CONFIG, DIFFICULTY_LEVELS } from "./difficulty";
+export { TYPE_BADGES } from "./materialType";
+export { DIFFICULTY_CONFIG, DIFFICULTY_BADGES } from "./difficulty";
 export {
   ABOUT_PREFIX,
   AUTHORIZATION_PREFIX,

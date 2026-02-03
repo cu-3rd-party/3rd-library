@@ -32,7 +32,7 @@ export const Header = ({ children }: HeaderProps) => {
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 variant={
-                  isActive(item.path) ? "primaryActive" : "primaryInactive"
+                  isActive(item.path) ? "navActive" : "navInactive"
                 }
                 className={`h-9 px-4 py-2 transition-colors text-md`}
               >

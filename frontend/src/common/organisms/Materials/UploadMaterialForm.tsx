@@ -13,52 +13,54 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Course, Difficulty, MaterialType, Subject } from "@/models";
 
 export const UploadMaterialForm = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
-  const [courses, setCourses] = useState<string[]>([]);
-  const [subjects, setSubjects] = useState<string[]>([]);
-  const [difficulties, setDifficulties] = useState<string[]>(["none"]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [difficulty, setDifficulty] = useState<Difficulty>("none");
+  const [type, setType] = useState<MaterialType>("longread");
 
-  const toggleSelection = (
-    item: string,
-    currentList: string[],
-    setList: (l: string[]) => void,
+  const toggleCourses = (
+    item: Course,
   ) => {
-    if (currentList.includes(item)) {
-      setList(currentList.filter((i) => i !== item));
+    if (courses.includes(item)) {
+      setCourses(courses.filter((i) => i !== item));
     } else {
-      setList([...currentList, item]);
+      setCourses([...courses, item].sort());
     }
   };
 
-  const toggleDifficulty = (value: string) => {
-    setDifficulties((prev) => {
-      if (value === "none") return ["none"];
-      let newSelection = [...prev];
-      if (newSelection.includes("none"))
-        newSelection = newSelection.filter((i) => i !== "none");
-      if (newSelection.includes(value)) {
-        newSelection = newSelection.filter((i) => i !== value);
-      } else {
-        newSelection.push(value);
-      }
-      if (newSelection.length === 0) return ["none"];
-      return newSelection;
-    });
+  const toggleSubjects = (
+    item: Subject,
+  ) => {
+    if (subjects.includes(item)) {
+      setSubjects(subjects.filter((i) => i !== item));
+    } else {
+      setSubjects([...subjects, item].sort());
+    }
   };
 
+  const selectType = (value: MaterialType) => {
+    setType(value);
+  };
+
+  const selectDifficulty = (value: Difficulty) => {
+    setDifficulty(value);
+  };
+
+
   const handleSubmit = () => {
-    console.log({ title, description, file, courses, subjects, difficulties });
+    console.log({ title, description, file, courses, subjects, difficulty });
     alert("Отправлено!");
   };
 
   return (
     <div className="space-y-4 md:space-y-8">
-      {/* Название */}
       <div className="space-y-3">
         <Label htmlFor="title" className="text-lg font-semibold">
           Название
@@ -68,17 +70,19 @@ export const UploadMaterialForm = () => {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Например: Полный курс лекций по матанализу"
-          className="bg-background text-base md:text-lg py-6"
+          className="text-base md:text-lg py-6"
         />
       </div>
 
       <MaterialAttributesSelector
         courses={courses}
         subjects={subjects}
-        difficulties={difficulties}
-        onToggleCourse={(c) => toggleSelection(c, courses, setCourses)}
-        onToggleSubject={(s) => toggleSelection(s, subjects, setSubjects)}
-        onToggleDifficulty={toggleDifficulty}
+        difficulty={difficulty}
+        type={type}
+        onToggleCourse={toggleCourses}
+        onToggleSubject={toggleSubjects}
+        onSelectType={selectType}
+        onSelectDifficulty={selectDifficulty}
       />
 
       <div className="space-y-3">
@@ -90,7 +94,7 @@ export const UploadMaterialForm = () => {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Краткое содержание..."
-          className="bg-background min-h-37.5 text-base resize-y"
+          className="min-h-37.5 text-base resize-y"
         />
       </div>
 
