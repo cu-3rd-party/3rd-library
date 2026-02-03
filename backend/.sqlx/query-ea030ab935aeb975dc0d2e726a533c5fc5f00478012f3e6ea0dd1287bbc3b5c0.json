@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            select\n                username,\n                bio,\n                pfp_id as \"image?\",\n                exists(\n                    select 1 from follow \n                    where followed_user_id = \"user\".user_id and following_user_id = $2\n                ) \"following!\" -- This tells SQLx that this column will never be null\n            from \"user\"\n            where username = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "username",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "bio",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "image?",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "following!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      null
+    ]
+  },
+  "hash": "ea030ab935aeb975dc0d2e726a533c5fc5f00478012f3e6ea0dd1287bbc3b5c0"
+}
