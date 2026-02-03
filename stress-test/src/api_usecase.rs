@@ -1,11 +1,12 @@
 use rand::prelude::*;
+use reqwest::StatusCode;
 use reqwest::header::AUTHORIZATION;
 use serde::de::DeserializeOwned;
 
 const API_URL: &str = "http://localhost:8080";
 
 // this function should imitate use case of api: full user cycle. Registration,
-pub async fn api_usecase() -> Result<(), reqwest::Error> {
+pub async fn api_usecase() -> Result<(), ApiError> {
     let data = MockData::generate();
     let client = reqwest::Client::new();
 
@@ -239,12 +240,43 @@ struct Comment {
     id: i64,
 }
 
-async fn send_json<T: DeserializeOwned>(
-    response: reqwest::Response,
-) -> Result<T, reqwest::Error> {
-    response.error_for_status()?.json().await
+async fn send_json<T: DeserializeOwned>(response: reqwest::Response) -> Result<T, ApiError> {
+    let status = response.status();
+    if !status.is_success() {
+        return Err(ApiError::Http(status));
+    }
+
+    response.json().await.map_err(ApiError::Transport)
 }
 
-async fn send_empty(response: reqwest::Response) -> Result<(), reqwest::Error> {
-    response.error_for_status().map(|_| ())
+async fn send_empty(response: reqwest::Response) -> Result<(), ApiError> {
+    let status = response.status();
+    if !status.is_success() {
+        return Err(ApiError::Http(status));
+    }
+
+    Ok(())
+}
+
+#[derive(Debug)]
+pub enum ApiError {
+    Http(StatusCode),
+
+    #[allow(dead_code)]
+    Transport(reqwest::Error),
+}
+
+impl ApiError {
+    pub fn status(&self) -> Option<StatusCode> {
+        match self {
+            Self::Http(status) => Some(*status),
+            Self::Transport(_) => None,
+        }
+    }
+}
+
+impl From<reqwest::Error> for ApiError {
+    fn from(err: reqwest::Error) -> Self {
+        Self::Transport(err)
+    }
 }
