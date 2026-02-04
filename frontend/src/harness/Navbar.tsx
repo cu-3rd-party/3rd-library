@@ -26,7 +26,7 @@ export const Header = ({ children }: HeaderProps) => {
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-50 border-b border-border/40 bg-background">
         <div className="container px-4 lg:px-0 lg:w-5/6 m-auto flex h-12 lg:h-16 max-w-screen-2xl items-center justify-between">
-          <nav className="hidden md:flex items-center gap-4 text-md font-medium">
+          <nav className="hidden md:flex items-center gap-4 font-medium">
             {NAV_ITEMS_DESKTOP.map((item) => (
               <Button
                 key={item.path}
@@ -34,7 +34,7 @@ export const Header = ({ children }: HeaderProps) => {
                 variant={
                   isActive(item.path) ? "navActive" : "navInactive"
                 }
-                className={`h-9 px-4 py-2 transition-colors text-md`}
+                className={`h-9 px-4 py-2 transition-colors`}
               >
                 {item.label}
               </Button>

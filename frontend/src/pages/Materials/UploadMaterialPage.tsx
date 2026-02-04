@@ -2,7 +2,7 @@ import { UploadMaterialForm } from "@/common/organisms/Materials/UploadMaterialF
 
 const UploadMaterialPage = () => {
   return (
-    <div className="w-full md:w-11/12 xl:w-5/6 mx-auto max-w-screen-2xl px-4 py-6">
+    <div className="w-full xl:w-11/12 mx-auto max-w-screen-2xl px-4 py-6">
       <UploadMaterialForm />
     </div>
   );

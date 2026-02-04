@@ -101,7 +101,7 @@ export const UploadMaterialForm = () => {
       <div className="pt-6 flex items-center justify-center lg:justify-end gap-4 lg:gap-6">
         <Button
           size="lg"
-          className="font-semibold px-4 text-md flex items-center justify-center"
+          className="font-semibold px-4 flex items-center justify-center"
           onClick={handleSubmit}
         >
           Отправить материал

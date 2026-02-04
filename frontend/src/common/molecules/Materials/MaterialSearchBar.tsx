@@ -1,18 +1,18 @@
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, Check } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { SUBJECTS } from "@/constants";
+import { cn } from "@/lib/utils";
 
-export const ALL_SUBJECTS = ["Матан", "Линал", "Диффуры"];
 
 type MaterialSearchBarProps = {
   searchQuery: string;
@@ -28,47 +28,53 @@ export const MaterialSearchBar = ({
   selectedSubjects,
   onSubjectToggle,
   onResetSubjects,
-}: MaterialSearchBarProps) => {
-  return (
-    <div className="flex w-full lg:w-auto gap-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            className="gap-2 border-border"
-          >
-            <Filter className="h-4 w-4" />
-            {selectedSubjects.length > 0 && (
-              <Badge
-                variant="secondary"
-                className="ml-1 h-5 px-1.5 bg-orange-500/10 text-orange-600"
-              >
-                {selectedSubjects.length}
-              </Badge>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>Выберите предметы</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {ALL_SUBJECTS.map((subject) => (
-            <DropdownMenuCheckboxItem
-              key={subject}
-              checked={selectedSubjects.includes(subject)}
-              onCheckedChange={() => onSubjectToggle(subject)}
-              onSelect={(e) => e.preventDefault()}
+}: MaterialSearchBarProps) => (
+  <div className="flex w-full lg:w-auto gap-2">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="gap-2 border-border">
+          <Filter className="h-4 w-4" />
+          {selectedSubjects.length > 0 && (
+            <Badge
+              variant="secondary"
+              className="ml-1 h-5 px-1.5"
             >
-              {subject}
-            </DropdownMenuCheckboxItem>
-          ))}
+              {selectedSubjects.length}
+            </Badge>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56 p-0">
+        <Command>
+          <CommandInput placeholder="Поиск предметов..." />
+          <CommandList>
+            <CommandEmpty>Предметы не найдены</CommandEmpty>
+            <CommandGroup>
+              {SUBJECTS.map((subject) => (
+                <CommandItem
+                  key={subject}
+                  value={subject}
+                  onSelect={() => onSubjectToggle(subject)}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      selectedSubjects.includes(subject) ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {subject}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
           {selectedSubjects.length > 0 && (
             <>
               <DropdownMenuSeparator />
-              <div className="p-2">
+              <div className="p-1">
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="w-full h-8 text-xs justify-center"
+                  size="lg"
+                  className="w-full h-8 text-sm justify-center bg-input hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-none"
                   onClick={onResetSubjects}
                 >
                   Сбросить фильтры
@@ -76,18 +82,18 @@ export const MaterialSearchBar = ({
               </div>
             </>
           )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </Command>
+      </DropdownMenuContent>
+    </DropdownMenu>
 
-      <div className="relative w-full lg:w-80">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Поиск..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 border-border"
-        />
-      </div>
+    <div className="relative w-full lg:w-80">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        placeholder="Поиск..."
+        value={searchQuery}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className="pl-9 border-border"
+      />
     </div>
-  );
-};
+  </div>
+);

@@ -22,12 +22,9 @@ export interface Material {
 export interface DifficultyBadge {
   value: Difficulty;
   label: string;
-  badgeClass: string;
-  indicatorClass: string
 }
 
 export interface TypeBadge {
   value: MaterialType;
   label: string;
-  badgeClass: string;
 }

@@ -1,10 +1,8 @@
 import { useState } from "react";
 
 import { SingleSelect } from "@/common/molecules/ui/SingleSelect";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { DIFFICULTY_BADGES } from "@/constants";
-import { cn } from "@/lib/utils";
 import { Difficulty } from "@/models";
 
 
