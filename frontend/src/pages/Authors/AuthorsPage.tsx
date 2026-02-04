@@ -27,7 +27,7 @@ const AuthorsPage = () => {
             placeholder="Поиск..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 bg-secondary/30 border-border/50 focus-visible:ring-orange-500 rounded-lg h-10 md:h-10"
+            className="pl-9 border-border rounded-lg h-10 md:h-10"
           />
         </div>
       </div>

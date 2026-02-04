@@ -94,7 +94,7 @@ export const UploadMaterialForm = () => {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Краткое содержание..."
-          className="min-h-37.5 text-base resize-y"
+          className="min-h-37.5 resize-y"
         />
       </div>
 

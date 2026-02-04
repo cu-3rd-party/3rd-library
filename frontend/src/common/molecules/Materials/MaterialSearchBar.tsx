@@ -35,7 +35,7 @@ export const MaterialSearchBar = ({
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className="gap-2 bg-secondary/30 border-border/50"
+            className="gap-2 border-border"
           >
             <Filter className="h-4 w-4" />
             {selectedSubjects.length > 0 && (
@@ -85,7 +85,7 @@ export const MaterialSearchBar = ({
           placeholder="Поиск..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 bg-secondary/30 border-border/50 focus-visible:ring-orange-500"
+          className="pl-9 border-border"
         />
       </div>
     </div>

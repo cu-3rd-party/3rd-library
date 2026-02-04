@@ -41,7 +41,7 @@ export const MaterialsSection = ({
 
     const matchSubject =
       selectedSubjects.length === 0 ||
-      selectedSubjects.includes(item.subject)
+      selectedSubjects.some((subject) => item.subjects.includes(subject));
 
     return matchCourse && matchSearch && matchSubject;
   });
