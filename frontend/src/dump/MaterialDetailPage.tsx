@@ -57,7 +57,7 @@ export const MaterialDetailPage = () => {
       {/* Верхняя секция: Заголовок + Кнопка закладки */}
       <div className="flex justify-between items-start gap-4">
         <div className="space-y-4">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
+          <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
             {MOCK_MATERIAL.title}
           </h1>
 

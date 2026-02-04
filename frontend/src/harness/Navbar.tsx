@@ -26,7 +26,7 @@ export const Header = ({ children }: HeaderProps) => {
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-50 border-b border-border/40 bg-background">
         <div className="container px-4 lg:px-0 lg:w-5/6 m-auto flex h-12 lg:h-16 max-w-screen-2xl items-center justify-between">
-          <nav className="hidden lg:flex items-center gap-4 text-md font-medium">
+          <nav className="hidden md:flex items-center gap-4 text-md font-medium">
             {NAV_ITEMS_DESKTOP.map((item) => (
               <Button
                 key={item.path}
@@ -45,7 +45,7 @@ export const Header = ({ children }: HeaderProps) => {
         </div>
       </header>
       <main className="flex-1"> {children} </main>
-      <nav className="lg:hidden sticky bottom-0 z-50 border-t border-border/40 bg-background">
+      <nav className="md:hidden sticky bottom-0 z-50 border-t border-border/40 bg-background">
         <Tabs
           value={
             NAV_ITEMS_MOBILE.find((item) => isActive(item.path))?.label ||

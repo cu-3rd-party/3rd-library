@@ -9,10 +9,10 @@ const ProfilePage = () => {
   const [imageError, setImageError] = useState(false);
   
   return (
-    <div className="container mx-auto max-w-screen-xl px-4 md:px-8 py-10 space-y-10">
-      <div className="flex flex-col md:flex-row items-start gap-6 md:gap-10">
+    <div className="container mx-auto max-w-screen-xl px-4 lg:px-8 py-10 space-y-10">
+      <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-10">
         <div className="shrink-0">
-          <div className="w-32 h-32 md:w-40 md:h-40 bg-secondary/30 rounded-xl overflow-hidden flex items-center justify-center border border-border/50 shadow-sm">
+          <div className="w-32 h-32 lg:w-40 lg:h-40 bg-secondary/30 rounded-xl overflow-hidden flex items-center justify-center border border-border/50 shadow-sm">
           {!imageError ? (
             <img
               src={`/avatars/${MOCK_USER.id}.png`}
@@ -28,7 +28,7 @@ const ProfilePage = () => {
 
         <div className="space-y-4 mt-1">
           <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
               {MOCK_USER.name}
             </h1>
 
@@ -50,7 +50,7 @@ const ProfilePage = () => {
       </div>
 
       <div className="border-t border-border/40 pt-8">
-        <h2 className="text-2xl font-bold mb-6 hidden md:block">
+        <h2 className="text-2xl font-bold mb-6 hidden lg:block">
           Материалы автора
         </h2>
         { MOCK_USER.materials && (

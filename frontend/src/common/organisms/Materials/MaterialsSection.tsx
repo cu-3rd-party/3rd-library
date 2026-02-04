@@ -48,7 +48,7 @@ export const MaterialsSection = ({
 
   return (
     <div className={cn("space-y-8", className)}>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <CourseSelector
           selectedCourse={selectedCourse}
           onSelect={setSelectedCourse}

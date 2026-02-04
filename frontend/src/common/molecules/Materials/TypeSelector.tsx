@@ -9,15 +9,16 @@ import { MaterialType } from "@/models";
 type TypeSelectorProps = {
   type: MaterialType;
   onSelect: (type: MaterialType) => void;
+  className?: string;
 };
 
-export const TypeSelector = ({ type, onSelect }: TypeSelectorProps) => {
+export const TypeSelector = ({ type, onSelect, className }: TypeSelectorProps) => {
   const [open, setOpen] = useState(false);
   const getTypeData = (value: MaterialType) =>
     TYPE_BADGES.find((l) => l.value === value);
 
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3 ${className || ''}`}>
       <Label className="text-lg font-semibold">Тип материала</Label>
       <SingleSelect
         open={open}

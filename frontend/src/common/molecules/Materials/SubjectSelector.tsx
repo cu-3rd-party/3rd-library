@@ -9,13 +9,14 @@ import { Subject } from "@/models";
 type SubjectSelectorProps = {
   subjects: Subject[];
   onToggle: (subject: Subject) => void;
+  className?: string;
 };
 
-export const SubjectSelector = ({ subjects, onToggle }: SubjectSelectorProps) => {
+export const SubjectSelector = ({ subjects, onToggle, className }: SubjectSelectorProps) => {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3 ${className || ''}`}>
       <Label className="text-lg font-semibold">Предметы</Label>
       <MultiSelect
         open={open}

@@ -30,7 +30,7 @@ export const MaterialSearchBar = ({
   onResetSubjects,
 }: MaterialSearchBarProps) => {
   return (
-    <div className="flex w-full md:w-auto gap-2">
+    <div className="flex w-full lg:w-auto gap-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -79,7 +79,7 @@ export const MaterialSearchBar = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div className="relative w-full md:w-80">
+      <div className="relative w-full lg:w-80">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Поиск..."

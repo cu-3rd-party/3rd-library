@@ -9,13 +9,14 @@ import { Course } from "@/models";
 type CourseSelectorProps = {
   courses: Course[];
   onToggle: (course: Course) => void;
+  className?: string;
 };
 
-export const CourseSelector = ({ courses, onToggle }: CourseSelectorProps) => {
+export const CourseSelector = ({ courses, onToggle, className }: CourseSelectorProps) => {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3 ${className || ''}`}>
       <Label className="text-lg font-semibold">Курсы</Label>
       <MultiSelect
         open={open}

@@ -10,7 +10,7 @@ export const DesktopHeader = () => {
   const { setTheme, theme } = useTheme();
 
   return (
-    <div className="hidden lg:flex flex-1 items-center justify-end gap-4">
+    <div className="hidden md:flex flex-1 items-center justify-end gap-4">
       <Button
         className="px-4"
         onClick={() => navigate("/materials/upload-material")}

@@ -11,18 +11,20 @@ import { Difficulty } from "@/models";
 type DifficultySelectorProps = {
   difficulty: Difficulty;
   onSelect: (difficulty: Difficulty) => void;
+  className?: string;
 };
 
 export const DifficultySelector = ({
   difficulty,
   onSelect,
+  className
 }: DifficultySelectorProps) => {
   const [open, setOpen] = useState(false);
   const getLevelData = (value: Difficulty) =>
     DIFFICULTY_BADGES.find((l) => l.value === value);
 
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3 ${className || ''}`}>
       <Label className="text-lg font-semibold">Уровень сложности</Label>
       <SingleSelect
         open={open}

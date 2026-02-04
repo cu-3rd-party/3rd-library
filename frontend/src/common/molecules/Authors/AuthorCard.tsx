@@ -16,10 +16,10 @@ export const AuthorCard = ({ author, onClick }: AuthorCardProps) => {
   return (
     <Card
       onClick={() => onClick(author.id)}
-      className="aspect-square flex flex-col justify-between p-3 md:p-5 bg-card border-border
-               hover:border-accent transition-all duration-(--std-duration) group cursor-pointer border"
+      className="aspect-square flex flex-col justify-between p-3 lg:p-5 bg-card border-border
+               hover:border-ring transition-all duration-(--std-duration) group cursor-pointer border"
     >
-      <div className="w-full flex-1 flex items-start justify-start mb-2 md:mb-4 min-h-0">
+      <div className="w-full flex-1 flex items-start justify-start mb-2 lg:mb-4 min-h-0">
         <div className="h-full aspect-square rounded-xl flex items-center justify-center overflow-hidden">
           {!imageError ? (
             <img
@@ -35,7 +35,7 @@ export const AuthorCard = ({ author, onClick }: AuthorCardProps) => {
       </div>
 
       <div className="flex items-center w-full mt-auto">
-        <span className="font-bold text-xs sm:text-sm md:text-base leading-tight line-clamp-2 text-left w-full">
+        <span className="font-bold text-xs sm:text-sm lg:text-base leading-tight line-clamp-2 text-left w-full">
           {author.name}
         </span>
       </div>

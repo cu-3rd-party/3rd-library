@@ -22,7 +22,7 @@ export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProp
   return (
     <Card
       onClick={() => onClick(material.id)}
-        className="flex flex-col h-full border-border bg-card hover:border-accent transition-colors cursor-pointer group"
+      className="flex flex-col h-full border-border bg-card hover:border-ring transition-colors cursor-pointer group"
     >
       <CardHeader className="pb-2">
         <CardTitle className="text-xl font-bold leading-tight line-clamp-2">

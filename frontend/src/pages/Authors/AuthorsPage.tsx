@@ -19,15 +19,15 @@ const AuthorsPage = () => {
   };
 
   return (
-    <div className="container w-full md:w-5/6 mx-auto max-w-screen-2xl py-4 md:py-6 px-4 md:px-0 space-y-6 md:space-y-8">
+    <div className="w-full md:w-11/12 xl:w-5/6 mx-auto max-w-screen-2xl py-4 px-4 space-y-6 lg:space-y-8">
       <div className="flex justify-end">
-        <div className="relative w-full md:w-72">
+        <div className="relative w-full lg:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Поиск..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 border-border rounded-lg h-10 md:h-10"
+            className="pl-9 border-border rounded-lg h-10 lg:h-10"
           />
         </div>
       </div>

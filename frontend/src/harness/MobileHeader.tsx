@@ -7,7 +7,7 @@ export const MobileHeader = () => {
   const { setTheme, theme } = useTheme();
 
   return (
-    <div className="flex lg:hidden flex-1 items-center justify-end gap-6">
+    <div className="flex md:hidden flex-1 items-center justify-end gap-6">
       <Button
         variant="ghost"
         size="icon-lg"

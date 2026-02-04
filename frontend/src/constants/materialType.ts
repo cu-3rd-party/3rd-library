@@ -13,7 +13,7 @@ export const TYPE_BADGES: TypeBadge[] = [
   },
   {
     value: "solution",
-    label: "Решение",
+    label: "Решение работы",
     badgeClass: "bg-black text-white hover:bg-neutral-900 border-transparent dark:border-white/30 dark:border",
   },
   {

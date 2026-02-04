@@ -1,4 +1,4 @@
-import { CircleAlert, SendHorizonal } from "lucide-react";
+import { SendHorizonal } from "lucide-react";
 import { useState } from "react";
 
 import { FileUploadArea } from "@/common/atoms/";
@@ -7,12 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Course, Difficulty, MaterialType, Subject } from "@/models";
 
 export const UploadMaterialForm = () => {
@@ -60,17 +54,17 @@ export const UploadMaterialForm = () => {
   };
 
   return (
-    <div className="space-y-4 md:space-y-8">
+    <div className="space-y-4 lg:space-y-8">
       <div className="space-y-3">
-        <Label htmlFor="title" className="text-lg font-semibold">
+        <Label htmlFor="material-title" className="text-lg font-semibold">
           Название
         </Label>
         <Input
-          id="title"
+          id="material-title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Например: Полный курс лекций по матанализу"
-          className="text-base md:text-lg py-6"
+          className="py-6"
         />
       </div>
 
@@ -86,11 +80,11 @@ export const UploadMaterialForm = () => {
       />
 
       <div className="space-y-3">
-        <Label htmlFor="description" className="text-lg font-semibold">
+        <Label htmlFor="material-description" className="text-lg font-semibold">
           Описание
         </Label>
         <Textarea
-          id="description"
+          id="material-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Краткое содержание..."
@@ -104,33 +98,13 @@ export const UploadMaterialForm = () => {
         onFileRemove={() => setFile(null)}
       />
 
-      <div className="pt-6 flex flex-col-reverse md:flex-row items-center justify-end gap-4 md:gap-6">
-        <TooltipProvider>
-          <Tooltip delayDuration={300}>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-2 cursor-help text-muted-foreground hover:text-orange-500 transition-colors py-2 md:py-0">
-                <span className="md:hidden text-sm">О модерации</span>
-                <CircleAlert className="h-6 w-6" />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent
-              side="top"
-              className="max-w-50 text-center md:text-left"
-            >
-              <p>
-                Все материалы проходят предварительную проверку модератором
-                перед публикацией.
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
+      <div className="pt-6 flex items-center justify-center lg:justify-end gap-4 lg:gap-6">
         <Button
           size="lg"
-          className="w-full md:w-auto bg-orange-500 text-primary-foreground hover:bg-orange-600 font-bold px-4 text-md shadow-md transition-transform active:scale-95 flex items-center justify-center"
+          className="font-semibold px-4 text-md flex items-center justify-center"
           onClick={handleSubmit}
         >
-          Отправить
+          Отправить материал
           <SendHorizonal className="h-5 w-5" />
         </Button>
       </div>

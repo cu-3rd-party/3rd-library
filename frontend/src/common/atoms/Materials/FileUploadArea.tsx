@@ -43,7 +43,7 @@ export const FileUploadArea = ({
       <Label className="text-lg font-semibold">Файл материала</Label>
       <input
         type="file"
-        accept=".pdf,.doc,.docx,.ppt,.pptx,.ipynb"
+        accept={ALLOWED_MATERIAL_EXTENSIONS.join(", ")}
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
@@ -52,14 +52,14 @@ export const FileUploadArea = ({
       {!file ? (
         <div
           onClick={handleTriggerClick}
-          className="border-2 border-dashed border-border/60 hover:border-primary/50 hover:bg-muted/30 rounded-lg p-6 
-          md:p-8 flex flex-col items-center justify-center cursor-pointer transition-all gap-3 text-center touch-manipulation"
+          className="group bg-input border-2 border-dashed border-border hover:border-ring rounded-lg p-6 
+          lg:p-8 flex flex-col items-center justify-center cursor-pointer transition-colors duration-(--std-duration) gap-3 text-center touch-manipulation"
         >
           <div className="p-3 bg-muted rounded-full">
-            <FileText className="h-6 w-6 text-muted-foreground" />
+            <FileText className="h-6 w-6 text-muted-foreground transition-colors duration-(--std-duration) group-hover:text-ring" />
           </div>
           <div>
-            <span className="font-semibold text-primary block mb-1">
+            <span className="font-semibold text-foreground group-hover:text-primary-foreground transition-colors duration-(--std-duration) block mb-1">
               Загрузить файл
             </span>
             <span className="text-xs text-muted-foreground">
@@ -68,9 +68,9 @@ export const FileUploadArea = ({
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-3 p-4 border border-border rounded-lg bg-background overflow-hidden">
+        <div className="flex items-center gap-3 p-4 border border-border rounded-lg bg-card overflow-hidden">
           <div
-            className={cn("p-2 rounded shrink-0", getFileIconStyles(file.name))}
+            className={cn("p-2 rounded", getFileIconStyles(file.name))}
           >
             {getFileIcon(file.name)}
           </div>
@@ -84,7 +84,6 @@ export const FileUploadArea = ({
             variant="ghost"
             size="icon"
             onClick={onFileRemove}
-            className="shrink-0"
           >
             <X className="h-5 w-5" />
           </Button>
