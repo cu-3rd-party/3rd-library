@@ -1,8 +1,9 @@
 import { useState } from "react";
 
-import { SingleSelect } from "@/common/molecules/ui/SingleSelect";
+import { SingleSelect } from "@/common/molecules";
 import { Label } from "@/components/ui/label";
-import { TYPE_BADGES } from "@/constants";
+import { MATERIAL_TYPES, TYPE_CONFIG } from "@/constants";
+import { cn } from "@/lib/utils";
 import { MaterialType } from "@/models";
 
 
@@ -14,25 +15,20 @@ type TypeSelectorProps = {
 
 export const TypeSelector = ({ type, onSelect, className }: TypeSelectorProps) => {
   const [open, setOpen] = useState(false);
-  const getTypeData = (value: MaterialType) =>
-    TYPE_BADGES.find((l) => l.value === value);
 
   return (
-    <div className={`space-y-3 ${className || ''}`}>
+    <div className={cn("space-y-3", className)}>
       <Label className="text-lg font-semibold">Тип материала</Label>
       <SingleSelect
         open={open}
         onOpenChange={setOpen}
         selectedItem={type || null}
         onSelect={onSelect}
-        items={TYPE_BADGES.map((d) => d.value)}
+        items={MATERIAL_TYPES}
         placeholder="Выберите тип материала..."
-        renderItem={(d) => {
-          const type = getTypeData(d);
-          return <span>{type?.label || d}</span>;
-        }}
-        getItemKey={(d) => d}
-        getItemValue={(d) => d}
+        renderItem={(type) => <span>{TYPE_CONFIG[type]?.label || type}</span>}
+        getItemKey={(type) => type}
+        getItemValue={(type) => type}
       />
     </div>
   );

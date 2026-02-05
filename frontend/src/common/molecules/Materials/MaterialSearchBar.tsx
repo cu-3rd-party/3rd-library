@@ -1,99 +1,81 @@
-import { Search, Filter, Check } from "lucide-react";
+import { Search } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { SUBJECTS } from "@/constants";
-import { cn } from "@/lib/utils";
+import { COURSES, DIFFICULTIES, MATERIAL_TYPES, SUBJECTS } from "@/constants";
+import { Course, Difficulty, FilterState, MaterialType, Subject } from "@/models";
+
+import { MaterialFilter } from "./MaterialFilter"
 
 
 type MaterialSearchBarProps = {
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  selectedSubjects: string[];
-  onSubjectToggle: (subject: string) => void;
-  onResetSubjects: () => void;
+  filters: FilterState;
+  onFilterChange: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
 };
 
 export const MaterialSearchBar = ({
   searchQuery,
   onSearchChange,
-  selectedSubjects,
-  onSubjectToggle,
-  onResetSubjects,
-}: MaterialSearchBarProps) => (
-  <div className="flex w-full lg:w-auto gap-2">
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="gap-2 border-border">
-          <Filter className="h-4 w-4" />
-          {selectedSubjects.length > 0 && (
-            <Badge
-              variant="secondary"
-              className="ml-1 h-5 px-1.5"
-            >
-              {selectedSubjects.length}
-            </Badge>
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 p-0">
-        <Command>
-          <CommandInput placeholder="Поиск предметов..." />
-          <CommandList>
-            <CommandEmpty>Предметы не найдены</CommandEmpty>
-            <CommandGroup>
-              {SUBJECTS.map((subject) => (
-                <CommandItem
-                  key={subject}
-                  value={subject}
-                  onSelect={() => onSubjectToggle(subject)}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      selectedSubjects.includes(subject) ? "opacity-100" : "opacity-0",
-                    )}
-                  />
-                  {subject}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-          {selectedSubjects.length > 0 && (
-            <>
-              <DropdownMenuSeparator />
-              <div className="p-1">
-                <Button
-                  variant="ghost"
-                  size="lg"
-                  className="w-full h-8 text-sm justify-center bg-input hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-none"
-                  onClick={onResetSubjects}
-                >
-                  Сбросить фильтры
-                </Button>
-              </div>
-            </>
-          )}
-        </Command>
-      </DropdownMenuContent>
-    </DropdownMenu>
+  filters,
+  onFilterChange,
+}: MaterialSearchBarProps) => {
 
-    <div className="relative w-full lg:w-80">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      <Input
-        placeholder="Поиск..."
-        value={searchQuery}
-        onChange={(e) => onSearchChange(e.target.value)}
-        className="pl-9 border-border"
+const handleFilterChange = (val: string, arr: string[], filterKey: keyof FilterState) => {
+  const newValues = arr.includes(val) ? arr.filter(item => item !== val) : [...arr, val];
+  
+  const orderMap: Record<keyof FilterState, readonly string[]> = {
+    courses: COURSES,
+    subjects: SUBJECTS,
+    difficulties: DIFFICULTIES,
+    types: MATERIAL_TYPES
+  };
+  
+  const order = orderMap[filterKey];
+  const sorted = newValues.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  
+  onFilterChange(filterKey, sorted as FilterState[keyof FilterState]);
+}
+
+  return (
+    <div className="flex w-full lg:w-auto gap-2">
+      <div className="relative flex-1 lg:flex-initial lg:w-80">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Поиск..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-9 border-border min-h-12"
+        />
+      </div>
+
+      <MaterialFilter<Course> 
+        items={filters.courses}
+        filterType="course"
+        onToggle={(val: string) => handleFilterChange(val, filters.courses, "courses")}
+        className="flex-1"
+      />
+      <MaterialFilter<Difficulty>
+        items={filters.difficulties}
+        filterType="difficulty"
+        onToggle={(val: string) => handleFilterChange(val, filters.difficulties, "difficulties")}
+        onReset={() => onFilterChange("difficulties", [])}
+        className="flex-1"
+      />
+      <MaterialFilter<MaterialType>
+        items={filters.types}
+        filterType="type"
+        onToggle={(val: string) => handleFilterChange(val, filters.types, "types")}
+        onReset={() => onFilterChange("types", [])}
+        className="flex-1"
+      />
+      <MaterialFilter<Subject>
+        items={filters.subjects}
+        filterType="subject"
+        onToggle={(val: string) => handleFilterChange(val, filters.subjects, "subjects")}
+        onReset={() => onFilterChange("subjects", [])}
+        className="flex-1"
       />
     </div>
-  </div>
-);
+
+)};

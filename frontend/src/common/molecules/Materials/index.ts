@@ -1,4 +1,3 @@
-export { MaterialAttributesSelector } from "./MaterialAttributesSelector";
 export { MaterialCard } from "./MaterialCard";
 export { MaterialSearchBar } from "./MaterialSearchBar";
-
+export { MaterialFilter } from "./MaterialFilter"

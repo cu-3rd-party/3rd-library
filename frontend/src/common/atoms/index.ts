@@ -1,1 +1,1 @@
-export { CourseSelector, FileUploadArea } from "./Materials"
+export { CourseSelector, FileUploadArea, MaterialBadge } from "./Materials"

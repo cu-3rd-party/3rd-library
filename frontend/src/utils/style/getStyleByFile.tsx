@@ -1,6 +1,7 @@
 import { File, FileType, FileChartPie, FileCode, FileText } from "lucide-react";
+import { ReactNode } from "react";
 
-export const getFileIconStyles = (fileName: string) => {
+export const getFileIconStyles = (fileName: string): string => {
   const name = fileName.toLowerCase();
   if (name.endsWith(".pdf")) return "bg-secondary text-secondary-foreground";
   if (name.endsWith(".doc") || name.endsWith(".docx"))
@@ -11,7 +12,7 @@ export const getFileIconStyles = (fileName: string) => {
   return "bg-muted text-muted-foreground";
 };
 
-export const getFileIcon = (fileName: string) => {
+export const getFileIcon = (fileName: string): ReactNode => {
   const name = fileName.toLowerCase();
   if (name.endsWith(".pdf")) return <FileText className="h-6 w-6" />;;
   if (name.endsWith(".doc") || name.endsWith(".docx"))

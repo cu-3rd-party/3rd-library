@@ -20,14 +20,14 @@ type SingleSelectProps<T> = {
   onOpenChange: (open: boolean) => void;
   selectedItem: T | null;
   onSelect: (item: T) => void;
-  items: T[];
+  items: readonly T[];
   placeholder: string;
   renderItem: (item: T) => ReactNode;
   getItemKey: (item: T) => string;
   getItemValue: (item: T) => string;
 };
 
-export function SingleSelect<T>({
+export const SingleSelect = <T,>({
   open,
   onOpenChange,
   selectedItem,
@@ -37,7 +37,7 @@ export function SingleSelect<T>({
   renderItem,
   getItemKey,
   getItemValue,
-}: SingleSelectProps<T>) {
+}: SingleSelectProps<T>) => {
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>

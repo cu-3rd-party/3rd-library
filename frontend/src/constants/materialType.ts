@@ -1,31 +1,4 @@
-import { MaterialType, TypeBadge } from "@/models/material";
-
-export const TYPE_BADGES: TypeBadge[] = [
-  {
-    value: "demo",
-    label: "Демо",
-  },
-  {
-    value: "longread",
-    label: "Лонгрид",
-  },
-  {
-    value: "solution",
-    label: "Решение работы",
-  },
-  {
-    value: "cheatlist",
-    label: "Читлист",
-  },
-  {
-    value: "shortread",
-    label: "Шортрид",
-  },
-  {
-    value: "other",
-    label: "Другое",
-  },
-];
+import { MaterialType } from "@/models/material";
 
 export const TYPE_CONFIG: Record<
   MaterialType,

@@ -1,9 +1,10 @@
 import { useState } from "react";
 
-import { MultiSelect } from  "@/common/molecules/ui/MultiSelect";
+import { MultiSelect } from  "@/common/molecules";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { COURSES } from "@/constants";
+import { cn } from "@/lib/utils";
 import { Course } from "@/models";
 
 type CourseSelectorProps = {
@@ -16,7 +17,7 @@ export const CourseSelector = ({ courses, onToggle, className }: CourseSelectorP
   const [open, setOpen] = useState(false);
 
   return (
-    <div className={`space-y-3 ${className || ''}`}>
+    <div className={cn("space-y-3", className)}>
       <Label className="text-lg font-semibold">Курсы</Label>
       <MultiSelect
         open={open}
@@ -26,15 +27,15 @@ export const CourseSelector = ({ courses, onToggle, className }: CourseSelectorP
         items={COURSES}
         placeholder="Выберите курсы..."
         emptyText="Курс не найден."
-        renderBadge={(c) => (
+        renderBadge={(course) => (
           <Badge variant="secondary" className="mr-1">
-            {c} курс
+            {course} курс
           </Badge>
         )}
-        renderItem={(c) => `${c} курс`}
-        getItemKey={(c) => c.toString()}
-        getItemValue={(c) => `${c} курс`}
-        isSelected={(c) => courses.includes(c)}
+        renderItem={(course) => `${course} курс`}
+        getItemKey={(course) => course.toString()}
+        getItemValue={(course) => `${course} курс`}
+        isSelected={(course) => courses.includes(course)}
       />
     </div>
   );

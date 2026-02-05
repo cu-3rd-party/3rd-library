@@ -19,7 +19,7 @@ const AuthorsPage = () => {
   };
 
   return (
-    <div className="w-full xl:w-11/12 mx-auto max-w-screen-2xl py-4 px-4 space-y-6 lg:space-y-8">
+    <div className="w-full px-4 py-6 xl:w-11/12 mx-auto max-w-screen-2xl space-y-6 lg:space-y-8">
       <div className="flex justify-end">
         <div className="relative w-full lg:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { COURSES } from "@/constants";
+import { Course } from "@/models";
 
 type CourseSelectorProps = {
-  selectedCourse: number;
-  onSelect: (course: number) => void;
+  selectedCourse: string;
+  onSelect: (course: Course) => void;
 };
 
 export const CourseSelector = ({
@@ -12,16 +13,16 @@ export const CourseSelector = ({
 }: CourseSelectorProps) => {
   return (
     <div className="flex gap-2">
-      {COURSES.map((c) => (
+      {COURSES.map((course) => (
         <Button
-          key={c}
-          onClick={() => onSelect(c)}
+          key={course}
+          onClick={() => onSelect(course)}
           variant={
-            selectedCourse === c ? "secondaryActive" : "secondaryInactive"
+            selectedCourse === course ? "secondaryActive" : "secondaryInactive"
           }
           className={`font-semibold text-sm px-6`}
         >
-          {c} курс
+          {course} курс
         </Button>
       ))}
     </div>

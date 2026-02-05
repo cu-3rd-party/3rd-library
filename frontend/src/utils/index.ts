@@ -1,2 +1,2 @@
-export { getFileIcon, getFileIconStyles } from "./style/getStyleByFile"
-export { getCourseName } from "./helpers/getCourseName" 
+export { getFileIcon, getFileIconStyles } from "./style"
+export { getCourseName, getFilterAttributes } from "./helpers" 

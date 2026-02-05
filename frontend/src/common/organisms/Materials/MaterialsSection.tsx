@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { CourseSelector } from "@/common/atoms";
 import { MaterialCard, MaterialSearchBar } from "@/common/molecules/Materials";
 import { cn } from "@/lib/utils";
-import { Material } from "@/models/material";
+import { defaultFilterState, FilterState, Material } from "@/models/material";
 
 type MaterialsSectionProps = {
   materials: Material[];
@@ -16,54 +15,35 @@ export const MaterialsSection = ({
   className,
 }: MaterialsSectionProps) => {
   const navigate = useNavigate();
-
-  const [selectedCourse, setSelectedCourse] = useState<number>(1);
+  const [filters, setFilters] = useState<FilterState>(defaultFilterState);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-
-  const handleSubjectToggle = (subject: string) => {
-    setSelectedSubjects((prev) =>
-      prev.includes(subject)
-        ? prev.filter((s) => s !== subject)
-        : [...prev, subject],
-    );
-  };
 
   const handleCardClick = (id: string) => {
     navigate(`/materials/${id}`);
   };
 
   const filteredMaterials = materials.filter((item) => {
-    const matchCourse = item.courses.includes(selectedCourse);
-
-    const matchSearch =
-      item.title.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchSubject =
-      selectedSubjects.length === 0 ||
-      selectedSubjects.some((subject) => item.subjects.includes(subject));
-
-    return matchCourse && matchSearch && matchSubject;
+    const matchSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchSearch) return false;
+    const matchCourses = filters.courses.length === 0 || filters.courses.some(course => item.courses.includes(course))
+    if (!matchCourses) return false;
+    const matchSubjects = filters.subjects.length === 0 || filters.subjects.some(subject => item.subjects.includes(subject))
+    if (!matchSubjects) return false;
+    const matchTypes = filters.types.length === 0 || filters.types.includes(item.type)
+    if (!matchTypes) return false;
+    const matchDifficulty = filters.difficulties.length === 0 || filters.difficulties.includes(item.difficulty)
+    return matchDifficulty
   });
 
   return (
-    <div className={cn("space-y-8", className)}>
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <CourseSelector
-          selectedCourse={selectedCourse}
-          onSelect={setSelectedCourse}
-        />
-
-        <MaterialSearchBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          selectedSubjects={selectedSubjects}
-          onSubjectToggle={handleSubjectToggle}
-          onResetSubjects={() => setSelectedSubjects([])}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className={cn("space-y-4 lg:space-y-8", className)}>
+      <MaterialSearchBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        filters={filters}
+        onFilterChange={(key, value) => setFilters(prev => ({...prev, [key]: value}))}
+      />
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 lg:gap-6">
         {filteredMaterials.length > 0 ? (
           filteredMaterials.map((material) => (
             <MaterialCard

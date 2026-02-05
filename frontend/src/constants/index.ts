@@ -1,5 +1,5 @@
-export { TYPE_BADGES } from "./materialType";
-export { DIFFICULTY_CONFIG, DIFFICULTY_BADGES } from "./difficulty";
+export { TYPE_CONFIG } from "./materialType";
+export { DIFFICULTY_CONFIG } from "./difficulty";
 export {
   ABOUT_PREFIX,
   AUTHORIZATION_PREFIX,
@@ -12,8 +12,10 @@ export {
 export {
   COURSES,
   COURSE_NAMES,
-  SUBJECTS
-} from "./course"
+  SUBJECTS,
+  DIFFICULTIES,
+  MATERIAL_TYPES
+} from "./material"
 export {
   ALLOWED_MATERIAL_EXTENSIONS
 } from "./allowedExtensions"

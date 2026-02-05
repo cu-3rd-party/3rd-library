@@ -1,11 +1,12 @@
-import { COURSES, SUBJECTS } from "@/constants/course";
+import { COURSES, DIFFICULTIES, MATERIAL_TYPES, SUBJECTS } from "@/constants/material";
 
 import { UUID } from "./types";
 
 export type Subject = typeof SUBJECTS[number];
 export type Course = typeof COURSES[number];
-export type MaterialType = "cheatlist" | "longread" | "shortread" | "demo" | "solution" | "other"
-export type Difficulty = "none" | "blue" | "red" | "black"
+export type MaterialType = typeof MATERIAL_TYPES[number];
+export type Difficulty = typeof DIFFICULTIES[number];
+export type FilterType = "course" | "difficulty" | "subject" | "type"
 export interface Material {
   id: UUID;
   authorId: UUID;
@@ -19,12 +20,16 @@ export interface Material {
   authorName?: string
 }
 
-export interface DifficultyBadge {
-  value: Difficulty;
-  label: string;
-}
+export type FilterState = {
+  courses: Course[];
+  subjects: Subject[];
+  difficulties: Difficulty[];
+  types: MaterialType[];
+};
 
-export interface TypeBadge {
-  value: MaterialType;
-  label: string;
+export const defaultFilterState: FilterState = {
+  courses: [],
+  subjects: [],
+  difficulties: [],
+  types: []
 }

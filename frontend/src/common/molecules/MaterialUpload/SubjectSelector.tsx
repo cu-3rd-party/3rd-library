@@ -1,9 +1,10 @@
 import { useState } from "react";
 
-import { MultiSelect } from "@/common/molecules/ui/MultiSelect";
+import { MultiSelect } from "@/common/molecules";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { SUBJECTS } from "@/constants";
+import { cn } from "@/lib/utils";
 import { Subject } from "@/models";
 
 type SubjectSelectorProps = {
@@ -16,7 +17,7 @@ export const SubjectSelector = ({ subjects, onToggle, className }: SubjectSelect
   const [open, setOpen] = useState(false);
 
   return (
-    <div className={`space-y-3 ${className || ''}`}>
+    <div className={cn("space-y-3", className)}>
       <Label className="text-lg font-semibold">Предметы</Label>
       <MultiSelect
         open={open}
@@ -27,15 +28,15 @@ export const SubjectSelector = ({ subjects, onToggle, className }: SubjectSelect
         placeholder="Выберите предметы..."
         emptyText="Предмет не найден."
         searchPlaceholder="Найти предмет..."
-        renderBadge={(s) => (
+        renderBadge={(subject) => (
           <Badge variant="secondary" className="mr-1">
-            {s}
+            {subject}
           </Badge>
         )}
-        renderItem={(s) => s}
-        getItemKey={(s) => s}
-        getItemValue={(s) => s}
-        isSelected={(s) => subjects.includes(s)}
+        renderItem={(subject) => subject}
+        getItemKey={(subject) => subject}
+        getItemValue={(subject) => subject}
+        isSelected={(subject) => subjects.includes(subject)}
       />
     </div>
   );

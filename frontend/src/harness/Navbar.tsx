@@ -9,11 +9,11 @@ import { DesktopHeader } from "./DesktopHeader";
 import { MobileHeader } from "./MobileHeader";
 
 
-interface HeaderProps {
+interface NavbarProps {
   children: ReactNode;
 }
 
-export const Header = ({ children }: HeaderProps) => {
+export const Navbar = ({ children }: NavbarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
 

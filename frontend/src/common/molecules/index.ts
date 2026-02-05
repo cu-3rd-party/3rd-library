@@ -1,5 +1,11 @@
 export { AuthorCard } from "./Authors"
 export {
   MaterialCard,
-  MaterialAttributesSelector,
 } from "./Materials";
+export {
+  MaterialAttributesSelector
+} from "./MaterialUpload"
+export {
+  SingleSelect,
+  MultiSelect
+} from "./ui"
