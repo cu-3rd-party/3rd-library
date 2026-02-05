@@ -12,7 +12,7 @@ export const DesktopHeader = () => {
   return (
     <div className="hidden md:flex flex-1 items-center justify-end gap-4">
       <Button
-        className="px-4"
+        className="px-4 text-base lg:text-lg"
         onClick={() => navigate("/materials/upload-material")}
       >
         <UploadCloud className="size-5 mr-2" />

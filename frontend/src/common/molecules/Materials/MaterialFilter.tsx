@@ -1,10 +1,11 @@
 import { useState } from "react";
 
-import { MultiSelect } from  "@/common/molecules/ui/MultiSelect";
+import { MultiSelect } from  "@/common/molecules";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Course, Difficulty, FilterType, MaterialType, Subject } from "@/models";
 import { getFilterAttributes } from "@/utils";
+
 
 type MaterialFilterProps<T> = {
   items: T[];
@@ -35,16 +36,16 @@ export const MaterialFilter = <T extends Course | Difficulty | MaterialType | Su
         placeholder={placeholder}
         emptyText={emptyText}
         renderBadge={(val: T) => (
-          <Badge variant="secondary">
+          <Badge variant="secondary" className="text-xs">
             {getLabel(val)}
           </Badge>
         )}
         searchPlaceholder={searchPlaceholder}
         onReset={onReset}
-        renderItem={(c) => getLabel(c)}
-        getItemKey={(c) => c.toString()}
-        getItemValue={(c) => c}
-        isSelected={(c) => items.includes(c)}
+        renderItem={(val) => getLabel(val)}
+        getItemKey={(val) => val}
+        getItemValue={(val) => val}
+        isSelected={(val) => items.includes(val)}
       />
     </div>
   );

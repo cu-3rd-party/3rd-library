@@ -40,7 +40,7 @@ export const getFilterAttributes = (filterType: FilterType): FilterAttributes =>
     }
     case "type": {
       return { 
-        placeholder: "Выберите тип материала...",
+        placeholder: "Выберите тип...",
         emptyText: "Тип не найден",
         allItems: MATERIAL_TYPES,
         getLabel: (val: string) => TYPE_CONFIG[val as MaterialType].label  

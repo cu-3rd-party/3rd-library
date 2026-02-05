@@ -1,2 +1,2 @@
 export { getFileIcon, getFileIconStyles } from "./style"
-export { getCourseName, getFilterAttributes } from "./helpers" 
+export { getCourseName, getFilterAttributes, getSortAttributes } from "./helpers" 

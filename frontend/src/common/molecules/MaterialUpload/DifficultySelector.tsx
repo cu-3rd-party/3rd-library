@@ -29,7 +29,6 @@ export const DifficultySelector = ({
         selectedItem={difficulty || null}
         onSelect={onSelect}
         items={DIFFICULTIES}
-        placeholder="Выберите уровень сложности..."
         renderItem={(d) => <span>{DIFFICULTY_CONFIG[d]?.label_add || d}</span>}
         getItemKey={(d) => d}
         getItemValue={(d) => d}

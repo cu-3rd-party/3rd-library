@@ -29,7 +29,7 @@ export const FileUploadArea = ({
       if (isValid) {
         onFileSelect(selectedFile);
       } else {
-        alert("Пожалуйста, выберите файл: PDF, Word, PowerPoint или .ipynb");  // TODO
+        alert("Пожалуйста, выберите файл: PDF, Word, PowerPoint или .ipynb");  // TODO: file sending
       }
     }
   };

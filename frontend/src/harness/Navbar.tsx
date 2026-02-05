@@ -34,7 +34,7 @@ export const Navbar = ({ children }: NavbarProps) => {
                 variant={
                   isActive(item.path) ? "navActive" : "navInactive"
                 }
-                className={`h-9 px-4 py-2 transition-colors`}
+                className="h-9 px-4 py-2 transition-colors text-base lg:text-lg"
               >
                 {item.label}
               </Button>

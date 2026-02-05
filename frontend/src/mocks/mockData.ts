@@ -109,7 +109,7 @@ export const MOCK_MATERIALS: Material[] = [
     authorName: "Даниил Матанович"
   },
   {
-    id: "39d4b6e8-5f7a-4b2c-8d3e-9a1f6c4b7e5h",
+    id: "s9d4b6e8-5f7a-4b2c-8d3e-9a1f6c4b7e5h",
     courses: ["2"],
     title: "Дифференциальные уравнения: Метод вариации постоянной",
     pubDate: "15.01.2026",
@@ -122,7 +122,7 @@ export const MOCK_MATERIALS: Material[] = [
     authorName: "Даниил Матанович"
   },
   {
-    id: "42f5a8c3-6e9b-4d7a-9f1c-8b3e5a6d4c2i",
+    id: "02f5a8c3-6e9b-4d7a-9f1c-8b3e5a6d4c2i",
     courses: ["1"],
     title: "Интегралы: Методы замены переменной",
     pubDate: "10.01.2026",
@@ -135,7 +135,7 @@ export const MOCK_MATERIALS: Material[] = [
     authorName: "Даниил Матанович"
   },
   {
-    id: "58a3c5d7-9f2b-4e6a-8c1d-7b4f9a2e5c3j",
+    id: "t8a3c5d7-9f2b-4e6a-8c1d-7b4f9a2e5c3j",
     courses: ["2"],
     title: "Ряды Фурье: Разложение функций",
     pubDate: "05.12.2025",
@@ -148,7 +148,7 @@ export const MOCK_MATERIALS: Material[] = [
     authorName: "Даниил Матанович"
   },
   {
-    id: "61c7b9e4-8d3a-4f5c-9e2b-6a8d4c7e1f5k",
+    id: "u1c7b9e4-8d3a-4f5c-9e2b-6a8d4c7e1f5k",
     courses: ["1"],
     title: "Аналитическая геометрия: Кривые второго порядка",
     pubDate: "20.11.2025",

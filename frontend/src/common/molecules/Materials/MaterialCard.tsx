@@ -47,7 +47,7 @@ export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProp
                 className={difficultyData.className}
               />
               {material.subjects.length > 1 && (
-                <TooltipProvider>
+                <TooltipProvider delayDuration={200}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <MaterialBadge
@@ -75,7 +75,7 @@ export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProp
           />
         </div>
 
-        <CardTitle className="text-sm md:text-lg lg:text-xl min-h-8.75 md:min-h-11.25 lg:min-h-12.5 font-bold leading-tight line-clamp-2 ">
+        <CardTitle className="text-sm md:text-base lg:text-xl min-h-8.75 md:min-h-11.25 lg:min-h-12.5 font-bold leading-tight line-clamp-2 ">
           {material.title}
         </CardTitle>
       </CardHeader>

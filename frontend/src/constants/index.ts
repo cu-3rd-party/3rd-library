@@ -19,3 +19,11 @@ export {
 export {
   ALLOWED_MATERIAL_EXTENSIONS
 } from "./allowedExtensions"
+export {
+  SORT_ORDER_TYPES,
+  SORT_TYPES,
+} from "./sort"
+export {
+  SORT_ORDER_CONFIG,
+  SORT_TYPE_CONFIG
+} from "./sortConfig"

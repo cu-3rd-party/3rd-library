@@ -25,7 +25,6 @@ export const TypeSelector = ({ type, onSelect, className }: TypeSelectorProps) =
         selectedItem={type || null}
         onSelect={onSelect}
         items={MATERIAL_TYPES}
-        placeholder="Выберите тип материала..."
         renderItem={(type) => <span>{TYPE_CONFIG[type]?.label || type}</span>}
         getItemKey={(type) => type}
         getItemValue={(type) => type}

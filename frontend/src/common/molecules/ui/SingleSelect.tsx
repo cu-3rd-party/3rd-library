@@ -21,10 +21,11 @@ type SingleSelectProps<T> = {
   selectedItem: T | null;
   onSelect: (item: T) => void;
   items: readonly T[];
-  placeholder: string;
+  placeholder?: string;
   renderItem: (item: T) => ReactNode;
   getItemKey: (item: T) => string;
   getItemValue: (item: T) => string;
+  getItemIcon?: (item: T) => ReactNode;
 };
 
 export const SingleSelect = <T,>({
@@ -37,6 +38,7 @@ export const SingleSelect = <T,>({
   renderItem,
   getItemKey,
   getItemValue,
+  getItemIcon,
 }: SingleSelectProps<T>) => {
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -47,8 +49,19 @@ export const SingleSelect = <T,>({
           aria-expanded={open}
           className="w-full justify-between min-h-12 px-3 py-2"
         >
-          <span className={cn(selectedItem ? "font-medium" : "font-normal text-muted-foreground text-base")}>
-            {selectedItem ? renderItem(selectedItem) : placeholder}
+          <span className={cn("flex items-center justify-center gap-2", selectedItem ? "font-medium text-base" : "font-normal text-muted-foreground text-base")}>
+            {selectedItem ? (
+              <>
+                {getItemIcon && (
+                  <span className="mr-2 h-4 w-4 flex items-center justify-center">
+                    {getItemIcon(selectedItem)}
+                  </span>
+                )}
+                {renderItem(selectedItem)}
+              </>
+            ) : (
+              placeholder
+            )}
           </span>
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -66,14 +79,11 @@ export const SingleSelect = <T,>({
                     onOpenChange(false);
                   }}
                 >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      selectedItem && getItemValue(selectedItem) === getItemValue(item)
-                        ? "opacity-100"
-                        : "opacity-0",
-                    )}
-                  />
+                  {getItemIcon && (
+                    <span className="mr-2 h-4 w-4 flex items-center justify-center">
+                      {getItemIcon(item)}
+                    </span>
+                  )}
                   {renderItem(item)}
                 </CommandItem>
               ))}

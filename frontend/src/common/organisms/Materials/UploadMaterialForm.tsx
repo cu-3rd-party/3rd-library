@@ -63,8 +63,8 @@ export const UploadMaterialForm = () => {
           id="material-title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Например: Полный курс лекций по матанализу"
-          className="py-6"
+          placeholder="Например: Курс лекций по матану"
+          className="py-6 placeholder:truncate"
         />
       </div>
 
