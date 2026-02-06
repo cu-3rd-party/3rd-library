@@ -1,7 +1,8 @@
 import { LogOut, Moon, Sun } from "lucide-react";
 
-import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/hooks";
+
 
 export const MobileHeader = () => {
   const { setTheme, theme } = useTheme();

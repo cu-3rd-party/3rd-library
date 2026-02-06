@@ -2,7 +2,6 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 
-import { ThemeProvider } from "@/components/theme-provider.tsx";
 import { enableMocking } from "@/mocks/browser";
 import { AppRouter } from "@/router";
 import "./index.css";
@@ -12,11 +11,9 @@ const container = document.querySelector("#root") as HTMLElement;
 enableMocking().then(() => {
   createRoot(container).render(
     <StrictMode>
-      <ThemeProvider defaultTheme="dark">
-        <BrowserRouter>
-          <AppRouter />
-        </BrowserRouter>
-      </ThemeProvider>
+      <BrowserRouter>
+        <AppRouter />
+      </BrowserRouter>
     </StrictMode>,
   );
 });

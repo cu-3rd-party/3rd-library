@@ -255,8 +255,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  
+  /* scrollbar will be present each time without appearing/disappearing (however slider will still appear only in cases of overflow) */
+  html {
+    overflow-y: scroll;
   }
 }

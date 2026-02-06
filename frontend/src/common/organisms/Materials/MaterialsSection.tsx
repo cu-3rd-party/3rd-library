@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 import { MaterialCard, MaterialTopPanel } from "@/common/molecules/Materials";
 import { cn } from "@/lib/utils";
-import { defaultFilterState, defaultSortState, FilterState, Material, SortState } from "@/models/material";
+import { Material } from "@/models";
+import { useFilterSortStore } from "@/store";
 
 type MaterialsSectionProps = {
   materials: Material[];
@@ -15,8 +16,7 @@ export const MaterialsSection = ({
   className,
 }: MaterialsSectionProps) => {
   const navigate = useNavigate();
-  const [filterState, setFilterState] = useState<FilterState>(defaultFilterState);
-  const [sortState, setSortState] = useState<SortState>(defaultSortState);
+  const { filterState, sortState } = useFilterSortStore();
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleCardClick = (id: string) => {
@@ -64,11 +64,6 @@ export const MaterialsSection = ({
       <MaterialTopPanel
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        sortState={sortState}
-        onSortChange={(key, value) => setSortState(prev => ({...prev, [key]: value}))}
-        filterState={filterState}
-        onFilterChange={(key, value) => setFilterState(prev => ({...prev, [key]: value}))}
-        resetAll={() => setFilterState(defaultFilterState)}
       />
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 lg:gap-6">
         {sortedMaterials.length > 0 ? (

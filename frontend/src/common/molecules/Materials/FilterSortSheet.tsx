@@ -1,74 +1,61 @@
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { useFilterSortStore } from "@/store";
 
-import { MobileFilters, MobileFiltersProps } from "./MobileFIlters";
-import { MobileSort, MobileSortProps } from "./MobileSort";
+import { MobileFilters } from "./MobileFIlters";
+import { MobileSort } from "./MobileSort";
 
-
-
-type SheetControlProps = {
+type FilterSortSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  resetAll: () => void;
   hasActiveFilters: boolean;
 }
 
-type FilterSortSheetProps = SheetControlProps & MobileFiltersProps & MobileSortProps;
 
 export const FilterSortSheet = ({
   open,
   onOpenChange,
-  resetAll,
   hasActiveFilters,
-  filterState,
-  sortState,
-  handleFilterChange,
-  onFilterChange,
-  onSortChange
-}: FilterSortSheetProps) => (
-  <Sheet 
-    open={open}
-    onOpenChange={onOpenChange}
-  >
-    <SheetContent 
-      side="bottom" 
-      className="h-[80vh]"
-      showCloseButton={false}
+}: FilterSortSheetProps) => { 
+  const { resetFilters } = useFilterSortStore();
+
+  return (
+    <Sheet 
+      open={open}
+      onOpenChange={onOpenChange}
     >
-      <div className="h-full py-6 px-6 flex flex-col gap-3">
-        <MobileFilters 
-          filterState={filterState}
-          handleFilterChange={handleFilterChange}
-          onFilterChange={onFilterChange}
-        />
-        <MobileSort 
-          sortState={sortState}
-          onSortChange={onSortChange}
-        />
-        <div className="mt-auto flex flex-col gap-3">
-          {hasActiveFilters && (
+      <SheetContent 
+        side="bottom" 
+        className="h-[80vh]"
+        showCloseButton={false}
+      >
+        <div className="h-full py-6 px-6 flex flex-col gap-3">
+          <MobileFilters />
+          <MobileSort />
+          <div className="mt-auto flex flex-col gap-3">
+            {hasActiveFilters && (
+              <Button
+                variant="destructive"
+                className="min-h-12 text-base"
+                onClick={() => {
+                  resetFilters();
+                }}
+              >
+                Сбросить все фильтры
+              </Button>
+            )}
             <Button
-              variant="destructive"
-              className="min-h-12 text-base"
+              variant="primaryActive"
+              className="min-h-12 text-lg"
               onClick={() => {
-                resetAll();
+                onOpenChange(false);
               }}
             >
-              Сбросить все фильтры
+              Закрыть
             </Button>
-          )}
-          <Button
-            variant="primaryActive"
-            className="min-h-12 text-lg"
-            onClick={() => {
-              onOpenChange(false);
-            }}
-          >
-            Закрыть
-          </Button>
-        </div>
+          </div>
 
-      </div>
-    </SheetContent>
-  </Sheet>
-)
+        </div>
+      </SheetContent>
+    </Sheet>
+)};

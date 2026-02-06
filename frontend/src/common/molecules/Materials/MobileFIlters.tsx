@@ -1,45 +1,37 @@
 import { Label } from "@radix-ui/react-label"
 
-import { Course, Difficulty, FilterState, MaterialType, Subject } from "@/models"
+import { Course, Difficulty, MaterialType, Subject } from "@/models"
+import { useFilterSortStore } from "@/store"
 
 import { MaterialFilter } from "./MaterialFilter"
 
-export type MobileFiltersProps = {
-  filterState: FilterState;
-  handleFilterChange: (val: string, arr: string[], filterKey: keyof FilterState) => void;
-  onFilterChange: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
-}
-
-export const MobileFilters = ({
-  filterState,
-  handleFilterChange,
-  onFilterChange
-}: MobileFiltersProps) => {
+export const MobileFilters = () => {
+  const { filterState, toggleFilter, resetFilter } = useFilterSortStore();
   return (
     <div className="flex flex-col gap-3">
       <Label className="text-lg font-semibold">Фильтры</Label>
       <MaterialFilter<Course> 
         items={filterState.courses}
         filterType="course"
-        onToggle={(val: string) => handleFilterChange(val, filterState.courses, "courses")}
+        onToggle={(val: string) => toggleFilter("courses", val)}
       />
       <MaterialFilter<Difficulty>
         items={filterState.difficulties}
         filterType="difficulty"
-        onToggle={(val: string) => handleFilterChange(val, filterState.difficulties, "difficulties")}
-        onReset={() => onFilterChange("difficulties", [])}
+        onToggle={(val: string) => toggleFilter("difficulties", val)}
+        onReset={() => resetFilter("difficulties")}
       />
       <MaterialFilter<MaterialType>
         items={filterState.types}
         filterType="type"
-        onToggle={(val: string) => handleFilterChange(val, filterState.types, "types")}
-        onReset={() => onFilterChange("types", [])}
+        onToggle={(val: string) => toggleFilter("types", val)}
+        onReset={() => resetFilter("types")}
       />
       <MaterialFilter<Subject>
         items={filterState.subjects}
         filterType="subject"
-        onToggle={(val: string) => handleFilterChange(val, filterState.subjects, "subjects")}
-        onReset={() => onFilterChange("subjects", [])}
+        onToggle={(val: string) => toggleFilter("subjects", val)}
+        onReset={() => resetFilter("subjects")}
       />
     </div>
   )

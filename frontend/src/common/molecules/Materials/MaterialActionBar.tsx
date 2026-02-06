@@ -3,13 +3,13 @@ import { ChevronDown, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import { useFilterSortStore } from "@/store";
 
 type MaterialActionBarProps = {
   showFilters: boolean,
   hasActiveFilters: boolean,
   openMobileSheet: () => void;
   setShowFilters: (val: boolean) => void;
-  resetAll: () => void;
 }
 
 export const MaterialActionBar = ({
@@ -17,8 +17,8 @@ export const MaterialActionBar = ({
   hasActiveFilters,
   openMobileSheet,
   setShowFilters,
-  resetAll
 }: MaterialActionBarProps) => {
+  const { resetFilters } = useFilterSortStore();
   return (
     <TooltipProvider
       delayDuration={300}
@@ -60,7 +60,7 @@ export const MaterialActionBar = ({
           <Button
             variant="outline"
             size="icon"
-            onClick={resetAll}
+            onClick={resetFilters}
             disabled={!hasActiveFilters}
             className={cn(
               "min-w-12 min-h-12 transition-all duration-(--std-duration)",  
