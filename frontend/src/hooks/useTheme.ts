@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { useSettingsStore } from "@/store"
+import { useSettingsStore } from "@/store";
 
 export const useTheme = () => {
   const { theme, setTheme } = useSettingsStore();

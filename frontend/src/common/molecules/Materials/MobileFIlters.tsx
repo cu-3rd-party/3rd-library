@@ -1,16 +1,16 @@
-import { Label } from "@radix-ui/react-label"
+import { Label } from "@radix-ui/react-label";
 
-import { Course, Difficulty, MaterialType, Subject } from "@/models"
-import { useFilterSortStore } from "@/store"
+import { Course, Difficulty, MaterialType, Subject } from "@/models";
+import { useFilterSortStore } from "@/store";
 
-import { MaterialFilter } from "./MaterialFilter"
+import { MaterialFilter } from "./MaterialFilter";
 
 export const MobileFilters = () => {
   const { filterState, toggleFilter, resetFilter } = useFilterSortStore();
   return (
     <div className="flex flex-col gap-3">
       <Label className="text-lg font-semibold">Фильтры</Label>
-      <MaterialFilter<Course> 
+      <MaterialFilter<Course>
         items={filterState.courses}
         filterType="course"
         onToggle={(val: string) => toggleFilter("courses", val)}
@@ -34,5 +34,5 @@ export const MobileFilters = () => {
         onReset={() => resetFilter("subjects")}
       />
     </div>
-  )
-}
+  );
+};

@@ -1,2 +1,9 @@
-export { useFilterSortStore } from "./filterSortStore"
-export { useSettingsStore } from "./settingsStore"
+export { useFilterSortStore } from "./filterSortStore";
+export {
+  getAuthorEditableSubmission,
+  getAuthorLatestSubmission,
+  getPublishedMaterials,
+  getSubmissionFiles,
+  useMaterialSubmissionStore,
+} from "./materialSubmissionStore";
+export { useSettingsStore } from "./settingsStore";

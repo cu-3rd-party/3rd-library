@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { SortOrderType, SortSettingsType, SortType } from "@/models";
 import { getSortAttributes } from "@/utils";
 
-
 type MaterialSortProps<T> = {
   item: T;
   sortSettingsType: SortSettingsType;
@@ -13,15 +12,15 @@ type MaterialSortProps<T> = {
   className?: string;
 };
 
-export const MaterialSort = <T extends SortType | SortOrderType>({ 
-  item, 
-  sortSettingsType, 
-  onSelect, 
-  className 
+export const MaterialSort = <T extends SortType | SortOrderType>({
+  item,
+  sortSettingsType,
+  onSelect,
+  className,
 }: MaterialSortProps<T>) => {
   const [open, setOpen] = useState(false);
   const { allItems, getLabel, getIcon } = getSortAttributes(sortSettingsType);
-  
+
   return (
     <div className={cn("space-y-3", className)}>
       <SingleSelect<T>
@@ -37,4 +36,4 @@ export const MaterialSort = <T extends SortType | SortOrderType>({
       />
     </div>
   );
-}
+};

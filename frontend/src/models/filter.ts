@@ -1,6 +1,6 @@
 import { Course, Difficulty, MaterialType, Subject } from "./material";
 
-export type FilterType = "course" | "difficulty" | "subject" | "type"
+export type FilterType = "course" | "difficulty" | "subject" | "type";
 
 export type FilterState = {
   courses: Course[];
@@ -13,5 +13,5 @@ export const defaultFilterState: FilterState = {
   courses: [],
   subjects: [],
   difficulties: [],
-  types: []
-}
+  types: [],
+};

@@ -49,7 +49,14 @@ export const SingleSelect = <T,>({
           aria-expanded={open}
           className="w-full justify-between min-h-12 px-3 py-2"
         >
-          <span className={cn("flex items-center justify-center gap-2", selectedItem ? "font-medium text-base" : "font-normal text-muted-foreground text-base")}>
+          <span
+            className={cn(
+              "flex items-center justify-center gap-2",
+              selectedItem
+                ? "font-medium text-base"
+                : "font-normal text-muted-foreground text-base",
+            )}
+          >
             {selectedItem ? (
               <>
                 {getItemIcon && (
@@ -66,7 +73,10 @@ export const SingleSelect = <T,>({
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
+      <PopoverContent
+        className="w-(--radix-popover-trigger-width) p-0"
+        align="start"
+      >
         <Command>
           <CommandList>
             <CommandGroup>
@@ -93,4 +103,4 @@ export const SingleSelect = <T,>({
       </PopoverContent>
     </Popover>
   );
-}
+};

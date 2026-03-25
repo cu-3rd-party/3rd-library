@@ -4,15 +4,21 @@ import {
   Feather,
   User,
   Info,
+  ShieldCheck,
 } from "lucide-react";
 
 import { NavItemDesktop, NavItemMobile } from "@/models";
 
-import { ABOUT_PREFIX, AUTHORS_PREFIX, MATERIALS_PREFIX } from "./routePrefixes";
+import {
+  ABOUT_PREFIX,
+  AUTHORS_PREFIX,
+  MATERIALS_PREFIX,
+} from "./routePrefixes";
 
 export const NAV_ITEMS_DESKTOP: NavItemDesktop[] = [
   { label: "Материалы", path: `${MATERIALS_PREFIX}` },
   { label: "Авторы", path: `${AUTHORS_PREFIX}` },
+  { label: "Модерация", path: `${MATERIALS_PREFIX}/moderation` },
   { label: "О проекте", path: `${ABOUT_PREFIX}` },
 ];
 
@@ -31,6 +37,11 @@ export const NAV_ITEMS_MOBILE: NavItemMobile[] = [
     label: "Материалы",
     path: `${MATERIALS_PREFIX}`,
     icon: <Home className="size-5" />,
+  },
+  {
+    label: "Модерация",
+    path: `${MATERIALS_PREFIX}/moderation`,
+    icon: <ShieldCheck className="size-5" />,
   },
   {
     label: "Опубликовать материал",

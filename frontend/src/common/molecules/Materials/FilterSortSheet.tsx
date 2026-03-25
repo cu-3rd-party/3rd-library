@@ -9,26 +9,18 @@ type FilterSortSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   hasActiveFilters: boolean;
-}
-
+};
 
 export const FilterSortSheet = ({
   open,
   onOpenChange,
   hasActiveFilters,
-}: FilterSortSheetProps) => { 
+}: FilterSortSheetProps) => {
   const { resetFilters } = useFilterSortStore();
 
   return (
-    <Sheet 
-      open={open}
-      onOpenChange={onOpenChange}
-    >
-      <SheetContent 
-        side="bottom" 
-        className="h-[80vh]"
-        showCloseButton={false}
-      >
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="h-[80vh]" showCloseButton={false}>
         <div className="h-full py-6 px-6 flex flex-col gap-3">
           <MobileFilters />
           <MobileSort />
@@ -54,8 +46,8 @@ export const FilterSortSheet = ({
               Закрыть
             </Button>
           </div>
-
         </div>
       </SheetContent>
     </Sheet>
-)};
+  );
+};

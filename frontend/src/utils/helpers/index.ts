@@ -1,3 +1,4 @@
-export { getCourseName } from "./getCourseName"
-export { getFilterAttributes } from "./getFilterAttributes"
-export { getSortAttributes } from "./getSortAttributes"
+export { getCourseName } from "./getCourseName";
+export { getFilterAttributes } from "./getFilterAttributes";
+export { openMaterialFile } from "./openMaterialFile";
+export { getSortAttributes } from "./getSortAttributes";

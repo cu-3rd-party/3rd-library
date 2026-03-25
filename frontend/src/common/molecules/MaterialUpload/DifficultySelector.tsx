@@ -6,7 +6,6 @@ import { DIFFICULTIES, DIFFICULTY_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils";
 import { Difficulty } from "@/models";
 
-
 type DifficultySelectorProps = {
   difficulty: Difficulty;
   onSelect: (difficulty: Difficulty) => void;
@@ -16,7 +15,7 @@ type DifficultySelectorProps = {
 export const DifficultySelector = ({
   difficulty,
   onSelect,
-  className
+  className,
 }: DifficultySelectorProps) => {
   const [open, setOpen] = useState(false);
 
@@ -35,4 +34,4 @@ export const DifficultySelector = ({
       />
     </div>
   );
-}
+};

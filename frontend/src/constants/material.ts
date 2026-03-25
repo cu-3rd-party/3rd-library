@@ -10,17 +10,12 @@ export const SUBJECTS = [
   "Матан",
   "Физика",
 ] as const;
-export const DIFFICULTIES = [
-  "none",
-  "blue",
-  "red",
-  "black"
-] as const;
+export const DIFFICULTIES = ["none", "blue", "red", "black"] as const;
 export const MATERIAL_TYPES = [
   "demo",
   "longread",
   "solution",
   "cheatlist",
   "shortread",
-  "other"
+  "other",
 ] as const;

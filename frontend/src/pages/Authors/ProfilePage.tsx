@@ -1,28 +1,37 @@
 import { ShieldCheck, User } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { MaterialsSection } from "@/common/organisms";
 import { Badge } from "@/components/ui/badge";
 import { MOCK_USER } from "@/mocks";
+import { getPublishedMaterials, useMaterialSubmissionStore } from "@/store";
 
 const ProfilePage = () => {
   const [imageError, setImageError] = useState(false);
-  
+  const submissions = useMaterialSubmissionStore((state) => state.submissions);
+  const authorMaterials = useMemo(
+    () =>
+      getPublishedMaterials(submissions).filter(
+        (material) => material.authorId === MOCK_USER.id,
+      ),
+    [submissions],
+  );
+
   return (
     <div className="container mx-auto max-w-screen-xl px-4 lg:px-8 py-10 space-y-10">
       <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-10">
         <div className="shrink-0">
           <div className="w-32 h-32 lg:w-40 lg:h-40 bg-secondary/30 rounded-xl overflow-hidden flex items-center justify-center border border-border/50 shadow-sm">
-          {!imageError ? (
-            <img
-              src={`/avatars/${MOCK_USER.id}.png`}
-              alt={MOCK_USER.name}
-              className="w-full h-full object-cover"
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <User className="w-16 h-16 text-muted-foreground/40" />
-          )}
+            {!imageError ? (
+              <img
+                src={`/avatars/${MOCK_USER.id}.png`}
+                alt={MOCK_USER.name}
+                className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <User className="w-16 h-16 text-muted-foreground/40" />
+            )}
           </div>
         </div>
 
@@ -53,9 +62,7 @@ const ProfilePage = () => {
         <h2 className="text-2xl font-bold mb-6 hidden lg:block">
           Материалы автора
         </h2>
-        { MOCK_USER.materials && (
-          <MaterialsSection materials={MOCK_USER.materials} />
-        )}
+        <MaterialsSection materials={authorMaterials} />
       </div>
     </div>
   );

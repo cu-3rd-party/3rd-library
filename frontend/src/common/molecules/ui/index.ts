@@ -1,2 +1,2 @@
-export { MultiSelect } from "./MultiSelect"
-export { SingleSelect } from "./SingleSelect"
+export { MultiSelect } from "./MultiSelect";
+export { SingleSelect } from "./SingleSelect";

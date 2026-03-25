@@ -1,1 +1,1 @@
-export { getFileIcon, getFileIconStyles } from "./getStyleByFile"
+export { getFileIcon, getFileIconStyles } from "./getStyleByFile";

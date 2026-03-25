@@ -1,4 +1,3 @@
-
 import { MaterialBadge } from "@/common/atoms";
 import {
   Card,
@@ -7,25 +6,42 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { DIFFICULTY_CONFIG } from "@/constants";
 import { TYPE_CONFIG } from "@/constants/materialType";
+import { cn } from "@/lib/utils";
 import { Material } from "@/models/material";
 import { getCourseName } from "@/utils";
 
 type MaterialCardProps = {
   material: Material;
-  onClick: (id: string) => void;
+  onClick?: (id: string) => void;
   showAuthor?: boolean;
+  className?: string;
 };
 
-export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProps) => {
+export const MaterialCard = ({
+  material,
+  onClick,
+  showAuthor,
+  className,
+}: MaterialCardProps) => {
   const difficultyData = DIFFICULTY_CONFIG[material.difficulty];
   const typeData = TYPE_CONFIG[material.type];
+  const isClickable = Boolean(onClick);
   return (
     <Card
-      onClick={() => onClick(material.id)}
-      className="flex flex-col h-full border-border bg-card hover:border-ring transition-colors cursor-pointer group"
+      onClick={onClick ? () => onClick(material.id) : undefined}
+      className={cn(
+        "flex flex-col h-full border-border bg-card transition-colors",
+        isClickable && "cursor-pointer group hover:border-ring",
+        className,
+      )}
     >
       <CardHeader className="pb-2">
         <div className="flex flex-wrap lg:flex-nowrap gap-2 lg:mb-1">
@@ -35,12 +51,9 @@ export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProp
                 label={getCourseName(material.courses)}
                 className="bg-orange-badge text-orange-badge-foreground"
               />
-              <MaterialBadge
-                label={typeData.label}
-                className="md:hidden"
-              />
+              <MaterialBadge label={typeData.label} className="md:hidden" />
             </div>
-            
+
             <div className="flex gap-2">
               <MaterialBadge
                 label={material.subjects[0]}
@@ -58,7 +71,9 @@ export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProp
                     <TooltipContent>
                       <div className="flex flex-col gap-1">
                         {material.subjects.slice(1).map((subject, idx) => (
-                          <span key={idx} className="text-xs">{subject}</span>
+                          <span key={idx} className="text-xs">
+                            {subject}
+                          </span>
                         ))}
                       </div>
                     </TooltipContent>
@@ -68,7 +83,6 @@ export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProp
             </div>
           </div>
 
-          
           <MaterialBadge
             label={typeData.label}
             className="hidden md:block md:ml-auto lg:self-start"
@@ -92,8 +106,9 @@ export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProp
             {material.authorName}
           </span>
         )}
-        <p className="text-xs md:text-sm text-muted-foreground md:ml-auto">{material.pubDate}</p>
-
+        <p className="text-xs md:text-sm text-muted-foreground md:ml-auto">
+          {material.pubDate}
+        </p>
       </CardFooter>
     </Card>
   );

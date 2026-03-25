@@ -1,12 +1,12 @@
-import { create } from "zustand"
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 import { Theme } from "@/models";
 
 type SettingsStore = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-}
+};
 
 export const useSettingsStore = create<SettingsStore>()(
   persist(
@@ -16,6 +16,6 @@ export const useSettingsStore = create<SettingsStore>()(
     }),
     {
       name: "settings-store",
-    }
-  )
+    },
+  ),
 );

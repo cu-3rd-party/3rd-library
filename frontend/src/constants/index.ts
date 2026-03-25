@@ -6,24 +6,19 @@ export {
   AUTHORS_PREFIX,
   MATERIALS_PREFIX,
 } from "./routePrefixes";
-export {
-  NAV_ITEMS_DESKTOP, NAV_ITEMS_MOBILE
-} from "./navigation";
+export { NAV_ITEMS_DESKTOP, NAV_ITEMS_MOBILE } from "./navigation";
 export {
   COURSES,
   COURSE_NAMES,
   SUBJECTS,
   DIFFICULTIES,
-  MATERIAL_TYPES
-} from "./material"
+  MATERIAL_TYPES,
+} from "./material";
+export { ALLOWED_MATERIAL_EXTENSIONS } from "./allowedExtensions";
+export { SORT_ORDER_TYPES, SORT_TYPES } from "./sort";
+export { SORT_ORDER_CONFIG, SORT_TYPE_CONFIG } from "./sortConfig";
 export {
-  ALLOWED_MATERIAL_EXTENSIONS
-} from "./allowedExtensions"
-export {
-  SORT_ORDER_TYPES,
-  SORT_TYPES,
-} from "./sort"
-export {
-  SORT_ORDER_CONFIG,
-  SORT_TYPE_CONFIG
-} from "./sortConfig"
+  MODERATION_TABS,
+  SUBMISSION_STATUS_UI,
+  type ModerationTabValue,
+} from "./submissionStatus";

@@ -68,9 +68,7 @@ export const MultiSelect = <T,>({
                   <div key={getItemKey(item)}>{renderBadge(item)}</div>
                 ))}
                 {selectedItems.length > 2 && (
-                  <Badge variant="secondary">
-                    +{selectedItems.length - 2}
-                  </Badge>
+                  <Badge variant="secondary">+{selectedItems.length - 2}</Badge>
                 )}
               </>
             ) : (
@@ -82,9 +80,14 @@ export const MultiSelect = <T,>({
           <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
+      <PopoverContent
+        className="w-(--radix-popover-trigger-width) p-0"
+        align="start"
+      >
         <Command>
-          {searchPlaceholder && <CommandInput placeholder={searchPlaceholder} />}
+          {searchPlaceholder && (
+            <CommandInput placeholder={searchPlaceholder} />
+          )}
           <CommandList>
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
@@ -124,4 +127,4 @@ export const MultiSelect = <T,>({
       </PopoverContent>
     </Popover>
   );
-}
+};

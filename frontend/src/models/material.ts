@@ -2,10 +2,10 @@ import { COURSES, DIFFICULTIES, MATERIAL_TYPES, SUBJECTS } from "@/constants";
 
 import { UUID } from "./types";
 
-export type Subject = typeof SUBJECTS[number];
-export type Course = typeof COURSES[number];
-export type MaterialType = typeof MATERIAL_TYPES[number];
-export type Difficulty = typeof DIFFICULTIES[number];
+export type Subject = (typeof SUBJECTS)[number];
+export type Course = (typeof COURSES)[number];
+export type MaterialType = (typeof MATERIAL_TYPES)[number];
+export type Difficulty = (typeof DIFFICULTIES)[number];
 
 export interface Material {
   id: UUID;
@@ -17,7 +17,5 @@ export interface Material {
   subjects: Subject[];
   type: MaterialType;
   difficulty: Difficulty;
-  authorName?: string
+  authorName?: string;
 }
-
-
