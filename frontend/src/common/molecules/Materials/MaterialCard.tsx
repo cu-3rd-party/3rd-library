@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { DIFFICULTY_CONFIG } from "@/constants";
 import { TYPE_CONFIG } from "@/constants/materialType";
 import { Material } from "@/models/material";
+import { useSettingsStore } from "@/store";
 import { getCourseName } from "@/utils";
 
 type MaterialCardProps = {
@@ -20,6 +21,7 @@ type MaterialCardProps = {
 };
 
 export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProps) => {
+  const { displayMaterialTags } = useSettingsStore();
   const difficultyData = DIFFICULTY_CONFIG[material.difficulty];
   const typeData = TYPE_CONFIG[material.type];
   return (
@@ -28,54 +30,54 @@ export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProp
       className="flex flex-col h-full border-border bg-card hover:border-ring transition-colors cursor-pointer group"
     >
       <CardHeader className="pb-2">
-        <div className="flex flex-wrap lg:flex-nowrap gap-2 lg:mb-1">
-          <div className="flex grow flex-wrap gap-2">
-            <div className="flex justify-between gap-2 w-full md:w-auto">
-              <MaterialBadge
-                label={getCourseName(material.courses)}
-                className="bg-orange-badge text-orange-badge-foreground"
-              />
-              <MaterialBadge
-                label={typeData.label}
-                className="md:hidden"
-              />
+        { displayMaterialTags && (
+          <div className="flex flex-wrap lg:flex-nowrap gap-2 lg:mb-1">
+            <div className="flex grow flex-wrap gap-2">
+              <div className="flex justify-between gap-2 w-full md:w-auto">
+                <MaterialBadge
+                  label={getCourseName(material.courses)}
+                  className="bg-orange-badge text-orange-badge-foreground"
+                />
+                <MaterialBadge
+                  label={typeData.label}
+                  className="md:hidden"
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <MaterialBadge
+                  label={material.subjects[0]}
+                  className={difficultyData.className}
+                />
+                {material.subjects.length > 1 && (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <MaterialBadge
+                          label={`+${material.subjects.length - 1}`}
+                          className={difficultyData.className}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="flex flex-col gap-1">
+                          {material.subjects.slice(1).map((subject, idx) => (
+                            <span key={idx} className="text-xs">{subject}</span>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
             </div>
             
-            <div className="flex gap-2">
-              <MaterialBadge
-                label={material.subjects[0]}
-                className={difficultyData.className}
-              />
-              {material.subjects.length > 1 && (
-                <TooltipProvider delayDuration={200}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <MaterialBadge
-                        label={`+${material.subjects.length - 1}`}
-                        className={difficultyData.className}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <div className="flex flex-col gap-1">
-                        {material.subjects.slice(1).map((subject, idx) => (
-                          <span key={idx} className="text-xs">{subject}</span>
-                        ))}
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
+            <MaterialBadge
+              label={typeData.label}
+              className="hidden md:block md:ml-auto lg:self-start"
+            />
           </div>
-
-          
-          <MaterialBadge
-            label={typeData.label}
-            className="hidden md:block md:ml-auto lg:self-start"
-          />
-        </div>
-
-        <CardTitle className="text-sm md:text-base lg:text-xl min-h-8.75 md:min-h-11.25 lg:min-h-12.5 font-bold leading-tight line-clamp-2 ">
+        )}
+        <CardTitle className="text-xs sm:text-sm md:text-base lg:text-xl min-h-7.5 sm:min-h-8.75 md:min-h-11.25 lg:min-h-12.5 font-bold leading-tight line-clamp-2 ">
           {material.title}
         </CardTitle>
       </CardHeader>
