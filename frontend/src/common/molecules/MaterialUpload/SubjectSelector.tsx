@@ -13,7 +13,11 @@ type SubjectSelectorProps = {
   className?: string;
 };
 
-export const SubjectSelector = ({ subjects, onToggle, className }: SubjectSelectorProps) => {
+export const SubjectSelector = ({
+  subjects,
+  onToggle,
+  className,
+}: SubjectSelectorProps) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -40,4 +44,4 @@ export const SubjectSelector = ({ subjects, onToggle, className }: SubjectSelect
       />
     </div>
   );
-}
+};

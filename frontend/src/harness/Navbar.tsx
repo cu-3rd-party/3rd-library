@@ -8,7 +8,6 @@ import { NAV_ITEMS_DESKTOP, NAV_ITEMS_MOBILE } from "@/constants";
 import { DesktopHeader } from "./DesktopHeader";
 import { MobileHeader } from "./MobileHeader";
 
-
 interface NavbarProps {
   children: ReactNode;
 }
@@ -31,9 +30,7 @@ export const Navbar = ({ children }: NavbarProps) => {
               <Button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                variant={
-                  isActive(item.path) ? "navActive" : "navInactive"
-                }
+                variant={isActive(item.path) ? "navActive" : "navInactive"}
                 className="h-9 px-4 py-2 transition-colors text-base lg:text-lg"
               >
                 {item.label}

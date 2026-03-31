@@ -6,14 +6,17 @@ import { MATERIAL_TYPES, TYPE_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils";
 import { MaterialType } from "@/models";
 
-
 type TypeSelectorProps = {
   type: MaterialType;
   onSelect: (type: MaterialType) => void;
   className?: string;
 };
 
-export const TypeSelector = ({ type, onSelect, className }: TypeSelectorProps) => {
+export const TypeSelector = ({
+  type,
+  onSelect,
+  className,
+}: TypeSelectorProps) => {
   const [open, setOpen] = useState(false);
 
   return (

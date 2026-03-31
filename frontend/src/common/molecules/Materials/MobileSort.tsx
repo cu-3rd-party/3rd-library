@@ -1,10 +1,9 @@
-import { Label } from "@radix-ui/react-label"
+import { Label } from "@radix-ui/react-label";
 
-import { SortOrderType, SortType} from "@/models"
-import { useFilterSortStore } from "@/store"
+import { SortOrderType, SortType } from "@/models";
+import { useFilterSortStore } from "@/store";
 
-import { MaterialSort } from "./MaterialSort"
-
+import { MaterialSort } from "./MaterialSort";
 
 export const MobileSort = () => {
   const { sortState, setSortState } = useFilterSortStore();
@@ -22,5 +21,5 @@ export const MobileSort = () => {
         onSelect={(val: SortOrderType) => setSortState("order", val)}
       />
     </div>
-  )
-}
+  );
+};

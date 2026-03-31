@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { MOCK_USER } from "@/mocks";
 import { User } from "@/models/user";
 
-
 type AuthorCardProps = {
   author: User;
   onClick: (id: string) => void;

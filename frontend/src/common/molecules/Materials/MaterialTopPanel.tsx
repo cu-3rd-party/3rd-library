@@ -18,14 +18,14 @@ export const MaterialTopPanel = ({
   searchQuery,
   onSearchChange,
 }: MaterialTopPanelProps) => {
-  const { filterState } = useFilterSortStore(); 
+  const { filterState } = useFilterSortStore();
   const [showFilters, setShowFilters] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const hasActiveFilters = 
-    filterState.courses.length > 0 || 
+  const hasActiveFilters =
+    filterState.courses.length > 0 ||
     filterState.difficulties.length > 0 ||
     filterState.subjects.length > 0 ||
-    filterState.types.length > 0
+    filterState.types.length > 0;
 
   return (
     <div className="w-full space-y-2">
@@ -39,28 +39,23 @@ export const MaterialTopPanel = ({
             className="pl-9 border-border min-h-12"
           />
         </div>
-        <MaterialActionBar 
+        <MaterialActionBar
           showFilters={showFilters}
           hasActiveFilters={hasActiveFilters}
           openMobileSheet={() => setSheetOpen(true)}
           setShowFilters={setShowFilters}
         />
       </div>
-      
-      <DesktopFilters 
-        showFilters={showFilters}
-      />
 
-      <DesktopSort 
-        showFilters={showFilters}
-      />
+      <DesktopFilters showFilters={showFilters} />
 
-      <FilterSortSheet 
+      <DesktopSort showFilters={showFilters} />
+
+      <FilterSortSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         hasActiveFilters={hasActiveFilters}
       />
     </div>
-    
-
-)};
+  );
+};

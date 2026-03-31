@@ -1,4 +1,8 @@
 import { Material } from "@/models/material";
+import {
+  MaterialSubmission,
+  MaterialSubmissionFile,
+} from "@/models/materialSubmission";
 import { User } from "@/models/user";
 
 const DEFAULT_USER_ID = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
@@ -9,52 +13,48 @@ export const MOCK_MATERIALS: Material[] = [
     courses: ["1"],
     title: "Привет",
     pubDate: "02.02.2026",
-    description:
-      "Разбираем",
+    description: "Разбираем",
     authorId: DEFAULT_USER_ID,
     subjects: ["Матан", "Линал", "Кумир"],
     type: "shortread",
     difficulty: "blue",
-    authorName: "Даниил Матанович"
+    authorName: "Даниил Матанович",
   },
   {
     id: "b7e2a9f4-3d6c-4a8b-9e1f-5c7d8a2b4e6g",
     courses: ["1"],
     title: "Линейные операторы и их страхи",
     pubDate: "28.01.2026",
-    description:
-      "Разбираем",
+    description: "Разбираем",
     subjects: ["Линал"],
     type: "shortread",
     authorId: DEFAULT_USER_ID,
     difficulty: "red",
-    authorName: "Даниил Матанович"
+    authorName: "Даниил Матанович",
   },
   {
     id: "c9d4b6e8-5f7a-4b2c-8d3e-9a1f6c4b7e5h",
     courses: ["2"],
     title: "Дифференциальные уравнения: Метод вариации постоянной",
     pubDate: "15.01.2026",
-    description:
-      "Разбираем",
+    description: "Разбираем",
     subjects: ["Диффуры"],
     type: "shortread",
     authorId: DEFAULT_USER_ID,
     difficulty: "black",
-    authorName: "Даниил Матанович"
+    authorName: "Даниил Матанович",
   },
   {
     id: "d2f5a8c3-6e9b-4d7a-9f1c-8b3e5a6d4c2i",
     courses: ["1", "2"],
     title: "Интегралы: Методы замены переменной",
     pubDate: "10.01.2026",
-    description:
-      "Разбираем",
+    description: "Разбираем",
     subjects: ["Матан"],
     type: "longread",
     authorId: DEFAULT_USER_ID,
     difficulty: "blue",
-    authorName: "Даниил Матанович"
+    authorName: "Даниил Матанович",
   },
   {
     id: "e8a3c5d7-9f2b-4e6a-8c1d-7b4f9a2e5c3j",
@@ -67,7 +67,7 @@ export const MOCK_MATERIALS: Material[] = [
     type: "shortread",
     authorId: DEFAULT_USER_ID,
     difficulty: "red",
-    authorName: "Даниил Матанович"
+    authorName: "Даниил Матанович",
   },
   {
     id: "f1c7b9e4-8d3a-4f5c-9e2b-6a8d4c7e1f5k",
@@ -80,7 +80,7 @@ export const MOCK_MATERIALS: Material[] = [
     type: "shortread",
     authorId: DEFAULT_USER_ID,
     difficulty: "none",
-    authorName: "Даниил Матанович"
+    authorName: "Даниил Матанович",
   },
   {
     id: "13f5c8d2-1e4b-4c9a-8f2d-6b7e9a3c5d1f",
@@ -93,7 +93,7 @@ export const MOCK_MATERIALS: Material[] = [
     subjects: ["Матан"],
     type: "shortread",
     difficulty: "blue",
-    authorName: "Даниил Матанович"
+    authorName: "Даниил Матанович",
   },
   {
     id: "27e2a9f4-3d6c-4a8b-9e1f-5c7d8a2b4e6g",
@@ -106,7 +106,7 @@ export const MOCK_MATERIALS: Material[] = [
     type: "shortread",
     authorId: DEFAULT_USER_ID,
     difficulty: "red",
-    authorName: "Даниил Матанович"
+    authorName: "Даниил Матанович",
   },
   {
     id: "s9d4b6e8-5f7a-4b2c-8d3e-9a1f6c4b7e5h",
@@ -119,7 +119,7 @@ export const MOCK_MATERIALS: Material[] = [
     type: "shortread",
     authorId: DEFAULT_USER_ID,
     difficulty: "black",
-    authorName: "Даниил Матанович"
+    authorName: "Даниил Матанович",
   },
   {
     id: "02f5a8c3-6e9b-4d7a-9f1c-8b3e5a6d4c2i",
@@ -132,7 +132,7 @@ export const MOCK_MATERIALS: Material[] = [
     type: "longread",
     authorId: DEFAULT_USER_ID,
     difficulty: "blue",
-    authorName: "Даниил Матанович"
+    authorName: "Даниил Матанович",
   },
   {
     id: "t8a3c5d7-9f2b-4e6a-8c1d-7b4f9a2e5c3j",
@@ -145,7 +145,7 @@ export const MOCK_MATERIALS: Material[] = [
     type: "shortread",
     authorId: DEFAULT_USER_ID,
     difficulty: "red",
-    authorName: "Даниил Матанович"
+    authorName: "Даниил Матанович",
   },
   {
     id: "u1c7b9e4-8d3a-4f5c-9e2b-6a8d4c7e1f5k",
@@ -158,7 +158,115 @@ export const MOCK_MATERIALS: Material[] = [
     type: "shortread",
     authorId: DEFAULT_USER_ID,
     difficulty: "none",
-    authorName: "Даниил Матанович"
+    authorName: "Даниил Матанович",
+  },
+];
+
+const createMockFile = (
+  name: string,
+  sizeBytes: number,
+  mimeType?: string,
+): MaterialSubmissionFile => ({
+  url: `data:text/plain;charset=utf-8,${encodeURIComponent(
+    `Демо-предпросмотр файла: ${name}`,
+  )}`,
+  name,
+  sizeBytes,
+  extension: name.split(".").pop()?.toLowerCase() || "",
+  mimeType,
+});
+
+const createApprovedSubmission = (
+  material: Material,
+  createdAt: string,
+  file: MaterialSubmissionFile,
+): MaterialSubmission => ({
+  id: `submission-${material.id}`,
+  material: {
+    ...material,
+    courses: [...material.courses],
+    subjects: [...material.subjects],
+  },
+  files: [file],
+  file,
+  status: "approved",
+  moderatorComment: "",
+  createdAt,
+  updatedAt: createdAt,
+  submittedAt: createdAt,
+  reviewedAt: createdAt,
+  publishedAt: createdAt,
+});
+
+export const MOCK_SUBMISSIONS: MaterialSubmission[] = [
+  ...MOCK_MATERIALS.map((material, index) =>
+    createApprovedSubmission(
+      material,
+      `2026-01-${String((index % 9) + 10)}T10:00:00.000Z`,
+      createMockFile(
+        `${material.title}.pdf`,
+        (index + 2) * 1024 * 1024,
+        "application/pdf",
+      ),
+    ),
+  ),
+  {
+    id: "pending-submission-demo",
+    material: {
+      id: "pending-material-demo",
+      authorId: DEFAULT_USER_ID,
+      authorName: "Даниил Матанович",
+      title: "Конспект по линейной алгебре для ревью",
+      pubDate: "18.03.2026",
+      description:
+        "Компактный конспект с определениями, примерами и типовыми ошибками перед контрольной.",
+      courses: ["1"],
+      subjects: ["Линал"],
+      type: "cheatlist",
+      difficulty: "blue",
+    },
+    files: [
+      createMockFile(
+        "linear-algebra-cheatsheet.pdf",
+        1572864,
+        "application/pdf",
+      ),
+    ],
+    status: "pending_review",
+    moderatorComment: "",
+    createdAt: "2026-03-18T08:30:00.000Z",
+    updatedAt: "2026-03-18T08:30:00.000Z",
+    submittedAt: "2026-03-18T08:30:00.000Z",
+  },
+  {
+    id: "rejected-submission-demo",
+    material: {
+      id: "rejected-material-demo",
+      authorId: DEFAULT_USER_ID,
+      authorName: "Даниил Матанович",
+      title: "Черновик шпаргалки по диффурам",
+      pubDate: "17.03.2026",
+      description:
+        "Набор коротких формул и алгоритмов решения задач, который автор сможет доработать после замечаний.",
+      courses: ["2"],
+      subjects: ["Диффуры"],
+      type: "cheatlist",
+      difficulty: "red",
+    },
+    files: [
+      createMockFile(
+        "diffeq-draft.pptx",
+        2621440,
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      ),
+    ],
+    status: "rejected",
+    moderatorComment:
+      "Добавьте более понятное описание и проверьте, что в файле нет пустых слайдов перед повторной отправкой.",
+    createdAt: "2026-03-17T12:00:00.000Z",
+    updatedAt: "2026-03-19T09:15:00.000Z",
+    submittedAt: "2026-03-17T12:00:00.000Z",
+    reviewedAt: "2026-03-19T09:15:00.000Z",
   },
 ];
 
@@ -167,7 +275,7 @@ export const MOCK_USER: User = {
   name: "Даниил Матанович",
   bio: "Облизал весь матан с ног до головы. Объясняю сложные теоремы на пальцах (и иногда на котиках).",
   verified: true,
-  materials: MOCK_MATERIALS
+  materials: MOCK_MATERIALS,
 };
 
 export const MOCK_AUTHORS: User[] = [

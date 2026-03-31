@@ -1,11 +1,16 @@
 import { useState } from "react";
 
-import { MultiSelect } from  "@/common/molecules";
+import { MultiSelect } from "@/common/molecules";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Course, Difficulty, FilterType, MaterialType, Subject } from "@/models";
+import {
+  Course,
+  Difficulty,
+  FilterType,
+  MaterialType,
+  Subject,
+} from "@/models";
 import { getFilterAttributes } from "@/utils";
-
 
 type MaterialFilterProps<T> = {
   items: T[];
@@ -15,16 +20,19 @@ type MaterialFilterProps<T> = {
   className?: string;
 };
 
-export const MaterialFilter = <T extends Course | Difficulty | MaterialType | Subject>({ 
-  items, 
-  filterType, 
-  onToggle, 
-  onReset, 
-  className 
+export const MaterialFilter = <
+  T extends Course | Difficulty | MaterialType | Subject,
+>({
+  items,
+  filterType,
+  onToggle,
+  onReset,
+  className,
 }: MaterialFilterProps<T>) => {
   const [open, setOpen] = useState(false);
-  const { placeholder, emptyText, searchPlaceholder, allItems, getLabel } = getFilterAttributes(filterType);
-  
+  const { placeholder, emptyText, searchPlaceholder, allItems, getLabel } =
+    getFilterAttributes(filterType);
+
   return (
     <div className={cn("space-y-3", className)}>
       <MultiSelect<T>
@@ -49,4 +57,4 @@ export const MaterialFilter = <T extends Course | Difficulty | MaterialType | Su
       />
     </div>
   );
-}
+};

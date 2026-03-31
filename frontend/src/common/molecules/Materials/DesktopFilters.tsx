@@ -1,27 +1,30 @@
-import { Label } from "@radix-ui/react-label"
+import { Label } from "@radix-ui/react-label";
 
-import { cn } from "@/lib/utils"
-import { Course, Difficulty, MaterialType, Subject } from "@/models"
-import { useFilterSortStore } from "@/store"
+import { cn } from "@/lib/utils";
+import { Course, Difficulty, MaterialType, Subject } from "@/models";
+import { useFilterSortStore } from "@/store";
 
-import { MaterialFilter } from "./MaterialFilter"
+import { MaterialFilter } from "./MaterialFilter";
 
 type DesktopFiltersProps = {
   showFilters: boolean;
-}
+};
 
-export const DesktopFilters = ({
-  showFilters,
-}: DesktopFiltersProps) => {
-  const { filterState, toggleFilter, resetFilter } = useFilterSortStore(); 
+export const DesktopFilters = ({ showFilters }: DesktopFiltersProps) => {
+  const { filterState, toggleFilter, resetFilter } = useFilterSortStore();
   return (
-    <div className={cn("hidden lg:grid grid-cols-4 lg:grid-cols-9 gap-2 overflow-hidden transition-all duration-(--std-duration) ease-in-out items-center", 
-      showFilters ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-    )}>
+    <div
+      className={cn(
+        "hidden lg:grid grid-cols-4 lg:grid-cols-9 gap-2 overflow-hidden transition-all duration-(--std-duration) ease-in-out items-center",
+        showFilters
+          ? "grid-rows-[1fr] opacity-100"
+          : "grid-rows-[0fr] opacity-0",
+      )}
+    >
       <Label className="text-base xl:text-lg font-semibold col-span-4 lg:col-span-1 min-h-0">
         Фильтры
       </Label>
-      <MaterialFilter<Course> 
+      <MaterialFilter<Course>
         items={filterState.courses}
         filterType="course"
         onToggle={(val: string) => toggleFilter("courses", val)}
@@ -49,5 +52,5 @@ export const DesktopFilters = ({
         className="min-h-0 col-span-2"
       />
     </div>
-  )
-}
+  );
+};

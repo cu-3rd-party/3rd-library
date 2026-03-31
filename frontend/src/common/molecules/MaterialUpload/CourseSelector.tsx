@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { MultiSelect } from  "@/common/molecules";
+import { MultiSelect } from "@/common/molecules";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { COURSES } from "@/constants";
@@ -13,7 +13,11 @@ type CourseSelectorProps = {
   className?: string;
 };
 
-export const CourseSelector = ({ courses, onToggle, className }: CourseSelectorProps) => {
+export const CourseSelector = ({
+  courses,
+  onToggle,
+  className,
+}: CourseSelectorProps) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -39,4 +43,4 @@ export const CourseSelector = ({ courses, onToggle, className }: CourseSelectorP
       />
     </div>
   );
-}
+};

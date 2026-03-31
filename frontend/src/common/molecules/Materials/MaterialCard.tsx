@@ -1,4 +1,3 @@
-
 import { MaterialBadge } from "@/common/atoms";
 import {
   Card,
@@ -7,27 +6,45 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { DIFFICULTY_CONFIG } from "@/constants";
 import { TYPE_CONFIG } from "@/constants/materialType";
+import { cn } from "@/lib/utils";
 import { Material } from "@/models/material";
 import { useSettingsStore } from "@/store";
 import { getCourseName } from "@/utils";
 
 type MaterialCardProps = {
   material: Material;
-  onClick: (id: string) => void;
+  onClick?: (id: string) => void;
   showAuthor?: boolean;
+  className?: string;
 };
 
 export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProps) => {
   const { displayMaterialTags } = useSettingsStore();
+export const MaterialCard = ({
+  material,
+  onClick,
+  showAuthor,
+  className,
+}: MaterialCardProps) => {
   const difficultyData = DIFFICULTY_CONFIG[material.difficulty];
   const typeData = TYPE_CONFIG[material.type];
+  const isClickable = Boolean(onClick);
   return (
     <Card
-      onClick={() => onClick(material.id)}
-      className="flex flex-col h-full border-border bg-card hover:border-ring transition-colors cursor-pointer group"
+      onClick={onClick ? () => onClick(material.id) : undefined}
+      className={cn(
+        "flex flex-col h-full border-border bg-card transition-colors",
+        isClickable && "cursor-pointer group hover:border-ring",
+        className,
+      )}
     >
       <CardHeader className="pb-2">
         { displayMaterialTags && (
@@ -94,8 +111,9 @@ export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProp
             {material.authorName}
           </span>
         )}
-        <p className="text-xs md:text-sm text-muted-foreground md:ml-auto">{material.pubDate}</p>
-
+        <p className="text-xs md:text-sm text-muted-foreground md:ml-auto">
+          {material.pubDate}
+        </p>
       </CardFooter>
     </Card>
   );

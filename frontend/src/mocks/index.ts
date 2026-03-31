@@ -1,1 +1,1 @@
-export { MOCK_MATERIALS, MOCK_USER} from "./mockData"
+export { MOCK_MATERIALS, MOCK_SUBMISSIONS, MOCK_USER } from "./mockData";

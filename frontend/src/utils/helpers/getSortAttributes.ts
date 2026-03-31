@@ -1,30 +1,37 @@
 import { ReactNode } from "react";
 
-import { SORT_ORDER_TYPES, SORT_TYPES, SORT_TYPE_CONFIG, SORT_ORDER_CONFIG } from "@/constants";
+import {
+  SORT_ORDER_TYPES,
+  SORT_TYPES,
+  SORT_TYPE_CONFIG,
+  SORT_ORDER_CONFIG,
+} from "@/constants";
 import { SortOrderType, SortSettingsType, SortType } from "@/models";
 
 type SortAttributes = {
   allItems: readonly string[] | readonly number[];
-  getLabel: (val: string) => string 
-  getIcon: (val: string) => ReactNode
+  getLabel: (val: string) => string;
+  getIcon: (val: string) => ReactNode;
 };
 
-
-export const getSortAttributes = (sortSettingsType: SortSettingsType): SortAttributes => {
+export const getSortAttributes = (
+  sortSettingsType: SortSettingsType,
+): SortAttributes => {
   switch (sortSettingsType) {
     case "type": {
       return {
         allItems: SORT_TYPES,
         getLabel: (val: string) => SORT_TYPE_CONFIG[val as SortType].label,
-        getIcon: (val: string) => SORT_TYPE_CONFIG[val as SortType].icon
-      }
+        getIcon: (val: string) => SORT_TYPE_CONFIG[val as SortType].icon,
+      };
     }
     case "order": {
       return {
         allItems: SORT_ORDER_TYPES,
-        getLabel: (val: string) => SORT_ORDER_CONFIG[val as SortOrderType].label,
-        getIcon: (val: string) => SORT_ORDER_CONFIG[val as SortOrderType].icon
-      }
+        getLabel: (val: string) =>
+          SORT_ORDER_CONFIG[val as SortOrderType].label,
+        getIcon: (val: string) => SORT_ORDER_CONFIG[val as SortOrderType].icon,
+      };
     }
   }
-}
+};

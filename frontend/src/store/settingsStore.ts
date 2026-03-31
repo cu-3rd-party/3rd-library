@@ -1,5 +1,5 @@
-import { create } from "zustand"
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 import { Theme } from "@/models";
 
@@ -21,6 +21,6 @@ export const useSettingsStore = create<SettingsStore>()(
     }),
     {
       name: "settings-store",
-    }
-  )
+    },
+  ),
 );

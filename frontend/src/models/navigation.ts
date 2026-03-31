@@ -10,4 +10,3 @@ export interface NavItemMobile {
   path: string;
   icon: ReactElement;
 }
-
