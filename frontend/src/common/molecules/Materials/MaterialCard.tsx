@@ -26,8 +26,6 @@ type MaterialCardProps = {
   className?: string;
 };
 
-export const MaterialCard = ({ material, onClick, showAuthor }: MaterialCardProps) => {
-  const { displayMaterialTags } = useSettingsStore();
 export const MaterialCard = ({
   material,
   onClick,
@@ -37,6 +35,8 @@ export const MaterialCard = ({
   const difficultyData = DIFFICULTY_CONFIG[material.difficulty];
   const typeData = TYPE_CONFIG[material.type];
   const isClickable = Boolean(onClick);
+  const { displayMaterialTags } = useSettingsStore();
+
   return (
     <Card
       onClick={onClick ? () => onClick(material.id) : undefined}
