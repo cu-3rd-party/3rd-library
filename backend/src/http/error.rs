@@ -2,6 +2,7 @@ use axum::Json;
 use axum::http::header::WWW_AUTHENTICATE;
 use axum::http::{HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
+use serde::Serialize;
 use sqlx::error::DatabaseError;
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -17,6 +18,12 @@ pub enum Error {
     #[error("request path not found")]
     NotFound,
 
+    #[error("bad request")]
+    BadRequest,
+
+    #[error("conflict")]
+    Conflict(String),
+
     #[error("error in the request body")]
     UnprocessableEntity {
         errors: HashMap<Cow<'static, str>, Vec<Cow<'static, str>>>,
@@ -27,6 +34,50 @@ pub enum Error {
 
     #[error("an internal server error occurred")]
     Anyhow(#[from] anyhow::Error),
+}
+
+#[derive(Serialize)]
+pub struct ApiError {
+    code: String,
+    message: String,
+    details: Option<Vec<FieldError>>,
+}
+
+#[derive(Serialize)]
+pub struct FieldError {
+    field: String,
+    message: String,
+}
+
+impl Error {
+    pub fn api_error(code: impl Into<String>, message: impl Into<String>) -> Self {
+        let mut error_map = HashMap::new();
+        error_map
+            .entry(Cow::Owned(code.into()))
+            .or_insert_with(Vec::new)
+            .push(Cow::Owned(message.into()));
+        Self::UnprocessableEntity { errors: error_map }
+    }
+
+    pub fn bad_request(_code: impl Into<String>, _message: impl Into<String>) -> Self {
+        Self::BadRequest
+    }
+
+    pub fn unauthorized(_code: impl Into<String>, _message: impl Into<String>) -> Self {
+        Self::Unauthorized
+    }
+
+    pub fn forbidden(_code: impl Into<String>, _message: impl Into<String>) -> Self {
+        Self::Forbidden
+    }
+
+    pub fn not_found(_code: impl Into<String>, _message: impl Into<String>) -> Self {
+        Self::NotFound
+    }
+
+    pub fn conflict(_code: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::Conflict(message.into())
+    }
 }
 
 impl Error {
@@ -52,6 +103,8 @@ impl Error {
             Self::Unauthorized => StatusCode::UNAUTHORIZED,
             Self::Forbidden => StatusCode::FORBIDDEN,
             Self::NotFound => StatusCode::NOT_FOUND,
+            Self::BadRequest => StatusCode::BAD_REQUEST,
+            Self::Conflict(_) => StatusCode::CONFLICT,
             Self::UnprocessableEntity { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             Self::Sqlx(_) | Self::Anyhow(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
@@ -60,45 +113,56 @@ impl Error {
 
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
-        match self {
-            Self::UnprocessableEntity { errors } => {
-                #[derive(serde::Serialize)]
-                struct Errors {
-                    errors: HashMap<Cow<'static, str>, Vec<Cow<'static, str>>>,
-                }
+        let (status, code, message): (StatusCode, &str, String) = match &self {
+            Self::Unauthorized => (StatusCode::UNAUTHORIZED, "unauthorized", self.to_string()),
+            Self::Forbidden => (StatusCode::FORBIDDEN, "forbidden", self.to_string()),
+            Self::NotFound => (StatusCode::NOT_FOUND, "not_found", self.to_string()),
+            Self::BadRequest => (StatusCode::BAD_REQUEST, "bad_request", self.to_string()),
+            Self::Conflict(msg) => (StatusCode::CONFLICT, "conflict", msg.clone()),
+            Self::UnprocessableEntity { .. } => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "validation_error",
+                self.to_string(),
+            ),
+            Self::Sqlx(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "internal_error",
+                "an error occurred with the database".to_string(),
+            ),
+            Self::Anyhow(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "internal_error",
+                "an internal server error occurred".to_string(),
+            ),
+        };
 
-                return (StatusCode::UNPROCESSABLE_ENTITY, Json(Errors { errors })).into_response();
-            }
+        let api_error = ApiError {
+            code: code.to_string(),
+            message,
+            details: None,
+        };
+
+        match self {
             Self::Unauthorized => {
                 return (
-                    self.status_code(),
-                    // Include the `WWW-Authenticate` challenge required in the specification
-                    // for the `401 Unauthorized` response code:
-                    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
-                    [(WWW_AUTHENTICATE, HeaderValue::from_static("Token"))]
+                    status,
+                    [(WWW_AUTHENTICATE, HeaderValue::from_static("Bearer"))]
                         .into_iter()
                         .collect::<HeaderMap>(),
-                    self.to_string(),
+                    Json(api_error),
                 )
                     .into_response();
             }
-
             Self::Sqlx(ref e) => {
-                // TODO: we probably want to use `tracing` instead
-                // so that this gets linked to the HTTP request by `TraceLayer`.
                 log::error!("SQLx error: {:?}", e);
             }
-
             Self::Anyhow(ref e) => {
-                // TODO: we probably want to use `tracing` instead
-                // so that this gets linked to the HTTP request by `TraceLayer`.
                 log::error!("Generic error: {:?}", e);
             }
-
             _ => (),
         }
 
-        (self.status_code(), self.to_string()).into_response()
+        (status, Json(api_error)).into_response()
     }
 }
 

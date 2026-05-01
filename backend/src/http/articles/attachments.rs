@@ -71,14 +71,13 @@ async fn get_attachments(
     Path(slug): Path<String>,
 ) -> Result<Json<MultipleAttachments>> {
     metrics::observe_db_query();
-    let article_id = sqlx::query_scalar!("select article_id from article where slug = $1", slug)
+    let article_id: Option<uuid::Uuid> = sqlx::query_scalar("select article_id from article where slug = $1", slug)
         .fetch_optional(&ctx.db)
         .await?
         .ok_or(Error::NotFound)?;
 
     metrics::observe_db_query();
-    let attachments: Vec<Attachment> = sqlx::query_as!(
-        AttachmentFromQuery,
+    let rows = sqlx::query(
         r#"
 			select
 				attachment_id,
@@ -92,11 +91,18 @@ async fn get_attachments(
         article_id
     )
     .fetch(&ctx.db)
-    .map_ok(|o| o.into())
+    .map_ok(|row| {
+        AttachmentFromQuery {
+            attachment_id: row.get::<uuid::Uuid, _>("attachment_id"),
+            file_name: row.get::<String, _>("file_name"),
+            created_at: row.get::<time::PrimitiveDateTime, _>("created_at").into(),
+            updated_at: row.get::<time::PrimitiveDateTime, _>("updated_at").into(),
+        }.into()
+    })
     .try_collect()
     .await?;
 
-    Ok(Json(MultipleAttachments { attachments }))
+    Ok(Json(MultipleAttachments { attachments: rows }))
 }
 
 async fn get_attachment(
@@ -105,7 +111,7 @@ async fn get_attachment(
     Path((slug, attachment_id)): Path<(String, Uuid)>,
 ) -> Result<(HeaderMap, Vec<u8>)> {
     metrics::observe_db_query();
-    let attachment = sqlx::query!(
+    let row = sqlx::query(
         r#"
             select attachment.file_path, attachment.file_name
             from attachment
@@ -119,8 +125,8 @@ async fn get_attachment(
     .await?
     .ok_or(Error::NotFound)?;
 
-    let file_path = attachment.file_path;
-    let file_name = sanitize_filename(&attachment.file_name);
+    let file_path = row.get::<String, _>("file_path");
+    let file_name = sanitize_filename(&row.get::<String, _>("file_name"));
 
     let read_result = tokio::task::spawn_blocking(move || std::fs::read(&file_path)).await;
     let file_bytes = match read_result {
@@ -208,7 +214,7 @@ async fn create_attachment(
     let file_path = format!("{}/{}", UPLOAD_DIR, stored_name);
 
     metrics::observe_db_query();
-    let result = sqlx::query!(
+    let row = sqlx::query(
         r#"
             with article_match as (
                 select article_id
@@ -222,12 +228,12 @@ async fn create_attachment(
                 returning attachment_id, file_name, created_at, updated_at
             )
             select
-                exists(select 1 from article where slug = $1) "existed!",
-                exists(select 1 from article_match) "authorized!",
-                (select attachment_id from inserted) "attachment_id?",
-                (select file_name from inserted) "file_name?",
-                (select created_at from inserted) "created_at?",
-                (select updated_at from inserted) "updated_at?"
+                exists(select 1 from article where slug = $1) as existed,
+                exists(select 1 from article_match) as authorized,
+                (select attachment_id from inserted) as attachment_id,
+                (select file_name from inserted) as file_name,
+                (select created_at from inserted) as created_at,
+                (select updated_at from inserted) as updated_at
         "#,
         slug,
         auth_user.user_id,
@@ -238,30 +244,28 @@ async fn create_attachment(
     .fetch_one(&ctx.db)
     .await?;
 
-    if !result.existed {
+    if !row.get::<bool, _>("existed") {
         return Err(Error::NotFound);
     }
 
-    if !result.authorized {
+    if !row.get::<bool, _>("authorized") {
         return Err(Error::Forbidden);
     }
 
     let attachment = Attachment {
-        attachment_id: result
-            .attachment_id
+        attachment_id: row.get::<Option<uuid::Uuid>, _>("attachment_id")
             .ok_or_else(|| anyhow::anyhow!("attachment insert failed"))?,
-        file_name: result
-            .file_name
+        file_name: row.get::<Option<String>, _>("file_name")
             .ok_or_else(|| anyhow::anyhow!("attachment insert failed"))?,
         created_at: Timestamptz(
-            result
-                .created_at
-                .ok_or_else(|| anyhow::anyhow!("attachment insert failed"))?,
+            row.get::<Option<time::PrimitiveDateTime>, _>("created_at")
+                .ok_or_else(|| anyhow::anyhow!("attachment insert failed"))?
+                .into(),
         ),
         updated_at: Timestamptz(
-            result
-                .updated_at
-                .ok_or_else(|| anyhow::anyhow!("attachment insert failed"))?,
+            row.get::<Option<time::PrimitiveDateTime>, _>("updated_at")
+                .ok_or_else(|| anyhow::anyhow!("attachment insert failed"))?
+                .into(),
         ),
     };
 
@@ -280,7 +284,7 @@ async fn create_attachment(
         }
         Ok(Err(err)) => {
             metrics::observe_db_query();
-            let _ = sqlx::query!(
+            let _ = sqlx::query(
                 "delete from attachment where attachment_id = $1",
                 attachment_id
             )
@@ -292,7 +296,7 @@ async fn create_attachment(
         }
         Err(err) => {
             metrics::observe_db_query();
-            let _ = sqlx::query!(
+            let _ = sqlx::query(
                 "delete from attachment where attachment_id = $1",
                 attachment_id
             )
@@ -328,7 +332,7 @@ async fn delete_attachment(
     Path((slug, attachment_id)): Path<(String, Uuid)>,
 ) -> Result<()> {
     metrics::observe_db_query();
-    let result = sqlx::query!(
+    let row = sqlx::query(
         r#"
             with deleted_attachment as (
                 delete from attachment
@@ -345,9 +349,9 @@ async fn delete_attachment(
                     select 1 from attachment
                     inner join article using (article_id)
                     where attachment_id = $1 and slug = $2
-                ) "existed!",
-                exists(select 1 from deleted_attachment) "deleted!",
-                (select file_path from deleted_attachment) "file_path?"
+                ) as existed,
+                exists(select 1 from deleted_attachment) as deleted,
+                (select file_path from deleted_attachment) as file_path
         "#,
         attachment_id,
         slug,
@@ -356,8 +360,8 @@ async fn delete_attachment(
     .fetch_one(&ctx.db)
     .await?;
 
-    if result.deleted {
-        if let Some(file_path) = result.file_path {
+    if row.get::<bool, _>("deleted") {
+        if let Some(file_path) = row.get::<Option<String>, _>("file_path") {
             let path_for_error = file_path.clone();
             tokio::task::spawn_blocking(move || std::fs::remove_file(&file_path))
                 .await
@@ -365,7 +369,7 @@ async fn delete_attachment(
                 .with_context(|| format!("failed to delete attachment file: {}", path_for_error))?;
         }
         Ok(())
-    } else if result.existed {
+    } else if row.get::<bool, _>("existed") {
         Err(Error::Forbidden)
     } else {
         Err(Error::NotFound)

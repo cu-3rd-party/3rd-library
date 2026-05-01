@@ -6,20 +6,14 @@ use sqlx::PgPool;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-// Utility modules.
-
 mod error;
-
 mod extractor;
-
-mod types;
 mod rate_limit;
+mod types;
 
-// Api
-
-mod articles;
-mod pfps;
-mod profiles;
+mod auth;
+pub mod materials;
+mod moderation;
 mod users;
 
 pub use error::{Error, ResultExt};
@@ -29,10 +23,11 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 use crate::metrics;
 use axum::http::HeaderValue;
 use axum::routing::get;
+use log::info;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 #[derive(Clone)]
-struct ApiContext {
+pub struct ApiContext {
     config: Arc<Config>,
     db: PgPool,
     redis: ConnectionManager,
@@ -42,15 +37,15 @@ struct ApiContext {
 pub async fn serve(config: Config, db: PgPool, redis: ConnectionManager) -> anyhow::Result<()> {
     metrics::start_business_metrics_updater(db.clone());
 
-    let cors = match config.cors.allowed_origin.as_deref() {
-        Some(origin) if !origin.is_empty() => CorsLayer::new()
+    let cors = match config.cors.allowed_origin.as_str() {
+        "" => CorsLayer::new()
+            .allow_origin(tower_http::cors::Any)
+            .allow_methods(tower_http::cors::Any)
+            .allow_headers(tower_http::cors::Any),
+        origin => CorsLayer::new()
             .allow_origin(
                 HeaderValue::from_str(origin).expect("CORS_ALLOWED_ORIGIN must be a valid origin"),
             )
-            .allow_methods(tower_http::cors::Any)
-            .allow_headers(tower_http::cors::Any),
-        _ => CorsLayer::new()
-            .allow_origin(tower_http::cors::Any)
             .allow_methods(tower_http::cors::Any)
             .allow_headers(tower_http::cors::Any),
     };
@@ -84,6 +79,10 @@ pub async fn serve(config: Config, db: PgPool, redis: ConnectionManager) -> anyh
             .context("failed to bind metrics server")
             .expect("metrics bind");
 
+        info!(
+            "metrics server listening on {}",
+            listener.local_addr().unwrap()
+        );
         if let Err(err) = axum::serve(listener, metrics_app).await {
             log::error!("metrics server stopped: {err}");
         }
@@ -93,14 +92,18 @@ pub async fn serve(config: Config, db: PgPool, redis: ConnectionManager) -> anyh
         .await
         .context("failed to bind HTTP server")?;
 
-    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
-        .await
-        .context("error running HTTP server")
+    info!("HTTP server listening on {}", listener.local_addr()?);
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
+    .context("error running HTTP server")
 }
 
 fn api_router() -> Router<ApiContext> {
-    users::router()
-        .merge(profiles::router())
-        .merge(pfps::router())
-        .merge(articles::router())
+    auth::router()
+        .merge(users::router())
+        .merge(materials::router())
+        .merge(moderation::router())
 }

@@ -1,0 +1,37 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="redis" type="docker-deploy" factoryName="docker-image" server-name="local">
+    <deployment type="docker-image">
+      <settings>
+        <option name="imageTag" value="redis:6.0.17-alpine" />
+        <option name="attachToContainerNeeded" value="true" />
+        <option name="containerName" value="3rd-library-redis" />
+        <option name="envVars">
+          <list>
+            <DockerEnvVarImpl>
+              <option name="name" value="POSTGRES_PASSWORD" />
+              <option name="value" value="admin" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="POSTGRES_USER" />
+              <option name="value" value="admin" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="POSTGRES_DB" />
+              <option name="value" value="db" />
+            </DockerEnvVarImpl>
+          </list>
+        </option>
+        <option name="portBindings">
+          <list>
+            <DockerPortBindingImpl>
+              <option name="containerPort" value="6379" />
+              <option name="hostPort" value="6379" />
+            </DockerPortBindingImpl>
+          </list>
+        </option>
+        <option name="showCommandPreview" value="true" />
+      </settings>
+    </deployment>
+    <method v="2" />
+  </configuration>
+</component>

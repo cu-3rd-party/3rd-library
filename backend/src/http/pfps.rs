@@ -85,7 +85,7 @@ async fn upload_pfp(
     let file_path = format!("{}/{}", upload_dir, stored_name);
     let size_bytes = file_bytes.len() as i64;
 
-    sqlx::query!(
+    sqlx::query(
         r#"
             insert into profile_picture (pfp_id, user_id, file_name, file_path, content_type, size_bytes)
             values ($1, $2, $3, $4, $5, $6)
@@ -112,7 +112,7 @@ async fn upload_pfp(
     .context("failed to join profile picture write task")?;
 
     if let Err(err) = write_result {
-        sqlx::query!(r#"delete from profile_picture where pfp_id = $1"#, pfp_id)
+        sqlx::query(r#"delete from profile_picture where pfp_id = $1"#, pfp_id)
             .execute(&ctx.db)
             .await?;
 
@@ -130,7 +130,7 @@ async fn get_pfp(
     State(ctx): State<ApiContext>,
     Path(pfp_id): Path<Uuid>,
 ) -> Result<(HeaderMap, Vec<u8>)> {
-    let record = sqlx::query!(
+    let row = sqlx::query(
         r#"select file_path, file_name, content_type from profile_picture where pfp_id = $1"#,
         pfp_id
     )
@@ -138,8 +138,8 @@ async fn get_pfp(
     .await?
     .ok_or(Error::NotFound)?;
 
-    let file_path = record.file_path;
-    let file_name = sanitize_filename(&record.file_name);
+    let file_path = row.get::<String, _>("file_path");
+    let file_name = sanitize_filename(&row.get::<String, _>("file_name"));
 
     let read_result = tokio::task::spawn_blocking(move || std::fs::read(&file_path)).await;
     let file_bytes = match read_result {
@@ -158,8 +158,8 @@ async fn get_pfp(
     };
 
     let mut headers = HeaderMap::new();
-    let content_type = record
-        .content_type
+    let content_type = row
+        .get::<Option<String>, _>("content_type")
         .as_deref()
         .unwrap_or("application/octet-stream");
     headers.insert(
