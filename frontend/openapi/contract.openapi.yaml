@@ -1,0 +1,1112 @@
+openapi: 3.0.3
+info:
+  title: 3rd Library Frontend-Driven API Contract
+  version: 0.1.0
+  description: |
+    Контракт сформирован по текущему MVP фронтенда (разделы Materials, Upload, Moderation, Users).
+
+    Ролевая модель:
+    - `user`: авторизованный пользователь, может просматривать материалы, отправлять и переотправлять свои заявки.
+    - `moderator`: расширенный `user`, дополнительно может модерировать заявки (approve/reject).
+    - `author` не выделяется в отдельную сущность: это тот же `user` с подтвержденной почтой (`isEmailVerified=true`) и опубликованными/отправленными материалами.
+servers:
+  - url: https://api.example.com
+    description: Production
+  - url: http://localhost:8080
+    description: Local
+
+tags:
+  - name: Auth
+  - name: Users
+  - name: Materials
+  - name: Submissions
+  - name: Moderation
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Verify email with code
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyEmailRequest"
+      responses:
+        "200":
+          description: Email verified, auth tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Email already verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /auth/resend-verification-code:
+    post:
+      tags: [Auth]
+      summary: Resend verification code to email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResendVerificationCodeRequest"
+      responses:
+        "204":
+          description: Verification code resent
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Email is not verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        "200":
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPair"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout current session
+      responses:
+        "204":
+          description: Logged out
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users:
+    get:
+      tags: [Users]
+      summary: List users
+      description: |
+        Возвращает пользователей, у которых есть опубликованные материалы.
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Paginated users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedUsersResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/{userId}:
+    get:
+      tags: [Users]
+      summary: Get user profile with published materials
+      description: |
+        Возвращает публичный профиль пользователя и его опубликованные материалы.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserWithMaterialsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /materials:
+    get:
+      tags: [Materials]
+      summary: List published materials
+      description: |
+        Возвращает только опубликованные (`approved`) материалы для публичной ленты.
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/Courses"
+        - $ref: "#/components/parameters/Subjects"
+        - $ref: "#/components/parameters/Types"
+        - $ref: "#/components/parameters/Difficulties"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Paginated materials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedMaterialsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /materials/{materialId}:
+    get:
+      tags: [Materials]
+      summary: Get material details
+      parameters:
+        - $ref: "#/components/parameters/MaterialId"
+      responses:
+        "200":
+          description: Material details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialDetails"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /materials/submissions:
+    get:
+      tags: [Submissions]
+      summary: List current user's submissions
+      description: |
+        Для автора отображается история отправок и текущий статус.
+      parameters:
+        - $ref: "#/components/parameters/SubmissionStatusFilter"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Paginated own submissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedSubmissionsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [Submissions]
+      summary: Create new material submission
+      description: |
+        Создает новую заявку и сразу переводит в статус `pending_review`.
+        Требуется подтвержденная почта (`isEmailVerified=true`).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateSubmissionRequest"
+      responses:
+        "201":
+          description: Submission created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialSubmission"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Email is not verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /materials/submissions/{submissionId}:
+    get:
+      tags: [Submissions]
+      summary: Get submission by id
+      description: |
+        Доступно владельцу заявки и модератору.
+      parameters:
+        - $ref: "#/components/parameters/SubmissionId"
+      responses:
+        "200":
+          description: Submission details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialSubmission"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags: [Submissions]
+      summary: Update and resubmit existing draft/rejected submission
+      description: |
+        Разрешено владельцу заявки только в статусах `draft` или `rejected`.
+        После успешного обновления статус становится `pending_review`.
+        Требуется подтвержденная почта (`isEmailVerified=true`).
+      parameters:
+        - $ref: "#/components/parameters/SubmissionId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UpdateSubmissionRequest"
+      responses:
+        "200":
+          description: Submission updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialSubmission"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /moderation/submissions:
+    get:
+      tags: [Moderation]
+      summary: List submissions for moderation
+      description: |
+        Только для роли `moderator`.
+      parameters:
+        - $ref: "#/components/parameters/ModerationStatusFilter"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Paginated moderation queue with status counters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedModerationSubmissionsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /moderation/submissions/{submissionId}/decision:
+    post:
+      tags: [Moderation]
+      summary: Approve or reject submission
+      description: |
+        Только для роли `moderator`.
+        - `approve`: публикует материал, очищает комментарий модератора.
+        - `reject`: возвращает материал автору с обязательным комментарием.
+      parameters:
+        - $ref: "#/components/parameters/SubmissionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModerationDecisionRequest"
+      responses:
+        "200":
+          description: Updated submission after moderation decision
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialSubmission"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      description: User ID
+      schema:
+        type: string
+        format: uuid
+    MaterialId:
+      name: materialId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SubmissionId:
+      name: submissionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SearchQuery:
+      name: search
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 200
+    Courses:
+      name: courses
+      in: query
+      style: form
+      explode: false
+      description: Comma-separated list, e.g. `1,2`
+      schema:
+        type: array
+        items:
+          $ref: "#/components/schemas/Course"
+    Subjects:
+      name: subjects
+      in: query
+      style: form
+      explode: false
+      description: Comma-separated list
+      schema:
+        type: array
+        items:
+          $ref: "#/components/schemas/Subject"
+    Types:
+      name: types
+      in: query
+      style: form
+      explode: false
+      description: Comma-separated list
+      schema:
+        type: array
+        items:
+          $ref: "#/components/schemas/MaterialType"
+    Difficulties:
+      name: difficulties
+      in: query
+      style: form
+      explode: false
+      description: Comma-separated list
+      schema:
+        type: array
+        items:
+          $ref: "#/components/schemas/Difficulty"
+    SortBy:
+      name: sortBy
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/SortBy"
+    SortOrder:
+      name: order
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/SortOrder"
+    SubmissionStatusFilter:
+      name: status
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/SubmissionStatus"
+    ModerationStatusFilter:
+      name: status
+      in: query
+      required: false
+      description: Defaults to `pending_review`
+      schema:
+        $ref: "#/components/schemas/ModerationStatusFilter"
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Invalid request payload or query parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    Unauthorized:
+      description: Missing or invalid auth token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    Forbidden:
+      description: Not enough permissions for this operation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+
+  schemas:
+    Role:
+      type: string
+      enum: [user, moderator]
+
+    Course:
+      type: string
+      enum: ["1", "2"]
+
+    Subject:
+      type: string
+      enum:
+        - Английский
+        - Алгоритмы
+        - Ангем
+        - Диффуры
+        - Кумир
+        - Линал
+        - Матан
+        - Физика
+
+    MaterialType:
+      type: string
+      enum: [demo, longread, solution, cheatlist, shortread, other]
+
+    Difficulty:
+      type: string
+      enum: [none, blue, red, black]
+
+    SortBy:
+      type: string
+      enum: [date, title, subject]
+
+    SortOrder:
+      type: string
+      enum: [increasing, decreasing]
+
+    SubmissionStatus:
+      type: string
+      enum: [draft, pending_review, rejected, approved]
+
+    ModerationStatusFilter:
+      type: string
+      enum: [pending_review, rejected, approved, all]
+
+    User:
+      type: object
+      required: [id, name, email, bio, isEmailVerified, roles]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 120
+        email:
+          type: string
+          format: email
+        bio:
+          type: string
+          maxLength: 2000
+        isEmailVerified:
+          type: boolean
+        canSubmitMaterials:
+          type: boolean
+          readOnly: true
+          description: Derived flag, true when `isEmailVerified=true`
+        roles:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Role"
+
+    UserPublicProfile:
+      type: object
+      required: [id, name, bio, isEmailVerified, materialsCount]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 120
+        bio:
+          type: string
+          maxLength: 2000
+        isEmailVerified:
+          type: boolean
+        materialsCount:
+          type: integer
+          minimum: 0
+
+    MaterialFile:
+      type: object
+      required: [id, name, sizeBytes, extension]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 255
+        sizeBytes:
+          type: integer
+          minimum: 1
+        extension:
+          type: string
+          description: Lowercase extension without dot
+          example: pdf
+        mimeType:
+          type: string
+          nullable: true
+        url:
+          type: string
+          format: uri
+          nullable: true
+          description: Public or signed URL for file download/preview
+
+    Material:
+      type: object
+      required:
+        - id
+        - authorId
+        - title
+        - description
+        - courses
+        - subjects
+        - type
+        - difficulty
+        - pubDate
+      properties:
+        id:
+          type: string
+          format: uuid
+        authorId:
+          type: string
+          format: uuid
+        authorName:
+          type: string
+          nullable: true
+          maxLength: 120
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 10000
+        courses:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Course"
+        subjects:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Subject"
+        type:
+          $ref: "#/components/schemas/MaterialType"
+        difficulty:
+          $ref: "#/components/schemas/Difficulty"
+        pubDate:
+          type: string
+          description: Display date in DD.MM.YYYY format (for current MVP compatibility)
+          example: 18.03.2026
+
+    MaterialDetails:
+      allOf:
+        - $ref: "#/components/schemas/Material"
+        - type: object
+          required: [files]
+          properties:
+            files:
+              type: array
+              items:
+                $ref: "#/components/schemas/MaterialFile"
+            publishedAt:
+              type: string
+              format: date-time
+              nullable: true
+            submittedAt:
+              type: string
+              format: date-time
+              nullable: true
+
+    MaterialSubmission:
+      type: object
+      required:
+        - id
+        - material
+        - files
+        - status
+        - moderatorComment
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        material:
+          $ref: "#/components/schemas/Material"
+        files:
+          type: array
+          items:
+            $ref: "#/components/schemas/MaterialFile"
+        status:
+          $ref: "#/components/schemas/SubmissionStatus"
+        moderatorComment:
+          type: string
+          maxLength: 2000
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        submittedAt:
+          type: string
+          format: date-time
+          nullable: true
+        reviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateSubmissionRequest:
+      type: object
+      required:
+        - title
+        - courses
+        - subjects
+        - type
+        - difficulty
+        - files
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 10000
+        courses:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Course"
+        subjects:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Subject"
+        type:
+          $ref: "#/components/schemas/MaterialType"
+        difficulty:
+          $ref: "#/components/schemas/Difficulty"
+        files:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            type: string
+            format: binary
+            description: "Allowed extensions: .pdf, .doc, .docx, .ppt, .pptx, .ipynb"
+
+    UpdateSubmissionRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 10000
+        courses:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Course"
+        subjects:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Subject"
+        type:
+          $ref: "#/components/schemas/MaterialType"
+        difficulty:
+          $ref: "#/components/schemas/Difficulty"
+        files:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+            format: binary
+        keepFileIds:
+          type: array
+          description: Existing file IDs to keep when updating submission
+          items:
+            type: string
+            format: uuid
+
+    ModerationDecisionRequest:
+      oneOf:
+        - $ref: "#/components/schemas/ApproveDecisionRequest"
+        - $ref: "#/components/schemas/RejectDecisionRequest"
+      discriminator:
+        propertyName: action
+        mapping:
+          approve: "#/components/schemas/ApproveDecisionRequest"
+          reject: "#/components/schemas/RejectDecisionRequest"
+
+    ApproveDecisionRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [approve]
+
+    RejectDecisionRequest:
+      type: object
+      required: [action, moderatorComment]
+      properties:
+        action:
+          type: string
+          enum: [reject]
+        moderatorComment:
+          type: string
+          minLength: 1
+          maxLength: 2000
+
+    RegisterRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+
+    VerifyEmailRequest:
+      type: object
+      required: [email, code]
+      properties:
+        email:
+          type: string
+          format: email
+        code:
+          type: string
+          minLength: 4
+          maxLength: 12
+
+    ResendVerificationCodeRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+
+    TokenPair:
+      type: object
+      required: [accessToken, refreshToken, expiresIn]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          description: Access token lifetime in seconds
+
+    AuthResponse:
+      type: object
+      required: [user, tokens]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        tokens:
+          $ref: "#/components/schemas/TokenPair"
+
+    RegisterResponse:
+      type: object
+      required: [user, verificationRequired]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        verificationRequired:
+          type: boolean
+          example: true
+        verificationChannel:
+          type: string
+          enum: [email_code]
+          example: email_code
+
+    PaginatedMaterialsResponse:
+      type: object
+      required: [items, page, limit, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Material"
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+
+    PaginatedUsersResponse:
+      type: object
+      required: [items, page, limit, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserPublicProfile"
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+
+    UserWithMaterialsResponse:
+      type: object
+      required: [user, materials]
+      properties:
+        user:
+          $ref: "#/components/schemas/UserPublicProfile"
+        materials:
+          $ref: "#/components/schemas/PaginatedMaterialsResponse"
+
+    SubmissionStatusCounters:
+      type: object
+      required: [all, draft, pending_review, rejected, approved]
+      properties:
+        all:
+          type: integer
+          minimum: 0
+        draft:
+          type: integer
+          minimum: 0
+        pending_review:
+          type: integer
+          minimum: 0
+        rejected:
+          type: integer
+          minimum: 0
+        approved:
+          type: integer
+          minimum: 0
+
+    PaginatedSubmissionsResponse:
+      type: object
+      required: [items, page, limit, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MaterialSubmission"
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+
+    PaginatedModerationSubmissionsResponse:
+      type: object
+      required: [items, page, limit, total, counters]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MaterialSubmission"
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+        counters:
+          $ref: "#/components/schemas/SubmissionStatusCounters"
+
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: validation_error
+        message:
+          type: string
+          example: Invalid request payload
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string

@@ -1,0 +1,1 @@
+export { MaterialAttributesSelector } from "./MaterialAttributesSelector";
