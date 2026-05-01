@@ -15,7 +15,7 @@ pub async fn login_user(
     Json(req): Json<UserBody<LoginUser>>,
 ) -> Result<Json<UserBody<User>>> {
     metrics::observe_db_query();
-    let user = sqlx::query!(
+    let row = sqlx::query(
         r#"
             select user_id, email, username, bio, pfp_id, password_hash
             from "user" where email = $1
@@ -26,20 +26,20 @@ pub async fn login_user(
     .await?
     .ok_or(Error::unprocessable_entity([("email", "does not exist")]))?;
 
-    verify_password(req.user.password, user.password_hash).await?;
+    verify_password(req.user.password, row.get::<String, _>("password_hash")).await?;
 
     Ok(Json(UserBody {
         user: User {
-            email: user.email,
+            email: row.get::<String, _>("email"),
             token: AuthUser {
-                user_id: user.user_id,
+                user_id: row.get::<uuid::Uuid, _>("user_id"),
                 session_id: Uuid::new_v4(),
             }
             .to_jwt(&ctx)
             .await?,
-            username: user.username,
-            bio: user.bio,
-            image: user.pfp_id,
+            username: row.get::<String, _>("username"),
+            bio: row.get::<Option<String>, _>("bio"),
+            image: row.get::<Option<uuid::Uuid>, _>("pfp_id"),
         },
     }))
 }

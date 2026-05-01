@@ -1,8 +1,8 @@
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::Formatter;
-use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
+use time::format_description::well_known::Rfc3339;
 
 /// `OffsetDateTime` provides RFC-3339 (ISO-8601 subset) serialization, but the default
 /// `serde::Serialize` implementation produces array of integers, which is great for binary
@@ -27,10 +27,7 @@ impl Serialize for Timestamptz {
     where
         S: Serializer,
     {
-        let formatted = self
-            .0
-            .format(&Rfc3339)
-            .map_err(serde::ser::Error::custom)?;
+        let formatted = self.0.format(&Rfc3339).map_err(serde::ser::Error::custom)?;
         serializer.serialize_str(&formatted)
     }
 }

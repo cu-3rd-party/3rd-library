@@ -17,7 +17,7 @@ pub async fn create_user(
     let password_hash = hash_password(req.user.password).await?;
 
     metrics::observe_db_query();
-    let user_id = sqlx::query_scalar!(
+    let user_id: uuid::Uuid = sqlx::query_scalar(
         r#"insert into "user" (username, email, password_hash) values ($1, $2, $3) returning user_id"#,
         req.user.username,
         req.user.email,

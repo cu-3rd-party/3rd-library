@@ -1,4 +1,4 @@
-use api_usecase::{api_usecase, ApiError};
+use api_usecase::{ApiError, api_usecase};
 use std::sync::atomic;
 use std::time::Instant;
 use tokio::task::JoinSet;

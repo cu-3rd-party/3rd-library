@@ -21,25 +21,25 @@ pub fn start_business_metrics_updater(db: PgPool) {
 
 async fn refresh_business_metrics(db: &PgPool) -> Result<(), sqlx::Error> {
     observe_db_query();
-    let users: Option<i64> = sqlx::query_scalar!(r#"select count(*) from "user""#)
+    let users: Option<i64> = sqlx::query_scalar(r#"select count(*) from "user""#)
         .fetch_one(db)
         .await?;
     USERS_TOTAL.set(users.unwrap_or(0) as i64);
 
     observe_db_query();
-    let articles: Option<i64> = sqlx::query_scalar!("select count(*) from article")
+    let articles: Option<i64> = sqlx::query_scalar("select count(*) from article")
         .fetch_one(db)
         .await?;
     ARTICLES_TOTAL.set(articles.unwrap_or(0) as i64);
 
     observe_db_query();
-    let comments: Option<i64> = sqlx::query_scalar!("select count(*) from article_comment")
+    let comments: Option<i64> = sqlx::query_scalar("select count(*) from article_comment")
         .fetch_one(db)
         .await?;
     COMMENTS_TOTAL.set(comments.unwrap_or(0) as i64);
 
     observe_db_query();
-    let attachments: Option<i64> = sqlx::query_scalar!("select count(*) from attachment")
+    let attachments: Option<i64> = sqlx::query_scalar("select count(*) from attachment")
         .fetch_one(db)
         .await?;
     ATTACHMENTS_TOTAL.set(attachments.unwrap_or(0) as i64);

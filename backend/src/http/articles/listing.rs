@@ -49,14 +49,12 @@ pub struct MultipleArticlesBody {
 }
 
 pub(in crate::http) async fn list_articles(
-    // authentication is optional
     maybe_auth_user: MaybeAuthUser,
     State(ctx): State<ApiContext>,
     query: Query<ListArticlesQuery>,
 ) -> http::Result<Json<MultipleArticlesBody>> {
     metrics::observe_db_query();
-    let articles: Vec<_> = sqlx::query_as!(
-        ArticleFromQuery,
+    let rows = sqlx::query(
         r#"
             select
                 slug,
@@ -64,26 +62,20 @@ pub(in crate::http) async fn list_articles(
                 description,
                 body,
                 tag_list,
-                article.created_at "created_at: Timestamptz",
-                article.updated_at "updated_at: Timestamptz",
-                exists(select 1 from article_favorite where user_id = $1) "favorited!",
+                article.created_at,
+                article.updated_at,
+                exists(select 1 from article_favorite where user_id = $1) as favorited,
                 coalesce(
-                    -- `count(*)` returns `NULL` if the query returned zero columns
-                    -- not exactly a fan of that design choice but whatever
                     (select count(*) from article_favorite fav where fav.article_id = article.article_id),
                     0
-                ) "favorites_count!",
-                author.username author_username,
-                author.bio author_bio,
-                author.pfp_id author_image,
-                exists(select 1 from follow where followed_user_id = author.user_id and following_user_id = $1) "following_author!"
+                ) as favorites_count,
+                author.username as author_username,
+                author.bio as author_bio,
+                author.pfp_id as author_image,
+                exists(select 1 from follow where followed_user_id = author.user_id and following_user_id = $1) as following_author
             from article
             inner join "user" author using (user_id)
-            -- the current way to do conditional filtering in SQLx
             where (
-                -- check if `query.tag` is null or contains the given tag
-                -- PostgresSQL doesn't have an "array contains element" operator
-                -- so instead we check if the tag_list contains an array of just the given tag
                 $2::text is null or tag_list @> array[$2]
             )
               and
@@ -111,13 +103,29 @@ pub(in crate::http) async fn list_articles(
         query.offset.unwrap_or(0)
     )
         .fetch(&ctx.db)
-        .map_ok(ArticleFromQuery::into_article)
+        .map_ok(|row| {
+            ArticleFromQuery {
+                slug: row.get::<String, _>("slug"),
+                title: row.get::<String, _>("title"),
+                description: row.get::<String, _>("description"),
+                body: row.get::<String, _>("body"),
+                tag_list: row.get::<Vec<String>, _>("tag_list"),
+                created_at: row.get::<Timestamptz, _>("created_at"),
+                updated_at: row.get::<Timestamptz, _>("updated_at"),
+                favorited: row.get::<bool, _>("favorited"),
+                favorites_count: row.get::<i64, _>("favorites_count"),
+                author_username: row.get::<String, _>("author_username"),
+                author_bio: row.get::<Option<String>, _>("author_bio").unwrap_or_default(),
+                author_image: row.get::<Option<uuid::Uuid>, _>("author_image"),
+                following_author: row.get::<bool, _>("following_author"),
+            }.into_article()
+        })
         .try_collect()
         .await?;
 
     Ok(Json(MultipleArticlesBody {
-        articles_count: articles.len(),
-        articles,
+        articles_count: rows.len(),
+        articles: rows,
     }))
 }
 
@@ -127,8 +135,7 @@ pub(in crate::http) async fn feed_articles(
     query: Query<FeedArticlesQuery>,
 ) -> http::Result<Json<MultipleArticlesBody>> {
     metrics::observe_db_query();
-    let articles: Vec<_> = sqlx::query_as!(
-        ArticleFromQuery,
+    let rows = sqlx::query(
         r#"
             select
                 slug,
@@ -136,18 +143,17 @@ pub(in crate::http) async fn feed_articles(
                 description,
                 body,
                 tag_list,
-                article.created_at "created_at: Timestamptz",
-                article.updated_at "updated_at: Timestamptz",
-                exists(select 1 from article_favorite where user_id = $1) "favorited!",
+                article.created_at,
+                article.updated_at,
+                exists(select 1 from article_favorite where user_id = $1) as favorited,
                 coalesce(
                     (select count(*) from article_favorite fav where fav.article_id = article.article_id),
                     0
-                ) "favorites_count!",
-                author.username author_username,
-                author.bio author_bio,
-                author.pfp_id author_image,
-                -- we wouldn't be returning this otherwise
-                true "following_author!"
+                ) as favorites_count,
+                author.username as author_username,
+                author.bio as author_bio,
+                author.pfp_id as author_image,
+                true as following_author
             from follow
             inner join article on followed_user_id = article.user_id
             inner join "user" author using (user_id)
@@ -160,12 +166,28 @@ pub(in crate::http) async fn feed_articles(
         query.offset.unwrap_or(0)
     )
         .fetch(&ctx.db)
-        .map_ok(ArticleFromQuery::into_article)
+        .map_ok(|row| {
+            ArticleFromQuery {
+                slug: row.get::<String, _>("slug"),
+                title: row.get::<String, _>("title"),
+                description: row.get::<String, _>("description"),
+                body: row.get::<String, _>("body"),
+                tag_list: row.get::<Vec<String>, _>("tag_list"),
+                created_at: row.get::<Timestamptz, _>("created_at"),
+                updated_at: row.get::<Timestamptz, _>("updated_at"),
+                favorited: row.get::<bool, _>("favorited"),
+                favorites_count: row.get::<i64, _>("favorites_count"),
+                author_username: row.get::<String, _>("author_username"),
+                author_bio: row.get::<Option<String>, _>("author_bio").unwrap_or_default(),
+                author_image: row.get::<Option<uuid::Uuid>, _>("author_image"),
+                following_author: row.get::<bool, _>("following_author"),
+            }.into_article()
+        })
         .try_collect()
         .await?;
 
     Ok(Json(MultipleArticlesBody {
-        articles_count: articles.len(),
-        articles,
+        articles_count: rows.len(),
+        articles: rows,
     }))
 }

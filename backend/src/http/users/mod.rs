@@ -1,22 +1,21 @@
-mod create;
 mod get;
-mod helpers;
-mod login;
+pub mod helpers;
 mod models;
 mod update;
 
+pub use helpers::*;
+
 use crate::http::ApiContext;
 use axum::Router;
-use axum::routing::{get, post};
+use axum::routing::{get, patch};
 
-use create::create_user;
-use get::get_current_user;
-use login::login_user;
-use update::update_user;
+use get::{get_current_user, get_user_by_id, get_users};
+use update::update_user_profile;
 
 pub fn router() -> Router<ApiContext> {
     Router::new()
-        .route("/api/users", post(create_user))
-        .route("/api/users/login", post(login_user))
-        .route("/api/user", get(get_current_user).put(update_user))
+        .route("/users/me", get(get_current_user))
+        .route("/users", get(get_users))
+        .route("/users/{userId}", get(get_user_by_id))
+        .route("/users/me", patch(update_user_profile))
 }

@@ -81,24 +81,23 @@ async fn get_article_comments(
     Path(slug): Path<String>,
 ) -> Result<Json<MultipleCommentsBody>> {
     metrics::observe_db_query();
-    let article_id = sqlx::query_scalar!("select article_id from article where slug = $1", slug)
+    let article_id: Option<uuid::Uuid> = sqlx::query_scalar("select article_id from article where slug = $1", slug)
         .fetch_optional(&ctx.db)
         .await?
         .ok_or(Error::NotFound)?;
 
     metrics::observe_db_query();
-    let comments = sqlx::query_as!(
-        CommentFromQuery,
+    let rows = sqlx::query(
         r#"
             select
                 comment_id,
                 comment.created_at,
                 comment.updated_at,
                 comment.body,
-                author.username author_username,
-                author.bio author_bio,
-                author.pfp_id author_image,
-                exists(select 1 from follow where followed_user_id = author.user_id and following_user_id = $1) "following_author!"
+                author.username as author_username,
+                author.bio as author_bio,
+                author.pfp_id as author_image,
+                exists(select 1 from follow where followed_user_id = author.user_id and following_user_id = $1) as following_author
             from article_comment comment
             inner join "user" author using (user_id)
             where article_id = $2
@@ -108,11 +107,22 @@ async fn get_article_comments(
         article_id
     )
         .fetch(&ctx.db)
-        .map_ok(CommentFromQuery::into_comment)
+        .map_ok(|row| {
+            CommentFromQuery {
+                comment_id: row.get::<i64, _>("comment_id"),
+                created_at: row.get::<time::PrimitiveDateTime, _>("created_at").into(),
+                updated_at: row.get::<time::PrimitiveDateTime, _>("updated_at").into(),
+                body: row.get::<String, _>("body"),
+                author_username: row.get::<String, _>("author_username"),
+                author_bio: row.get::<Option<String>, _>("author_bio").unwrap_or_default(),
+                author_image: row.get::<Option<uuid::Uuid>, _>("author_image"),
+                following_author: row.get::<bool, _>("following_author"),
+            }.into_comment()
+        })
         .try_collect()
         .await?;
 
-    Ok(Json(MultipleCommentsBody { comments }))
+    Ok(Json(MultipleCommentsBody { comments: rows }))
 }
 
 async fn add_comment(
@@ -122,8 +132,7 @@ async fn add_comment(
     req: Json<CommentBody<AddComment>>,
 ) -> Result<Json<CommentBody>> {
     metrics::observe_db_query();
-    let comment = sqlx::query_as!(
-        CommentFromQuery,
+    let row = sqlx::query(
         r#"
             with inserted_comment as (
                 insert into article_comment(article_id, user_id, body)
@@ -137,10 +146,10 @@ async fn add_comment(
                 comment.created_at,
                 comment.updated_at,
                 body,
-                author.username author_username,
-                author.bio author_bio,
-                author.pfp_id author_image,
-                false "following_author!"
+                author.username as author_username,
+                author.bio as author_bio,
+                author.pfp_id as author_image,
+                false as following_author
             from inserted_comment comment
             inner join "user" author on user_id = $1
         "#,
@@ -150,12 +159,22 @@ async fn add_comment(
     )
     .fetch_optional(&ctx.db)
     .await?
-    .ok_or(Error::NotFound)?
-    .into_comment();
+    .ok_or(Error::NotFound)?;
+
+    let comment = CommentFromQuery {
+        comment_id: row.get::<i64, _>("comment_id"),
+        created_at: row.get::<time::PrimitiveDateTime, _>("created_at").into(),
+        updated_at: row.get::<time::PrimitiveDateTime, _>("updated_at").into(),
+        body: row.get::<String, _>("body"),
+        author_username: row.get::<String, _>("author_username"),
+        author_bio: row.get::<Option<String>, _>("author_bio").unwrap_or_default(),
+        author_image: row.get::<Option<uuid::Uuid>, _>("author_image"),
+        following_author: row.get::<bool, _>("following_author"),
+    };
 
     metrics::record_comment_created();
 
-    Ok(Json(CommentBody { comment }))
+    Ok(Json(CommentBody { comment: comment.into_comment() }))
 }
 
 async fn delete_comment(
@@ -164,7 +183,7 @@ async fn delete_comment(
     Path((slug, comment_id)): Path<(String, i64)>,
 ) -> Result<()> {
     metrics::observe_db_query();
-    let result = sqlx::query!(
+    let row = sqlx::query(
         r#"
             with deleted_comment as (
                 delete from article_comment
@@ -179,8 +198,8 @@ async fn delete_comment(
                     select 1 from article_comment
                     inner join article using (article_id)
                     where comment_id = $1 and slug = $2
-                ) "existed!",
-                exists(select 1 from deleted_comment) "deleted!"
+                ) as existed,
+                exists(select 1 from deleted_comment) as deleted
         "#,
         comment_id,
         slug,
@@ -189,9 +208,9 @@ async fn delete_comment(
     .fetch_one(&ctx.db)
     .await?;
 
-    if result.deleted {
+    if row.get::<bool, _>("deleted") {
         Ok(())
-    } else if result.existed {
+    } else if row.get::<bool, _>("existed") {
         Err(Error::Forbidden)
     } else {
         Err(Error::NotFound)

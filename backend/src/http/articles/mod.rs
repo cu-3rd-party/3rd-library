@@ -124,8 +124,7 @@ async fn create_article(
     req.article.tag_list.sort();
 
     metrics::observe_db_query();
-    let article = sqlx::query_as!(
-        ArticleFromQuery,
+    let row = sqlx::query(
         r#"
             with inserted_article as (
                 insert into article (user_id, slug, title, description, body, tag_list)
@@ -136,19 +135,17 @@ async fn create_article(
                     description, 
                     body, 
                     tag_list, 
-                    -- This is how you can override the inferred type of a column.
-                    created_at "created_at: Timestamptz", 
-                    updated_at "updated_at: Timestamptz"
+                    created_at, 
+                    updated_at
             )
             select 
                 inserted_article.*,
-                false "favorited!",
-                0::int8 "favorites_count!",
-                username author_username,
-                bio author_bio,
-                pfp_id author_image,
-                -- user is forbidden to follow themselves
-                false "following_author!"
+                false as favorited,
+                0::int8 as favorites_count,
+                username as author_username,
+                bio as author_bio,
+                pfp_id as author_image,
+                false as following_author
             from inserted_article
             inner join "user" on user_id = $1
         "#,
@@ -157,9 +154,6 @@ async fn create_article(
         req.article.title,
         req.article.description,
         req.article.body,
-        // The typechecking code that SQLx emits for parameters sometimes chokes on vectors.
-        // This slicing operation shouldn't be required, but it took a mess of type-system
-        // hacks just to get the codegen this far.
         &req.article.tag_list[..]
     )
     .fetch_one(&ctx.db)
@@ -167,6 +161,22 @@ async fn create_article(
     .on_constraint("article_slug_key", |_| {
         Error::unprocessable_entity([("slug", format!("duplicate article slug: {}", slug))])
     })?;
+
+    let article = ArticleFromQuery {
+        slug: row.get::<String, _>("slug"),
+        title: row.get::<String, _>("title"),
+        description: row.get::<String, _>("description"),
+        body: row.get::<String, _>("body"),
+        tag_list: row.get::<Vec<String>, _>("tag_list"),
+        created_at: row.get::<Timestamptz, _>("created_at"),
+        updated_at: row.get::<Timestamptz, _>("updated_at"),
+        favorited: row.get::<bool, _>("favorited"),
+        favorites_count: row.get::<i64, _>("favorites_count"),
+        author_username: row.get::<String, _>("author_username"),
+        author_bio: row.get::<Option<String>, _>("author_bio").unwrap_or_default(),
+        author_image: row.get::<Option<uuid::Uuid>, _>("author_image"),
+        following_author: row.get::<bool, _>("following_author"),
+    };
 
     metrics::record_article_created();
 
@@ -186,7 +196,7 @@ async fn update_article(
     let new_slug = req.article.title.as_deref().map(slugify);
 
     metrics::observe_db_query();
-    let article_meta = sqlx::query!(
+    let meta_row = sqlx::query(
         "select article_id, user_id from article where slug = $1 for update",
         slug
     )
@@ -194,13 +204,14 @@ async fn update_article(
     .await?
     .ok_or(Error::NotFound)?;
 
-    if article_meta.user_id != auth_user.user_id {
+    if meta_row.get::<uuid::Uuid, _>("user_id") != auth_user.user_id {
         return Err(Error::Forbidden);
     }
 
+    let article_id = meta_row.get::<uuid::Uuid, _>("article_id");
+
     metrics::observe_db_query();
-    let article = sqlx::query_as!(
-        ArticleFromQuery,
+    let row = sqlx::query(
         r#"
             with updated_article as (
                 update article
@@ -216,30 +227,28 @@ async fn update_article(
                     description,
                     body,
                     tag_list,
-                    article.created_at "created_at: Timestamptz",
-                    article.updated_at "updated_at: Timestamptz"
+                    created_at,
+                    updated_at
             )
             select
                 updated_article.*,
-                exists(select 1 from article_favorite where user_id = $6) "favorited!",
+                exists(select 1 from article_favorite where user_id = $6) as favorited,
                 coalesce(
                     (select count(*) from article_favorite fav where fav.article_id = $5),
                     0
-                ) "favorites_count!",
-                author.username author_username,
-                author.bio author_bio,
-                author.pfp_id author_image,
-                -- user not allowed to follow themselves
-                false "following_author!"
+                ) as favorites_count,
+                author.username as author_username,
+                author.bio as author_bio,
+                author.pfp_id as author_image,
+                false as following_author
             from updated_article
-            -- we've ensured the current user is the article's author so we can assume it here
             inner join "user" author on author.user_id = $6
         "#,
         new_slug,
         req.article.title,
         req.article.description,
         req.article.body,
-        article_meta.article_id,
+        article_id,
         auth_user.user_id
     )
     .fetch_one(&mut *tx)
@@ -249,13 +258,27 @@ async fn update_article(
             "slug",
             format!("duplicate article slug: {}", new_slug.unwrap()),
         )])
-    })?
-    .into_article();
+    })?;
 
-    // Mustn't forget this!
+    let article = ArticleFromQuery {
+        slug: row.get::<String, _>("slug"),
+        title: row.get::<String, _>("title"),
+        description: row.get::<String, _>("description"),
+        body: row.get::<String, _>("body"),
+        tag_list: row.get::<Vec<String>, _>("tag_list"),
+        created_at: row.get::<Timestamptz, _>("created_at"),
+        updated_at: row.get::<Timestamptz, _>("updated_at"),
+        favorited: row.get::<bool, _>("favorited"),
+        favorites_count: row.get::<i64, _>("favorites_count"),
+        author_username: row.get::<String, _>("author_username"),
+        author_bio: row.get::<Option<String>, _>("author_bio").unwrap_or_default(),
+        author_image: row.get::<Option<uuid::Uuid>, _>("author_image"),
+        following_author: row.get::<bool, _>("following_author"),
+    };
+
     tx.commit().await?;
 
-    Ok(Json(ArticleBody { article }))
+    Ok(Json(ArticleBody { article: article.into_article() }))
 }
 
 async fn delete_article(
@@ -264,27 +287,16 @@ async fn delete_article(
     Path(slug): Path<String>,
 ) -> Result<()> {
     metrics::observe_db_query();
-    let result = sqlx::query!(
+    let row = sqlx::query(
         r#"
-            -- The main query cannot observe side-effects of data-modifying CTEs and 
-            -- by design, always sees the "before" picture of the database,
-            -- so this lets us fold our permissions check together with the actual delete.
-            --
-            -- This was the "being too clever" I was talking about before. However, I think it's
-            -- permissible here as we're not pairing this together with a huge select, so it
-            -- should be relatively easy to understand the intended effect here.
             with deleted_article as (
                 delete from article 
-                -- Important: we only delete the article if the user actually authored it.
                 where slug = $1 and user_id = $2
-                -- We just need to return *something* for `exists()` below.
                 returning 1
             )
             select
-                -- This will be `true` if the article existed before we deleted it.
-                exists(select 1 from article where slug = $1) "existed!",
-                -- This will only be `true` if we actually deleted the article.
-                exists(select 1 from deleted_article) "deleted!"
+                exists(select 1 from article where slug = $1) as existed,
+                exists(select 1 from deleted_article) as deleted
         "#,
         slug,
         auth_user.user_id
@@ -292,9 +304,9 @@ async fn delete_article(
     .fetch_one(&ctx.db)
     .await?;
 
-    if result.deleted {
+    if row.get::<bool, _>("deleted") {
         Ok(())
-    } else if result.existed {
+    } else if row.get::<bool, _>("existed") {
         Err(Error::Forbidden)
     } else {
         Err(Error::NotFound)
@@ -307,8 +319,7 @@ async fn get_article(
     Path(slug): Path<String>,
 ) -> Result<Json<ArticleBody>> {
     metrics::observe_db_query();
-    let article = sqlx::query_as!(
-        ArticleFromQuery,
+    let row = sqlx::query(
         r#"
             select
                 slug,
@@ -316,19 +327,17 @@ async fn get_article(
                 description,
                 body,
                 tag_list,
-                article.created_at "created_at: Timestamptz",
-                article.updated_at "updated_at: Timestamptz",
-                exists(select 1 from article_favorite where user_id = $1) "favorited!",
+                article.created_at,
+                article.updated_at,
+                exists(select 1 from article_favorite where user_id = $1) as favorited,
                 coalesce(
-                    -- `count(*)` returns `NULL` if the query returned zero columns
-                    -- not exactly a fan of that design choice but whatever
                     (select count(*) from article_favorite fav where fav.article_id = article.article_id),
                     0
-                ) "favorites_count!",
-                author.username author_username,
-                author.bio author_bio,
-                author.pfp_id author_image,
-                exists(select 1 from follow where followed_user_id = author.user_id and following_user_id = $1) "following_author!"
+                ) as favorites_count,
+                author.username as author_username,
+                author.bio as author_bio,
+                author.pfp_id as author_image,
+                exists(select 1 from follow where followed_user_id = author.user_id and following_user_id = $1) as following_author
             from article
             inner join "user" author using (user_id)
             where slug = $2
@@ -338,10 +347,25 @@ async fn get_article(
     )
         .fetch_optional(&ctx.db)
         .await?
-        .ok_or(Error::NotFound)?
-        .into_article();
+        .ok_or(Error::NotFound)?;
 
-    Ok(Json(ArticleBody { article }))
+    let article = ArticleFromQuery {
+        slug: row.get::<String, _>("slug"),
+        title: row.get::<String, _>("title"),
+        description: row.get::<String, _>("description"),
+        body: row.get::<String, _>("body"),
+        tag_list: row.get::<Vec<String>, _>("tag_list"),
+        created_at: row.get::<Timestamptz, _>("created_at"),
+        updated_at: row.get::<Timestamptz, _>("updated_at"),
+        favorited: row.get::<bool, _>("favorited"),
+        favorites_count: row.get::<i64, _>("favorites_count"),
+        author_username: row.get::<String, _>("author_username"),
+        author_bio: row.get::<Option<String>, _>("author_bio").unwrap_or_default(),
+        author_image: row.get::<Option<uuid::Uuid>, _>("author_image"),
+        following_author: row.get::<bool, _>("following_author"),
+    };
+
+    Ok(Json(ArticleBody { article: article.into_article() }))
 }
 
 async fn favorite_article(
@@ -350,7 +374,7 @@ async fn favorite_article(
     Path(slug): Path<String>,
 ) -> Result<()> {
     metrics::observe_db_query();
-    sqlx::query_scalar!(
+    let _: Option<uuid::Uuid> = sqlx::query_scalar(
         r#"
             with selected_article as (
                 select article_id from article where slug = $1
@@ -359,7 +383,6 @@ async fn favorite_article(
                 insert into article_favorite(article_id, user_id)
                 select article_id, $2
                 from selected_article
-                -- if the article is already favorited
                 on conflict do nothing
             )
             select article_id from selected_article
@@ -380,7 +403,7 @@ async fn unfavorite_article(
     Path(slug): Path<String>,
 ) -> Result<()> {
     metrics::observe_db_query();
-    sqlx::query_scalar!(
+    let _: Option<uuid::Uuid> = sqlx::query_scalar(
         r#"
             with selected_article as (
                 select article_id from article where slug = $1
@@ -404,15 +427,17 @@ async fn unfavorite_article(
 
 async fn get_tags(State(ctx): State<ApiContext>) -> Result<Json<TagsBody>> {
     metrics::observe_db_query();
-    let tags = sqlx::query_scalar!(
+    let rows = sqlx::query(
         r#"
-            select distinct tag "tag!"
+            select distinct tag
             from article, unnest (article.tag_list) tags(tag)
             order by tag
         "#
     )
     .fetch_all(&ctx.db)
     .await?;
+
+    let tags: Vec<String> = rows.into_iter().map(|r| r.get::<String, _>("tag")).collect();
 
     Ok(Json(TagsBody { tags }))
 }
@@ -423,8 +448,7 @@ async fn _article_by_id(
     article_id: Uuid,
 ) -> Result<Article> {
     metrics::observe_db_query();
-    let article = sqlx::query_as!(
-        ArticleFromQuery,
+    let row = sqlx::query(
         r#"
             select
                 slug,
@@ -432,19 +456,17 @@ async fn _article_by_id(
                 description,
                 body,
                 tag_list,
-                article.created_at "created_at: Timestamptz",
-                article.updated_at "updated_at: Timestamptz",
-                exists(select 1 from article_favorite where user_id = $1) "favorited!",
+                article.created_at,
+                article.updated_at,
+                exists(select 1 from article_favorite where user_id = $1) as favorited,
                 coalesce(
-                    -- `count(*)` returns `NULL` if the query returned zero columns
-                    -- not exactly a fan of that design choice but whatever
                     (select count(*) from article_favorite fav where fav.article_id = article.article_id),
                     0
-                ) "favorites_count!",
-                author.username author_username,
-                author.bio author_bio,
-                author.pfp_id author_image,
-                exists(select 1 from follow where followed_user_id = author.user_id and following_user_id = $1) "following_author!"
+                ) as favorites_count,
+                author.username as author_username,
+                author.bio as author_bio,
+                author.pfp_id as author_image,
+                exists(select 1 from follow where followed_user_id = author.user_id and following_user_id = $1) as following_author
             from article
             inner join "user" author using (user_id)
             where article_id = $2
@@ -454,10 +476,25 @@ async fn _article_by_id(
     )
         .fetch_optional(e)
         .await?
-        .ok_or(Error::NotFound)?
-        .into_article();
+        .ok_or(Error::NotFound)?;
 
-    Ok(article)
+    let article = ArticleFromQuery {
+        slug: row.get::<String, _>("slug"),
+        title: row.get::<String, _>("title"),
+        description: row.get::<String, _>("description"),
+        body: row.get::<String, _>("body"),
+        tag_list: row.get::<Vec<String>, _>("tag_list"),
+        created_at: row.get::<Timestamptz, _>("created_at"),
+        updated_at: row.get::<Timestamptz, _>("updated_at"),
+        favorited: row.get::<bool, _>("favorited"),
+        favorites_count: row.get::<i64, _>("favorites_count"),
+        author_username: row.get::<String, _>("author_username"),
+        author_bio: row.get::<Option<String>, _>("author_bio").unwrap_or_default(),
+        author_image: row.get::<Option<uuid::Uuid>, _>("author_image"),
+        following_author: row.get::<bool, _>("following_author"),
+    };
+
+    Ok(article.into_article())
 }
 
 fn slugify(string: &str) -> String {

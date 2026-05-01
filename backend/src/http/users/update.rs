@@ -1,89 +1,51 @@
 use crate::http::{ApiContext, Result};
-use crate::metrics;
 use axum::Json;
 use axum::extract::State;
+use serde::Deserialize;
 
-use crate::http::error::{Error, ResultExt};
 use crate::http::extractor::AuthUser;
+use sqlx::{Executor, Row};
 
-use super::get::get_current_user;
-use super::helpers::*;
 use super::models::*;
 
-pub async fn update_user(
+#[derive(Deserialize)]
+pub struct UpdateUserRequest {
+    pub name: Option<String>,
+    pub bio: Option<String>,
+}
+
+pub async fn update_user_profile(
     auth_user: AuthUser,
     State(ctx): State<ApiContext>,
-    Json(req): Json<UserBody<UpdateUser>>,
-) -> Result<Json<UserBody<User>>> {
-    if req.user == UpdateUser::default() {
-        return get_current_user(auth_user, State(ctx)).await;
-    }
-
-    let password_hash = if let Some(password) = req.user.password {
-        Some(hash_password(password).await?)
-    } else {
-        None
-    };
-
-    let requested_pfp_id = req.user.image;
-    if let Some(pfp_id) = requested_pfp_id {
-        let owns_pfp = sqlx::query_scalar!(
-            r#"
-                select exists(
-                    select 1
-                    from profile_picture
-                    where pfp_id = $1 and user_id = $2
-                ) as "exists!"
-            "#,
-            pfp_id,
-            auth_user.user_id
-        )
-        .fetch_one(&ctx.db)
-        .await?;
-
-        if !owns_pfp {
-            return Err(Error::unprocessable_entity([(
-                "image",
-                "invalid profile picture",
-            )]));
-        }
-    }
-
-    metrics::observe_db_query();
-    let user = sqlx::query!(
-        r#"
-            update "user"
-            set email = coalesce($1, "user".email),
-                username = coalesce($2, "user".username),
-                password_hash = coalesce($3, "user".password_hash),
-                bio = coalesce($4, "user".bio),
-                pfp_id = coalesce($5, "user".pfp_id)
-            where user_id = $6
-            returning email, username, bio, pfp_id
-        "#,
-        req.user.email,
-        req.user.username,
-        password_hash,
-        req.user.bio,
-        requested_pfp_id,
-        auth_user.user_id
+    Json(req): Json<UpdateUserRequest>,
+) -> Result<Json<WebUser>> {
+    sqlx::query(
+        "update web_user set name = coalesce($1, name), bio = coalesce($2, bio) where user_id = $3",
     )
-    .fetch_one(&ctx.db)
-    .await
-    .on_constraint("user_username_key", |_| {
-        Error::unprocessable_entity([("username", "username taken")])
-    })
-    .on_constraint("user_email_key", |_| {
-        Error::unprocessable_entity([("email", "email taken")])
-    })?;
+    .bind(&req.name)
+    .bind(&req.bio)
+    .bind(auth_user.user_id)
+    .execute(&ctx.db)
+    .await?;
 
-    Ok(Json(UserBody {
-        user: User {
-            email: user.email,
-            token: auth_user.to_jwt(&ctx).await?,
-            username: user.username,
-            bio: user.bio,
-            image: user.pfp_id,
-        },
+    let row = sqlx::query(
+        "select user_id, email, name, bio, roles, is_email_verified from web_user where user_id = $1"
+    )
+    .bind(auth_user.user_id)
+    .fetch_one(&ctx.db)
+    .await?;
+
+    let roles: Vec<String> = row
+        .get::<Option<Vec<String>>, _>("roles")
+        .unwrap_or_else(|| vec!["user".to_string()]);
+
+    Ok(Json(WebUser {
+        id: row.get::<uuid::Uuid, _>("user_id"),
+        name: row.get::<String, _>("name"),
+        email: row.get::<String, _>("email"),
+        bio: row.get::<Option<String>, _>("bio").unwrap_or_default(),
+        is_email_verified: row.get::<bool, _>("is_email_verified"),
+        can_submit_materials: row.get::<bool, _>("is_email_verified"),
+        roles,
     }))
 }
