@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ModerationTabs } from "@/common/molecules/Moderation";
 import {
@@ -6,8 +6,10 @@ import {
   SubmissionReviewDialog,
 } from "@/common/organisms/Moderation";
 import { ModerationTabValue } from "@/constants";
+import { fetchJson, resolveApiUrl } from "@/lib/api";
+import { MOCK_SUBMISSIONS } from "@/mocks/mockData";
 import { MaterialSubmission, MaterialSubmissionFile } from "@/models";
-import { getSubmissionFiles, useMaterialSubmissionStore } from "@/store";
+import { getSubmissionFiles } from "@/store";
 import { openMaterialFile } from "@/utils";
 
 const initialSubmissionCounts: Record<ModerationTabValue, number> = {
@@ -18,29 +20,85 @@ const initialSubmissionCounts: Record<ModerationTabValue, number> = {
   approved: 0,
 };
 
-const ModerationPage = () => {
-  const submissions = useMaterialSubmissionStore((state) => state.submissions);
-  const approveSubmission = useMaterialSubmissionStore(
-    (state) => state.approveSubmission,
+type ModerationResponse = {
+  items: MaterialSubmission[];
+  page: number;
+  limit: number;
+  total: number;
+  counters: Record<ModerationTabValue, number>;
+};
+
+const getFallbackModerationResponse = (
+  statusFilter: ModerationTabValue,
+): ModerationResponse => {
+  const items = MOCK_SUBMISSIONS.filter((submission) =>
+    statusFilter === "all" ? true : submission.status === statusFilter,
   );
-  const rejectSubmission = useMaterialSubmissionStore(
-    (state) => state.rejectSubmission,
+  const counters = MOCK_SUBMISSIONS.reduce<Record<ModerationTabValue, number>>(
+    (acc, submission) => {
+      acc.all += 1;
+      acc[submission.status] += 1;
+      return acc;
+    },
+    { ...initialSubmissionCounts },
   );
 
+  return {
+    items,
+    page: 1,
+    limit: 20,
+    total: items.length,
+    counters,
+  };
+};
+
+const ModerationPage = () => {
   const [statusFilter, setStatusFilter] =
     useState<ModerationTabValue>("pending_review");
+  const [submissions, setSubmissions] = useState<MaterialSubmission[]>([]);
+  const [submissionCounts, setSubmissionCounts] = useState<
+    Record<ModerationTabValue, number>
+  >({ ...initialSubmissionCounts });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<
     string | null
   >(null);
   const [rejectComment, setRejectComment] = useState("");
 
-  const filteredSubmissions = useMemo(
-    () =>
-      submissions.filter((submission) =>
-        statusFilter === "all" ? true : submission.status === statusFilter,
-      ),
-    [statusFilter, submissions],
-  );
+  const loadSubmissions = useCallback(async () => {
+    setIsLoading(true);
+    setIsError(false);
+
+    try {
+      const payload = await fetchJson<ModerationResponse>(
+        resolveApiUrl(`/moderation/submissions?status=${statusFilter}`),
+      );
+      setSubmissions(payload.items);
+      setSubmissionCounts(payload.counters);
+    } catch (error) {
+      if (import.meta.env.VITE_API === "mock") {
+        console.warn(
+          "[Moderation] Falling back to local mock moderation list.",
+        );
+        const fallback = getFallbackModerationResponse(statusFilter);
+        setSubmissions(fallback.items);
+        setSubmissionCounts(fallback.counters);
+        setIsError(false);
+        return;
+      }
+
+      console.error(error);
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [statusFilter]);
+
+  useEffect(() => {
+    loadSubmissions();
+  }, [loadSubmissions]);
 
   const selectedSubmission = useMemo(
     () =>
@@ -55,36 +113,68 @@ const ModerationPage = () => {
     setRejectComment(submission.moderatorComment);
   };
 
-  const submissionCounts = useMemo(
-    () =>
-      submissions.reduce<Record<ModerationTabValue, number>>(
-        (acc, submission) => {
-          acc.all += 1;
-          acc[submission.status] += 1;
-          return acc;
-        },
-        { ...initialSubmissionCounts },
-      ),
-    [submissions],
-  );
-
   const closeDialog = () => {
     setSelectedSubmissionId(null);
     setRejectComment("");
   };
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     if (!selectedSubmission) return;
 
-    approveSubmission(selectedSubmission.id);
-    closeDialog();
+    setIsActionLoading(true);
+
+    try {
+      await fetchJson<MaterialSubmission>(
+        resolveApiUrl(
+          `/moderation/submissions/${selectedSubmission.id}/decision`,
+        ),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action: "approve" }),
+        },
+      );
+      await loadSubmissions();
+      closeDialog();
+    } catch (error) {
+      console.error(error);
+      alert("Не удалось одобрить заявку.");
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!selectedSubmission || !rejectComment.trim()) return;
 
-    rejectSubmission(selectedSubmission.id, rejectComment);
-    closeDialog();
+    setIsActionLoading(true);
+
+    try {
+      await fetchJson<MaterialSubmission>(
+        resolveApiUrl(
+          `/moderation/submissions/${selectedSubmission.id}/decision`,
+        ),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "reject",
+            moderatorComment: rejectComment.trim(),
+          }),
+        },
+      );
+      await loadSubmissions();
+      closeDialog();
+    } catch (error) {
+      console.error(error);
+      alert("Не удалось отклонить заявку.");
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const handleOpenFile = (file: MaterialSubmissionFile) => {
@@ -110,10 +200,20 @@ const ModerationPage = () => {
         onValueChange={setStatusFilter}
       />
 
-      <ModerationSubmissionGrid
-        submissions={filteredSubmissions}
-        onSubmissionClick={openSubmission}
-      />
+      {isLoading ? (
+        <div className="rounded-xl border border-border bg-card px-6 py-14 text-center text-muted-foreground">
+          Загружаем заявки...
+        </div>
+      ) : isError ? (
+        <div className="rounded-xl border border-border bg-card px-6 py-14 text-center text-destructive">
+          Не удалось загрузить список заявок
+        </div>
+      ) : (
+        <ModerationSubmissionGrid
+          submissions={submissions}
+          onSubmissionClick={openSubmission}
+        />
+      )}
 
       <SubmissionReviewDialog
         submission={selectedSubmission}
@@ -124,6 +224,7 @@ const ModerationPage = () => {
         onReject={handleReject}
         onOpenFile={handleOpenFile}
         files={selectedSubmission ? getSubmissionFiles(selectedSubmission) : []}
+        isActionLoading={isActionLoading}
       />
     </div>
   );

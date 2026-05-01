@@ -24,3 +24,4 @@ export type {
 } from "./sort";
 export { defaultSortState } from "./sort";
 export type { Theme } from "./settings";
+export type { User } from "./user";

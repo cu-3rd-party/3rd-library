@@ -2,7 +2,6 @@ import { User as UserIcon } from "lucide-react";
 import { useState } from "react";
 
 import { Card } from "@/components/ui/card";
-import { MOCK_USER } from "@/mocks";
 import { User } from "@/models/user";
 
 type AuthorCardProps = {
@@ -22,7 +21,7 @@ export const AuthorCard = ({ author, onClick }: AuthorCardProps) => {
         <div className="h-full aspect-square rounded-xl flex items-center justify-center overflow-hidden">
           {!imageError ? (
             <img
-              src={`/avatars/${MOCK_USER.id}.png`}
+              src={`/avatars/${author.id}.png`}
               alt={author.name}
               className="w-full h-full object-cover"
               onError={() => setImageError(true)}

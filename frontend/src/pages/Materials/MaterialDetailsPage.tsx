@@ -1,5 +1,5 @@
 import { ExternalLink, User } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,9 @@ import {
   TYPE_CONFIG,
 } from "@/constants";
 import { cn } from "@/lib/utils";
-import { getSubmissionFiles, useMaterialSubmissionStore } from "@/store";
+import { fetchJson, resolveApiUrl } from "@/lib/api";
+import { MOCK_SUBMISSIONS } from "@/mocks/mockData";
+import { Material, MaterialSubmissionFile } from "@/models";
 import {
   getCourseName,
   getFileIcon,
@@ -32,38 +34,116 @@ const formatUploadDate = (submittedAt?: string, fallback?: string) => {
   }).format(date);
 };
 
+type MaterialDetailsResponse = Material & {
+  files: MaterialSubmissionFile[];
+  submittedAt?: string;
+  publishedAt?: string;
+};
+
+const getFallbackMaterial = (
+  materialId: string,
+): MaterialDetailsResponse | null => {
+  const submission =
+    MOCK_SUBMISSIONS.find(
+      (item) => item.material.id === materialId && item.status === "approved",
+    ) || null;
+
+  if (!submission) return null;
+
+  return {
+    ...submission.material,
+    files: submission.files,
+    submittedAt: submission.submittedAt,
+    publishedAt: submission.publishedAt,
+  };
+};
+
 const MaterialDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const submissions = useMaterialSubmissionStore((state) => state.submissions);
+  const [materialDetails, setMaterialDetails] =
+    useState<MaterialDetailsResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
-  const submission = useMemo(
-    () =>
-      submissions.find(
-        (item) => item.material.id === id && item.status === "approved",
-      ) || null,
-    [id, submissions],
-  );
+  useEffect(() => {
+    const materialId = id || "";
+    if (!materialId) {
+      setIsLoading(false);
+      setIsError(true);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    const fetchMaterial = async () => {
+      setIsLoading(true);
+      setIsError(false);
+
+      try {
+        const payload = await fetchJson<MaterialDetailsResponse>(
+          resolveApiUrl(`/materials/${materialId}`),
+          { signal: abortController.signal },
+        );
+        setMaterialDetails(payload);
+      } catch (error) {
+        if (abortController.signal.aborted) return;
+
+        if (import.meta.env.VITE_API === "mock") {
+          const fallbackMaterial = getFallbackMaterial(materialId);
+          if (fallbackMaterial) {
+            console.warn(
+              "[MaterialDetails] Falling back to local mock details.",
+            );
+            setMaterialDetails(fallbackMaterial);
+            setIsError(false);
+            return;
+          }
+        }
+
+        console.error(error);
+        setIsError(true);
+      } finally {
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchMaterial();
+
+    return () => abortController.abort();
+  }, [id]);
 
   const handleOpenFile = openMaterialFile;
 
-  const typeData = submission ? TYPE_CONFIG[submission.material.type] : null;
-  const difficultyData = submission
-    ? DIFFICULTY_CONFIG[submission.material.difficulty]
+  const typeData = materialDetails ? TYPE_CONFIG[materialDetails.type] : null;
+  const difficultyData = materialDetails
+    ? DIFFICULTY_CONFIG[materialDetails.difficulty]
     : null;
-  const subjectPreview = submission?.material.subjects.slice(0, 2) || [];
+  const subjectPreview = materialDetails?.subjects.slice(0, 2) || [];
   const subjectText =
     subjectPreview.length > 0 ? subjectPreview.join(" · ") : "Не указан";
   const extraSubjectsCount = Math.max(
     0,
-    (submission?.material.subjects.length || 0) - 2,
+    (materialDetails?.subjects.length || 0) - 2,
   );
-  const uploadDate = submission
-    ? formatUploadDate(submission.submittedAt, submission.material.pubDate)
+  const uploadDate = materialDetails
+    ? formatUploadDate(materialDetails.submittedAt, materialDetails.pubDate)
     : "Не указана";
-  const files = submission ? getSubmissionFiles(submission) : [];
+  const files = materialDetails?.files || [];
 
-  if (!submission) {
+  if (isLoading) {
+    return (
+      <div className="w-full px-4 py-6 xl:w-11/12 mx-auto max-w-screen-2xl">
+        <div className="rounded-xl border border-border bg-card px-6 py-14 text-center text-muted-foreground">
+          <p className="text-base">Загружаем материал...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !materialDetails) {
     return (
       <div className="w-full px-4 py-6 xl:w-11/12 mx-auto max-w-screen-2xl">
         <div className="rounded-xl border border-border bg-card px-6 py-14 text-center text-muted-foreground">
@@ -83,50 +163,51 @@ const MaterialDetailsPage = () => {
   return (
     <div className="w-full px-4 py-6 xl:w-11/12 mx-auto max-w-screen-2xl space-y-6 lg:space-y-8">
       <div className="space-y-3">
-        <div className="flex flex-wrap items-start gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="min-w-0 break-words text-2xl font-bold leading-tight tracking-tight lg:text-3xl">
-                {submission.material.title}
+                {materialDetails.title}
               </h1>
             </div>
           </div>
-          <p className="ml-auto max-w-full text-right text-base font-semibold text-foreground sm:max-w-xs lg:text-lg">
-            {subjectText}
-            {extraSubjectsCount > 0 && (
-              <span className="ml-1 text-sm text-muted-foreground">
-                +{extraSubjectsCount}
+          <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto sm:justify-end">
+            <p className="max-w-full text-base font-semibold text-foreground sm:max-w-xs sm:text-right lg:text-lg">
+              {subjectText}
+              {extraSubjectsCount > 0 && (
+                <span className="ml-1 text-sm text-muted-foreground">
+                  +{extraSubjectsCount}
+                </span>
+              )}
+            </p>
+            {difficultyData && (
+              <span
+                className={cn(
+                  "inline-flex shrink-0 items-center rounded-full border border-border/60 px-2.5 py-1 text-xs font-semibold lg:text-sm",
+                  difficultyData.className || "bg-muted text-foreground",
+                )}
+              >
+                {difficultyData.label}
               </span>
             )}
-          </p>
-          {difficultyData && (
-            <span
-              className={cn(
-                "inline-flex shrink-0 items-center rounded-full border border-border/60 px-2.5 py-1 text-xs font-semibold lg:text-sm",
-                difficultyData.className || "bg-muted text-foreground",
-              )}
-            >
-              {difficultyData.label}
-            </span>
-          )}
+          </div>
         </div>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-muted/40">
             <User className="h-4 w-4 text-foreground/80" />
           </span>
           <p>
-            
-            {submission.material.authorName ? (
-              submission.material.authorId ? (
+            {materialDetails.authorName ? (
+              materialDetails.authorId ? (
                 <Link
-                  to={`${AUTHORS_PREFIX}/${submission.material.authorId}`}
+                  to={`${AUTHORS_PREFIX}/${materialDetails.authorId}`}
                   className="font-medium text-foreground underline-offset-4 hover:underline"
                 >
-                  {submission.material.authorName}
+                  {materialDetails.authorName}
                 </Link>
               ) : (
                 <span className="font-medium text-foreground">
-                  {submission.material.authorName}
+                  {materialDetails.authorName}
                 </span>
               )
             ) : (
@@ -135,11 +216,11 @@ const MaterialDetailsPage = () => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm lg:text-base font-medium text-foreground">
-          <p>{getCourseName(submission.material.courses)}</p>
+          <p>{getCourseName(materialDetails.courses)}</p>
           {typeData && <p>{typeData.label}</p>}
         </div>
         <p className="max-w-4xl whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-          {submission.material.description}
+          {materialDetails.description}
         </p>
       </div>
 

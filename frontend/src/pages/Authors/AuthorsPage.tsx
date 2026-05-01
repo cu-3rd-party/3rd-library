@@ -1,17 +1,72 @@
 import { Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AuthorsGrid } from "@/common/organisms";
 import { Input } from "@/components/ui/input";
+import { fetchJson, resolveApiUrl } from "@/lib/api";
 import { MOCK_AUTHORS } from "@/mocks/mockData";
+import { User } from "@/models/user";
+
+type UsersResponse = {
+  items: User[];
+  page: number;
+  limit: number;
+  total: number;
+};
 
 const AuthorsPage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [authors, setAuthors] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
-  const filteredAuthors = MOCK_AUTHORS.filter((author) =>
-    author.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    const fetchUsers = async () => {
+      setIsLoading(true);
+      setIsError(false);
+
+      try {
+        const payload = await fetchJson<UsersResponse>(
+          resolveApiUrl("/users"),
+          {
+            signal: abortController.signal,
+          },
+        );
+        setAuthors(payload.items);
+      } catch (error) {
+        if (abortController.signal.aborted) return;
+
+        if (import.meta.env.VITE_API === "mock") {
+          console.warn("[Users] Falling back to local mock list.");
+          setAuthors(MOCK_AUTHORS);
+          setIsError(false);
+          return;
+        }
+
+        console.error(error);
+        setIsError(true);
+      } finally {
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchUsers();
+
+    return () => abortController.abort();
+  }, []);
+
+  const filteredAuthors = useMemo(
+    () =>
+      authors.filter((author) =>
+        author.name.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [authors, searchQuery],
   );
 
   const handleAuthorClick = (id: string) => {
@@ -32,10 +87,20 @@ const AuthorsPage = () => {
         </div>
       </div>
 
-      <AuthorsGrid
-        authors={filteredAuthors}
-        onAuthorClick={handleAuthorClick}
-      />
+      {isLoading ? (
+        <div className="col-span-full text-center py-20 text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border/50">
+          Загружаем пользователей...
+        </div>
+      ) : isError ? (
+        <div className="col-span-full text-center py-20 text-destructive bg-secondary/10 rounded-xl border border-dashed border-border/50">
+          Не удалось загрузить пользователей
+        </div>
+      ) : (
+        <AuthorsGrid
+          authors={filteredAuthors}
+          onAuthorClick={handleAuthorClick}
+        />
+      )}
     </div>
   );
 };

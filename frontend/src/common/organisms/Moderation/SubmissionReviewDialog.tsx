@@ -22,6 +22,7 @@ type SubmissionReviewDialogProps = {
   onApprove: () => void;
   onReject: () => void;
   onOpenFile: (file: MaterialSubmissionFile) => void;
+  isActionLoading?: boolean;
 };
 
 export const SubmissionReviewDialog = ({
@@ -33,14 +34,15 @@ export const SubmissionReviewDialog = ({
   onApprove,
   onReject,
   onOpenFile,
+  isActionLoading = false,
 }: SubmissionReviewDialogProps) => (
   <Dialog
     open={Boolean(submission)}
     onOpenChange={(open) => !open && onClose()}
   >
     {submission && (
-      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-2xl gap-0 overflow-hidden p-0">
-        <DialogHeader className="border-b border-border px-6 pt-6 pb-4">
+      <DialogContent className="flex h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:w-full">
+        <DialogHeader className="border-b border-border px-4 pt-5 pb-4 sm:px-6 sm:pt-6">
           <div className="flex flex-wrap items-center gap-2 pr-8">
             <DialogTitle className="line-clamp-2">
               {submission.material.title}
@@ -53,7 +55,7 @@ export const SubmissionReviewDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[calc(100vh-14rem)] overflow-y-auto px-6 py-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
           <div className="space-y-5">
             <p className="text-sm text-muted-foreground">
               Автор:{" "}
@@ -105,15 +107,22 @@ export const SubmissionReviewDialog = ({
           </div>
         </div>
 
-        <DialogFooter className="shrink-0 border-t border-border bg-background px-6 py-4">
+        <DialogFooter className="shrink-0 border-t border-border bg-background px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-4">
           <Button
             variant="destructive"
             onClick={onReject}
-            disabled={!rejectComment.trim()}
+            disabled={!rejectComment.trim() || isActionLoading}
+            className="w-full sm:w-auto"
           >
             Отклонить
           </Button>
-          <Button onClick={onApprove}>Одобрить</Button>
+          <Button
+            onClick={onApprove}
+            className="w-full sm:w-auto"
+            disabled={isActionLoading}
+          >
+            Одобрить
+          </Button>
         </DialogFooter>
       </DialogContent>
     )}
