@@ -1,33 +1,19 @@
+use chrono::{DateTime, Utc};
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::Formatter;
-use time::OffsetDateTime;
-use time::format_description::well_known::Rfc3339;
 
-/// `OffsetDateTime` provides RFC-3339 (ISO-8601 subset) serialization, but the default
-/// `serde::Serialize` implementation produces array of integers, which is great for binary
-/// serialization, but infeasible to consume when returned from an API, and certainly
-/// not human-readable.
-///
-/// With this wrapper type, we override this to provide the serialization format we want.
-///
-/// `chrono::DateTime` doesn't need this treatment, but Chrono sadly seems to have stagnated,
-/// and has a few more papercuts than I'd like:
-///
-/// * Having to import both `DateTime` and `Utc` everywhere gets annoying quickly.
-/// * lack of `const fn` constructors anywhere (especially for `chrono::Duration`)
-/// * `cookie::CookieBuilder` (used by Actix-web and `tower-cookies`) bakes-in `time::Duration`
-///   for setting the expiration
-///     * not really Chrono's fault but certainly doesn't help.
+const RFC3339_FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.fZ";
+
 #[derive(sqlx::Type)]
-pub struct Timestamptz(pub OffsetDateTime);
+pub struct Timestamptz(pub DateTime<Utc>);
 
 impl Serialize for Timestamptz {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let formatted = self.0.format(&Rfc3339).map_err(serde::ser::Error::custom)?;
+        let formatted = self.0.format(RFC3339_FORMAT).to_string();
         serializer.serialize_str(&formatted)
     }
 }
@@ -39,18 +25,6 @@ impl<'de> Deserialize<'de> for Timestamptz {
     {
         struct StrVisitor;
 
-        // By providing our own `Visitor` impl, we can access the string data without copying.
-        //
-        // We could deserialize a borrowed `&str` directly but certain deserialization modes
-        // of `serde_json` don't support that, so we'd be forced to always deserialize `String`.
-        //
-        // `serde_with` has a helper for this but it can be a bit overkill to bring in
-        // just for one type: https://docs.rs/serde_with/latest/serde_with/#displayfromstr
-        //
-        // We'd still need to implement `Display` and `FromStr`, but those are much simpler
-        // to work with.
-        //
-        // However, I also wanted to demonstrate that it was possible to do this with Serde alone.
         impl Visitor<'_> for StrVisitor {
             type Value = Timestamptz;
 
@@ -62,8 +36,8 @@ impl<'de> Deserialize<'de> for Timestamptz {
             where
                 E: serde::de::Error,
             {
-                OffsetDateTime::parse(v, &Rfc3339)
-                    .map(Timestamptz)
+                DateTime::parse_from_str(v, RFC3339_FORMAT)
+                    .map(|dt| Timestamptz(dt.with_timezone(&Utc)))
                     .map_err(E::custom)
             }
         }

@@ -1,9 +1,9 @@
 use crate::http::{ApiContext, Result};
 use axum::Json;
 use axum::extract::{Query, State};
+use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::Row;
-use time::format_description::well_known::Rfc3339;
 
 use crate::http::error::Error;
 use crate::http::extractor::AuthUser;
@@ -11,8 +11,8 @@ use crate::http::materials::models::{Material, Submission};
 
 use super::models::*;
 
-fn to_rfc3339(dt: time::PrimitiveDateTime) -> String {
-    dt.format(&Rfc3339).unwrap().to_string()
+fn to_rfc3339(dt: DateTime<Utc>) -> String {
+    dt.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string()
 }
 
 #[derive(Deserialize)]
@@ -100,7 +100,7 @@ pub async fn list_moderation_submissions(
         .take(limit as usize)
         .map(|s| {
             let pub_date: Option<String> = s
-                .get::<Option<time::PrimitiveDateTime>, _>("published_at")
+                .get::<Option<DateTime<Utc>>, _>("published_at")
                 .map(to_rfc3339);
             Submission {
                 id: s.get::<uuid::Uuid, _>("submission_id"),
@@ -129,16 +129,16 @@ pub async fn list_moderation_submissions(
                 moderator_comment: s
                     .get::<Option<String>, _>("moderator_comment")
                     .unwrap_or_default(),
-                created_at: to_rfc3339(s.get::<time::PrimitiveDateTime, _>("created_at")),
-                updated_at: to_rfc3339(s.get::<time::PrimitiveDateTime, _>("updated_at")),
+                created_at: to_rfc3339(s.get::<DateTime<Utc>, _>("created_at")),
+                updated_at: to_rfc3339(s.get::<DateTime<Utc>, _>("updated_at")),
                 submitted_at: s
-                    .get::<Option<time::PrimitiveDateTime>, _>("submitted_at")
+                    .get::<Option<DateTime<Utc>>, _>("submitted_at")
                     .map(to_rfc3339),
                 reviewed_at: s
-                    .get::<Option<time::PrimitiveDateTime>, _>("reviewed_at")
+                    .get::<Option<DateTime<Utc>>, _>("reviewed_at")
                     .map(to_rfc3339),
                 published_at: s
-                    .get::<Option<time::PrimitiveDateTime>, _>("published_at")
+                    .get::<Option<DateTime<Utc>>, _>("published_at")
                     .map(to_rfc3339),
             }
         })

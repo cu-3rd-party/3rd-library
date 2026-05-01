@@ -5,11 +5,11 @@ use crate::http::ApiContext;
 use axum::http::HeaderValue;
 use axum::http::header::AUTHORIZATION;
 use axum::http::request::Parts;
+use chrono::Utc;
 use hmac::{Hmac, Mac};
 use jwt::{SignWithKey, VerifyWithKey};
 use redis::AsyncCommands;
 use sha2::Sha384;
-use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::constants::{DEFAULT_SESSION_LENGTH, SCHEME_PREFIX};
@@ -34,11 +34,11 @@ impl AuthUser {
         let hmac = Hmac::<Sha384>::new_from_slice(ctx.config.jwt.hmac_key.as_bytes())
             .expect("HMAC-SHA-384 can accept any key length");
 
-        let exp = (OffsetDateTime::now_utc() + DEFAULT_SESSION_LENGTH).unix_timestamp();
+        let exp = (Utc::now() + DEFAULT_SESSION_LENGTH).timestamp();
 
         let mut redis = ctx.redis.clone();
         let key = format!("session:{}", self.session_id);
-        let ttl_seconds = DEFAULT_SESSION_LENGTH.whole_seconds().max(1) as u64;
+        let ttl_seconds = DEFAULT_SESSION_LENGTH.num_seconds().max(1) as u64;
         let _: () = redis
             .set_ex(key, self.user_id.to_string(), ttl_seconds)
             .await
@@ -95,7 +95,7 @@ impl AuthUser {
 
         let (_header, claims) = jwt.into();
 
-        if claims.exp < OffsetDateTime::now_utc().unix_timestamp() {
+        if claims.exp < Utc::now().timestamp() {
             log::debug!("token expired");
             return Err(Error::Unauthorized);
         }

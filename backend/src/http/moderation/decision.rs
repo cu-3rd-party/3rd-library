@@ -1,8 +1,8 @@
 use crate::http::{ApiContext, Result};
 use axum::Json;
 use axum::extract::{Path, State};
+use chrono::{DateTime, Utc};
 use sqlx::Row;
-use time::format_description::well_known::Rfc3339;
 
 use crate::http::error::Error;
 use crate::http::extractor::AuthUser;
@@ -10,8 +10,8 @@ use crate::http::materials::models::{Material, Submission};
 
 use super::models::ModerationDecisionRequest;
 
-fn to_rfc3339(dt: time::PrimitiveDateTime) -> String {
-    dt.format(&Rfc3339).unwrap().to_string()
+fn to_rfc3339(dt: DateTime<Utc>) -> String {
+    dt.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string()
 }
 
 pub async fn moderation_decision(
@@ -48,7 +48,7 @@ pub async fn moderation_decision(
         ));
     }
 
-    let now = time::OffsetDateTime::now_utc();
+    let now = Utc::now();
 
     if req.action == "approve" {
         let material_id = uuid::Uuid::new_v4();
@@ -130,7 +130,7 @@ pub async fn moderation_decision(
         .fetch_one(&ctx.db)
         .await?;
 
-        let now_rfc3339 = now.format(&Rfc3339).unwrap().to_string();
+        let now_rfc3339 = now.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string();
 
         Ok(Json(Submission {
             id: updated_row.get::<uuid::Uuid, _>("submission_id"),
@@ -159,16 +159,16 @@ pub async fn moderation_decision(
             moderator_comment: updated_row
                 .get::<Option<String>, _>("moderator_comment")
                 .unwrap_or_default(),
-            created_at: to_rfc3339(updated_row.get::<time::PrimitiveDateTime, _>("created_at")),
-            updated_at: to_rfc3339(updated_row.get::<time::PrimitiveDateTime, _>("updated_at")),
+            created_at: to_rfc3339(updated_row.get::<DateTime<Utc>, _>("created_at")),
+            updated_at: to_rfc3339(updated_row.get::<DateTime<Utc>, _>("updated_at")),
             submitted_at: updated_row
-                .get::<Option<time::PrimitiveDateTime>, _>("submitted_at")
+                .get::<Option<DateTime<Utc>>, _>("submitted_at")
                 .map(to_rfc3339),
             reviewed_at: updated_row
-                .get::<Option<time::PrimitiveDateTime>, _>("reviewed_at")
+                .get::<Option<DateTime<Utc>>, _>("reviewed_at")
                 .map(to_rfc3339),
             published_at: updated_row
-                .get::<Option<time::PrimitiveDateTime>, _>("published_at")
+                .get::<Option<DateTime<Utc>>, _>("published_at")
                 .map(to_rfc3339),
         }))
     } else if req.action == "reject" {
@@ -250,16 +250,16 @@ pub async fn moderation_decision(
             moderator_comment: updated_row
                 .get::<Option<String>, _>("moderator_comment")
                 .unwrap_or_default(),
-            created_at: to_rfc3339(updated_row.get::<time::PrimitiveDateTime, _>("created_at")),
-            updated_at: to_rfc3339(updated_row.get::<time::PrimitiveDateTime, _>("updated_at")),
+            created_at: to_rfc3339(updated_row.get::<DateTime<Utc>, _>("created_at")),
+            updated_at: to_rfc3339(updated_row.get::<DateTime<Utc>, _>("updated_at")),
             submitted_at: updated_row
-                .get::<Option<time::PrimitiveDateTime>, _>("submitted_at")
+                .get::<Option<DateTime<Utc>>, _>("submitted_at")
                 .map(to_rfc3339),
             reviewed_at: updated_row
-                .get::<Option<time::PrimitiveDateTime>, _>("reviewed_at")
+                .get::<Option<DateTime<Utc>>, _>("reviewed_at")
                 .map(to_rfc3339),
             published_at: updated_row
-                .get::<Option<time::PrimitiveDateTime>, _>("published_at")
+                .get::<Option<DateTime<Utc>>, _>("published_at")
                 .map(to_rfc3339),
         }))
     } else {

@@ -1,7 +1,7 @@
 use tokio::time::Duration;
 
 // Extractor
-pub const DEFAULT_SESSION_LENGTH: time::Duration = time::Duration::weeks(2);
+pub const DEFAULT_SESSION_LENGTH: chrono::Duration = chrono::Duration::weeks(2);
 pub const SCHEME_PREFIX: &str = "Token ";
 
 // Metrics

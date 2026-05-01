@@ -24,7 +24,7 @@ pub async fn register_user(
         })
         .collect();
 
-    let code_expires_at = time::OffsetDateTime::now_utc() + time::Duration::hours(24);
+    let code_expires_at = chrono::Utc::now() + chrono::Duration::hours(24);
 
     metrics::observe_db_query();
     let user_id: uuid::Uuid = sqlx::query_scalar(

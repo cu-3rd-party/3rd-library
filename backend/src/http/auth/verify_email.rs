@@ -5,6 +5,7 @@ use axum::extract::State;
 
 use crate::http::error::Error;
 use crate::http::extractor::AuthUser;
+use chrono::{DateTime, Utc};
 use sqlx::{Executor, Row};
 use uuid::Uuid;
 
@@ -37,16 +38,16 @@ pub async fn verify_email(
         return Err(Error::BadRequest);
     }
 
-    let code_expires_at: Option<time::PrimitiveDateTime> =
-        row.get::<Option<time::PrimitiveDateTime>, _>("verification_code_expires_at");
-    let now = time::OffsetDateTime::now_utc();
+    let code_expires_at: Option<DateTime<Utc>> =
+        row.get::<Option<DateTime<Utc>>, _>("verification_code_expires_at");
+    let now = Utc::now();
     if let Some(expires) = code_expires_at {
-        // Convert now (OffsetDateTime) to a timestamp and compare
-        let _now_timestamp = now.unix_timestamp();
-        let _expires_timestamp =
-            expires.hour() as i64 * 3600 + expires.minute() as i64 * 60 + expires.second() as i64;
-        // This is a simplified comparison - in reality we'd want to compare dates properly
-        // For now, let's just proceed - the issue is comparing timestamps properly
+        if expires < now {
+            return Err(Error::bad_request(
+                "verification_code_expired",
+                "Verification code has expired",
+            ));
+        }
     }
 
     metrics::observe_db_query();

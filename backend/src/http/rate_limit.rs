@@ -6,10 +6,10 @@ use axum::http::header::HeaderName;
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
+use chrono::Utc;
 use redis::Script;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::OnceLock;
-use time::OffsetDateTime;
 
 const LUA_SCRIPT: &str = r#"
 local key = KEYS[1]
@@ -70,7 +70,7 @@ pub async fn rate_limit_middleware(
     }
 
     let ttl_seconds = ctx.rate_limit_ttl_seconds;
-    let now_ms = (OffsetDateTime::now_utc().unix_timestamp_nanos() / 1_000_000) as i64;
+    let now_ms = (Utc::now().timestamp_nanos_opt().unwrap_or(0) / 1_000_000) as i64;
     let key = format!("rate_limit:{ip}");
 
     let mut redis = ctx.redis.clone();

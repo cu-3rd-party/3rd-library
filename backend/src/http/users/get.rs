@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 use crate::http::error::Error;
 use crate::http::extractor::AuthUser;
 use crate::http::materials::models as materials_models;
+use chrono::{DateTime, Utc};
 use sqlx::Row;
-use time::format_description::well_known::Rfc3339;
 
 use super::models::*;
 
@@ -200,8 +200,8 @@ pub async fn get_user_by_id(
         .take(limit as usize)
         .map(|m| {
             let pub_date: Option<String> = m
-                .get::<Option<time::PrimitiveDateTime>, _>("published_at")
-                .map(|dt| dt.format(&Rfc3339).unwrap_or_default());
+                .get::<Option<DateTime<Utc>>, _>("published_at")
+                .map(|dt| dt.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string());
             materials_models::Material {
                 id: m.get::<uuid::Uuid, _>("material_id"),
                 author_id: m.get::<uuid::Uuid, _>("user_id"),
