@@ -1,7 +1,7 @@
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[command(author, version, about)]
+#[command(author, version, about, ignore_errors = true)]
 pub struct Config {
     #[command(flatten)]
     pub db: DbConfig,

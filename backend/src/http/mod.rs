@@ -1,6 +1,6 @@
 use crate::config::Config;
 use anyhow::Context;
-use axum::Router;
+use axum::{Json, Router};
 use redis::aio::ConnectionManager;
 use sqlx::PgPool;
 use std::net::SocketAddr;
@@ -22,8 +22,11 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 use crate::metrics;
 use axum::http::HeaderValue;
+use axum::response::IntoResponse;
 use axum::routing::get;
+use itertools::Itertools;
 use log::info;
+use serde::Serialize;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 #[derive(Clone)]
@@ -63,6 +66,7 @@ pub async fn serve(config: Config, db: PgPool, redis: ConnectionManager) -> anyh
     };
 
     let app = api_router()
+        .route("/api/health", get(health_check))
         .with_state(context.clone())
         .layer(axum::middleware::from_fn_with_state(
             context.clone(),
@@ -106,4 +110,17 @@ fn api_router() -> Router<ApiContext> {
         .merge(users::router())
         .merge(materials::router())
         .merge(moderation::router())
+}
+
+async fn health_check() -> impl IntoResponse {
+    Json(HealthCheck {
+        status: "ok".to_string(),
+        timestamp: chrono::Local::now().to_rfc2822(),
+    })
+}
+
+#[derive(Serialize)]
+struct HealthCheck {
+    status: String,
+    timestamp: String,
 }

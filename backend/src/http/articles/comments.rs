@@ -8,7 +8,7 @@ use axum::extract::{Path, State};
 use axum::routing::{delete, get};
 use axum::{Json, Router};
 use futures::TryStreamExt;
-use time::OffsetDateTime;
+use chrono::{DateTime, Utc};
 
 pub fn router() -> Router<ApiContext> {
     Router::new()
@@ -49,8 +49,8 @@ struct Comment {
 
 struct CommentFromQuery {
     comment_id: i64,
-    created_at: OffsetDateTime,
-    updated_at: OffsetDateTime,
+    created_at: DateTime<Utc>,
+    updated_at: DateTime<Utc>,
     body: String,
     author_username: String,
     author_bio: String,
@@ -110,8 +110,8 @@ async fn get_article_comments(
         .map_ok(|row| {
             CommentFromQuery {
                 comment_id: row.get::<i64, _>("comment_id"),
-                created_at: row.get::<time::PrimitiveDateTime, _>("created_at").into(),
-                updated_at: row.get::<time::PrimitiveDateTime, _>("updated_at").into(),
+                created_at: row.get::<DateTime<Utc>, _>("created_at"),
+                updated_at: row.get::<DateTime<Utc>, _>("updated_at"),
                 body: row.get::<String, _>("body"),
                 author_username: row.get::<String, _>("author_username"),
                 author_bio: row.get::<Option<String>, _>("author_bio").unwrap_or_default(),
@@ -163,8 +163,8 @@ async fn add_comment(
 
     let comment = CommentFromQuery {
         comment_id: row.get::<i64, _>("comment_id"),
-        created_at: row.get::<time::PrimitiveDateTime, _>("created_at").into(),
-        updated_at: row.get::<time::PrimitiveDateTime, _>("updated_at").into(),
+        created_at: row.get::<DateTime<Utc>, _>("created_at"),
+        updated_at: row.get::<DateTime<Utc>, _>("updated_at"),
         body: row.get::<String, _>("body"),
         author_username: row.get::<String, _>("author_username"),
         author_bio: row.get::<Option<String>, _>("author_bio").unwrap_or_default(),

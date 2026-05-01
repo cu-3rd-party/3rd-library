@@ -11,7 +11,7 @@ use axum::{Json, Router};
 use futures::TryStreamExt;
 use serde::Serialize;
 use std::path::Path as StdPath;
-use time::OffsetDateTime;
+use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 use crate::constants::UPLOAD_DIR;
@@ -31,8 +31,8 @@ pub fn router() -> Router<ApiContext> {
 struct AttachmentFromQuery {
     attachment_id: Uuid,
     file_name: String,
-    created_at: OffsetDateTime,
-    updated_at: OffsetDateTime,
+    created_at: DateTime<Utc>,
+    updated_at: DateTime<Utc>,
 }
 
 impl From<AttachmentFromQuery> for Attachment {
@@ -95,8 +95,8 @@ async fn get_attachments(
         AttachmentFromQuery {
             attachment_id: row.get::<uuid::Uuid, _>("attachment_id"),
             file_name: row.get::<String, _>("file_name"),
-            created_at: row.get::<time::PrimitiveDateTime, _>("created_at").into(),
-            updated_at: row.get::<time::PrimitiveDateTime, _>("updated_at").into(),
+            created_at: row.get::<DateTime<Utc>, _>("created_at"),
+            updated_at: row.get::<DateTime<Utc>, _>("updated_at"),
         }.into()
     })
     .try_collect()
@@ -258,14 +258,12 @@ async fn create_attachment(
         file_name: row.get::<Option<String>, _>("file_name")
             .ok_or_else(|| anyhow::anyhow!("attachment insert failed"))?,
         created_at: Timestamptz(
-            row.get::<Option<time::PrimitiveDateTime>, _>("created_at")
-                .ok_or_else(|| anyhow::anyhow!("attachment insert failed"))?
-                .into(),
+            row.get::<Option<DateTime<Utc>>, _>("created_at")
+                .ok_or_else(|| anyhow::anyhow!("attachment insert failed"))?,
         ),
         updated_at: Timestamptz(
-            row.get::<Option<time::PrimitiveDateTime>, _>("updated_at")
-                .ok_or_else(|| anyhow::anyhow!("attachment insert failed"))?
-                .into(),
+            row.get::<Option<DateTime<Utc>>, _>("updated_at")
+                .ok_or_else(|| anyhow::anyhow!("attachment insert failed"))?,
         ),
     };
 

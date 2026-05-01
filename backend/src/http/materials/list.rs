@@ -4,13 +4,13 @@ use axum::extract::{Query, State};
 
 use crate::http::error::Error;
 use crate::http::extractor::{AuthUser, MaybeAuthUser};
+use chrono::{DateTime, Utc};
 use sqlx::Row;
-use time::format_description::well_known::Rfc3339;
 
 use super::models::*;
 
-fn to_rfc3339(dt: time::PrimitiveDateTime) -> String {
-    dt.format(&Rfc3339).unwrap().to_string()
+fn to_rfc3339(dt: DateTime<Utc>) -> String {
+    dt.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string()
 }
 
 pub async fn list_materials(
@@ -68,7 +68,7 @@ pub async fn list_materials(
         .take(limit as usize)
         .map(|m| {
             let pub_date: Option<String> = m
-                .get::<Option<time::PrimitiveDateTime>, _>("published_at")
+                .get::<Option<DateTime<Utc>>, _>("published_at")
                 .map(to_rfc3339);
             Material {
                 id: m.get::<uuid::Uuid, _>("material_id"),
@@ -160,7 +160,7 @@ pub async fn list_submissions(
         .take(limit as usize)
         .map(|s| {
             let pub_date: Option<String> = s
-                .get::<Option<time::PrimitiveDateTime>, _>("published_at")
+                .get::<Option<DateTime<Utc>>, _>("published_at")
                 .map(to_rfc3339);
             Submission {
                 id: s.get::<uuid::Uuid, _>("submission_id"),
@@ -189,16 +189,16 @@ pub async fn list_submissions(
                 moderator_comment: s
                     .get::<Option<String>, _>("moderator_comment")
                     .unwrap_or_default(),
-                created_at: to_rfc3339(s.get::<time::PrimitiveDateTime, _>("created_at")),
-                updated_at: to_rfc3339(s.get::<time::PrimitiveDateTime, _>("updated_at")),
+                created_at: to_rfc3339(s.get::<DateTime<Utc>, _>("created_at")),
+                updated_at: to_rfc3339(s.get::<DateTime<Utc>, _>("updated_at")),
                 submitted_at: s
-                    .get::<Option<time::PrimitiveDateTime>, _>("submitted_at")
+                    .get::<Option<DateTime<Utc>>, _>("submitted_at")
                     .map(to_rfc3339),
                 reviewed_at: s
-                    .get::<Option<time::PrimitiveDateTime>, _>("reviewed_at")
+                    .get::<Option<DateTime<Utc>>, _>("reviewed_at")
                     .map(to_rfc3339),
                 published_at: s
-                    .get::<Option<time::PrimitiveDateTime>, _>("published_at")
+                    .get::<Option<DateTime<Utc>>, _>("published_at")
                     .map(to_rfc3339),
             }
         })
@@ -230,7 +230,7 @@ pub async fn create_submission(
     }
 
     let submission_id = uuid::Uuid::new_v4();
-    let now = time::OffsetDateTime::now_utc();
+    let now = Utc::now();
 
     sqlx::query(
         r#"insert into submission (submission_id, user_id, title, description, courses, subjects, type, difficulty, status, submitted_at)
@@ -265,9 +265,9 @@ pub async fn create_submission(
         files: vec![],
         status: "pending_review".to_string(),
         moderator_comment: String::new(),
-        created_at: now.format(&Rfc3339).unwrap().to_string(),
-        updated_at: now.format(&Rfc3339).unwrap().to_string(),
-        submitted_at: Some(now.format(&Rfc3339).unwrap().to_string()),
+        created_at: now.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string(),
+        updated_at: now.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string(),
+        submitted_at: Some(now.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string()),
         reviewed_at: None,
         published_at: None,
     }))

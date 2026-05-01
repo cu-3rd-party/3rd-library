@@ -18,7 +18,7 @@ pub async fn resend_verification_code(
         })
         .collect();
 
-    let code_expires_at = time::OffsetDateTime::now_utc() + time::Duration::hours(24);
+    let code_expires_at = chrono::Utc::now() + chrono::Duration::hours(24);
 
     let result = sqlx::query(
         "update web_user set verification_code = $1, verification_code_expires_at = $2 where email = $3 and not is_email_verified"

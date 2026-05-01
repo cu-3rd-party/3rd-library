@@ -3,13 +3,13 @@ use axum::Json;
 use axum::extract::{Path, State};
 
 use crate::http::error::Error;
+use chrono::{DateTime, Utc};
 use sqlx::{Executor, Row};
-use time::format_description::well_known::Rfc3339;
 
 use super::models::*;
 
-fn to_rfc3339(dt: time::PrimitiveDateTime) -> String {
-    dt.format(&Rfc3339).unwrap().to_string()
+fn to_rfc3339(dt: DateTime<Utc>) -> String {
+    dt.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string()
 }
 
 pub async fn get_material(
@@ -65,10 +65,10 @@ pub async fn get_material(
         .collect();
 
     let published_at: Option<String> = row
-        .get::<Option<time::PrimitiveDateTime>, _>("published_at")
+        .get::<Option<DateTime<Utc>>, _>("published_at")
         .map(to_rfc3339);
     let submitted_at: Option<String> = row
-        .get::<Option<time::PrimitiveDateTime>, _>("submitted_at")
+        .get::<Option<DateTime<Utc>>, _>("submitted_at")
         .map(to_rfc3339);
 
     Ok(Json(MaterialDetails {

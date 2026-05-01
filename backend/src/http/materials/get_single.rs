@@ -4,13 +4,13 @@ use axum::extract::{Path, State};
 
 use crate::http::error::Error;
 use crate::http::extractor::AuthUser;
+use chrono::{DateTime, Utc};
 use sqlx::Row;
-use time::format_description::well_known::Rfc3339;
 
 use super::models::*;
 
-fn to_rfc3339(dt: time::PrimitiveDateTime) -> String {
-    dt.format(&Rfc3339).unwrap().to_string()
+fn to_rfc3339(dt: DateTime<Utc>) -> String {
+    dt.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string()
 }
 
 pub async fn get_submission_by_id(
@@ -88,7 +88,7 @@ pub async fn get_submission_by_id(
         .collect();
 
     let pub_date: Option<String> = row
-        .get::<Option<time::PrimitiveDateTime>, _>("published_at")
+        .get::<Option<DateTime<Utc>>, _>("published_at")
         .map(to_rfc3339);
 
     Ok(Json(Submission {
@@ -118,16 +118,16 @@ pub async fn get_submission_by_id(
         moderator_comment: row
             .get::<Option<String>, _>("moderator_comment")
             .unwrap_or_default(),
-        created_at: to_rfc3339(row.get::<time::PrimitiveDateTime, _>("created_at")),
-        updated_at: to_rfc3339(row.get::<time::PrimitiveDateTime, _>("updated_at")),
+        created_at: to_rfc3339(row.get::<DateTime<Utc>, _>("created_at")),
+        updated_at: to_rfc3339(row.get::<DateTime<Utc>, _>("updated_at")),
         submitted_at: row
-            .get::<Option<time::PrimitiveDateTime>, _>("submitted_at")
+            .get::<Option<DateTime<Utc>>, _>("submitted_at")
             .map(to_rfc3339),
         reviewed_at: row
-            .get::<Option<time::PrimitiveDateTime>, _>("reviewed_at")
+            .get::<Option<DateTime<Utc>>, _>("reviewed_at")
             .map(to_rfc3339),
         published_at: row
-            .get::<Option<time::PrimitiveDateTime>, _>("published_at")
+            .get::<Option<DateTime<Utc>>, _>("published_at")
             .map(to_rfc3339),
     }))
 }
@@ -169,7 +169,7 @@ pub async fn update_submission(
         ));
     }
 
-    let now = time::OffsetDateTime::now_utc();
+    let now = Utc::now();
 
     sqlx::query(
         r#"
@@ -226,7 +226,7 @@ pub async fn update_submission(
     .await?;
 
     let pub_date: Option<String> = updated_row
-        .get::<Option<time::PrimitiveDateTime>, _>("published_at")
+        .get::<Option<DateTime<Utc>>, _>("published_at")
         .map(to_rfc3339);
 
     Ok(Json(Submission {
@@ -256,16 +256,16 @@ pub async fn update_submission(
         moderator_comment: updated_row
             .get::<Option<String>, _>("moderator_comment")
             .unwrap_or_default(),
-        created_at: to_rfc3339(updated_row.get::<time::PrimitiveDateTime, _>("created_at")),
-        updated_at: to_rfc3339(updated_row.get::<time::PrimitiveDateTime, _>("updated_at")),
+        created_at: to_rfc3339(updated_row.get::<DateTime<Utc>, _>("created_at")),
+        updated_at: to_rfc3339(updated_row.get::<DateTime<Utc>, _>("updated_at")),
         submitted_at: updated_row
-            .get::<Option<time::PrimitiveDateTime>, _>("submitted_at")
+            .get::<Option<DateTime<Utc>>, _>("submitted_at")
             .map(to_rfc3339),
         reviewed_at: updated_row
-            .get::<Option<time::PrimitiveDateTime>, _>("reviewed_at")
+            .get::<Option<DateTime<Utc>>, _>("reviewed_at")
             .map(to_rfc3339),
         published_at: updated_row
-            .get::<Option<time::PrimitiveDateTime>, _>("published_at")
+            .get::<Option<DateTime<Utc>>, _>("published_at")
             .map(to_rfc3339),
     }))
 }

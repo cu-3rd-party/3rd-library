@@ -168,18 +168,6 @@ impl IntoResponse for Error {
 
 /// A little helper trait for more easily converting database constraint errors into API errors.
 ///
-/// ```rust,ignore
-/// let user_id = sqlx::query_scalar!(
-///     r#"insert into "user" (username, email, password_hash) values ($1, $2, $3) returning user_id"#,
-///     username,
-///     email,
-///     password_hash
-/// )
-///     .fetch_one(&ctxt.db)
-///     .await
-///     .on_constraint("user_username_key", |_| Error::unprocessable_entity([("username", "already taken")]))?;
-/// ```
-///
 /// Something like this would ideally live in a `sqlx-axum` crate if it made sense to author one,
 /// however its definition is tied pretty intimately to the `Error` type, which is itself
 /// tied directly to application semantics.
