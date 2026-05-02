@@ -71,12 +71,14 @@ pub async fn moderation_decision(
                 update submission 
                 set status = 'approved', 
                     moderator_comment = '', 
-                    reviewed_at = $1,
-                    published_at = $1,
-                    updated_at = $1
-                where submission_id = $2
+                    moderator_id = $1,
+                    reviewed_at = $2,
+                    published_at = $2,
+                    updated_at = $2
+                where submission_id = $3
             "#,
         )
+        .bind(auth_user.user_id)
         .bind(now)
         .bind(submission_id)
         .execute(&ctx.db)
@@ -184,12 +186,14 @@ pub async fn moderation_decision(
                 update submission 
                 set status = 'rejected', 
                     moderator_comment = $1, 
-                    reviewed_at = $2,
-                    updated_at = $2
-                where submission_id = $3
+                    moderator_id = $2,
+                    reviewed_at = $3,
+                    updated_at = $3
+                where submission_id = $4
             "#,
         )
         .bind(&comment)
+        .bind(auth_user.user_id)
         .bind(now)
         .bind(submission_id)
         .execute(&ctx.db)
