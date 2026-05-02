@@ -149,7 +149,8 @@ async fn test_auth_register_invalid_email() {
 
     assert!(
         response.status().is_client_error(),
-        "Expected 400 Bad Request"
+        "Expected 400 Bad Request, received: {}",
+        response.status().to_string()
     );
 
     let error: ApiError = response.json().await.unwrap();
