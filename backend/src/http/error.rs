@@ -21,6 +21,9 @@ pub enum Error {
     #[error("bad request")]
     BadRequest,
 
+    #[error("too many requests")]
+    TooManyRequests,
+
     #[error("conflict")]
     Conflict(String),
 
@@ -78,6 +81,10 @@ impl Error {
     pub fn conflict(_code: impl Into<String>, message: impl Into<String>) -> Self {
         Self::Conflict(message.into())
     }
+
+    pub fn too_many_requests() -> Self {
+        Self::TooManyRequests
+    }
 }
 
 impl Error {
@@ -104,6 +111,7 @@ impl Error {
             Self::Forbidden => StatusCode::FORBIDDEN,
             Self::NotFound => StatusCode::NOT_FOUND,
             Self::BadRequest => StatusCode::BAD_REQUEST,
+            Self::TooManyRequests => StatusCode::TOO_MANY_REQUESTS,
             Self::Conflict(_) => StatusCode::CONFLICT,
             Self::UnprocessableEntity { .. } => StatusCode::UNPROCESSABLE_ENTITY,
             Self::Sqlx(_) | Self::Anyhow(_) => StatusCode::INTERNAL_SERVER_ERROR,
@@ -118,6 +126,7 @@ impl IntoResponse for Error {
             Self::Forbidden => (StatusCode::FORBIDDEN, "forbidden", self.to_string()),
             Self::NotFound => (StatusCode::NOT_FOUND, "not_found", self.to_string()),
             Self::BadRequest => (StatusCode::BAD_REQUEST, "bad_request", self.to_string()),
+            Self::TooManyRequests => (StatusCode::TOO_MANY_REQUESTS, "too_many_requests", self.to_string()),
             Self::Conflict(msg) => (StatusCode::CONFLICT, "conflict", msg.clone()),
             Self::UnprocessableEntity { .. } => (
                 StatusCode::UNPROCESSABLE_ENTITY,

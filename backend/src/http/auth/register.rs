@@ -30,14 +30,15 @@ pub async fn register_user(
 
     metrics::observe_db_query();
     let user_id: uuid::Uuid = sqlx::query_scalar(
-        r#"insert into web_user (email, password_hash, name, verification_code, verification_code_expires_at) 
-           values ($1, $2, $3, $4, $5) 
+        r#"insert into web_user (email, password_hash, name, verification_code, verification_code_issued_at, verification_code_expires_at) 
+           values ($1, $2, $3, $4, $5, $6) 
            returning user_id"#
     )
     .bind(&req.email)
     .bind(&password_hash)
     .bind(&req.name)
     .bind(&code)
+    .bind(chrono::Utc::now())
     .bind(code_expires_at)
     .fetch_one(&ctx.db)
     .await

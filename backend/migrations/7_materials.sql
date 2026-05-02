@@ -10,6 +10,7 @@ create table if not exists web_user (
     roles text[] default array ['user'],
     is_email_verified bool default false,
     verification_code text,
+    verification_code_issued_at timestamptz,
     verification_code_expires_at timestamptz,
     created_at timestamptz default now(),
     updated_at timestamptz default now()
