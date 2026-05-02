@@ -4,13 +4,15 @@ use axum::extract::State;
 
 use crate::http::error::Error;
 use rand::Rng;
-
+#[cfg(feature = "smtp")]
+use crate::smtp;
 use super::models::*;
 
 pub async fn resend_verification_code(
     State(ctx): State<ApiContext>,
     Json(req): Json<ResendVerificationCodeRequest>,
 ) -> Result<Json<()>> {
+    // todo: add rate limit to email code re-sends
     let code: String = (0..6)
         .map(|_| {
             let idx = rand::thread_rng().gen_range(0..10);
@@ -34,6 +36,13 @@ pub async fn resend_verification_code(
     }
 
     log::info!("Resent verification code to {}", req.email);
+
+    #[cfg(feature = "smtp")]
+    tokio::spawn(smtp::send_verification_code(
+        ctx,
+        req.email.clone(),
+        code.clone(),
+    ));
 
     Ok(Json(()))
 }

@@ -1,5 +1,7 @@
 use crate::http::{ApiContext, Result};
 use crate::metrics;
+#[cfg(feature = "smtp")]
+use crate::smtp;
 use axum::Json;
 use axum::extract::State;
 
@@ -60,6 +62,13 @@ pub async fn register_user(
         can_submit_materials: false,
         roles: vec!["user".to_string()],
     };
+
+    #[cfg(feature = "smtp")]
+    tokio::spawn(smtp::send_verification_code(
+        ctx,
+        user.email.clone(),
+        code.clone(),
+    ));
 
     Ok(Json(RegisterResponse {
         user,
