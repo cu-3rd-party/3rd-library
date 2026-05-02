@@ -1,16 +1,16 @@
-use std::sync::OnceLock;
 use crate::http::{ApiContext, Result};
 use crate::metrics;
 #[cfg(feature = "smtp")]
 use crate::smtp;
 use axum::Json;
 use axum::extract::State;
+use std::sync::OnceLock;
 
+use super::models::*;
 use crate::http::error::{Error, ResultExt};
+use crate::http::users::hash_password;
 use rand::Rng;
 use regex::Regex;
-use super::models::*;
-use crate::http::users::hash_password;
 
 const VERIFICATION_CODE_LENGTH: usize = 6;
 static EMAIL_REGEX: OnceLock<Regex> = OnceLock::new();
@@ -19,13 +19,12 @@ pub async fn register_user(
     State(ctx): State<ApiContext>,
     Json(req): Json<RegisterRequest>,
 ) -> Result<Json<RegisterResponse>> {
-    let email_regex = EMAIL_REGEX.get_or_init(|| {
-        Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap()
-    });
+    let email_regex = EMAIL_REGEX
+        .get_or_init(|| Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap());
     if !email_regex.is_match(&req.email) {
         return Err(Error::BadRequest);
     }
-    
+
     let password_hash = hash_password(req.password).await?;
 
     let code: String = (0..VERIFICATION_CODE_LENGTH)

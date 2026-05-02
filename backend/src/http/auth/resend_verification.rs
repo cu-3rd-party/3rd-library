@@ -2,11 +2,11 @@ use crate::http::{ApiContext, Result};
 use axum::Json;
 use axum::extract::State;
 
+use super::models::*;
 use crate::http::error::Error;
-use rand::Rng;
 #[cfg(feature = "smtp")]
 use crate::smtp;
-use super::models::*;
+use rand::Rng;
 
 pub async fn resend_verification_code(
     State(ctx): State<ApiContext>,
