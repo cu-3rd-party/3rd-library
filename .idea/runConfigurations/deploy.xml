@@ -1,0 +1,19 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="deploy" type="docker-deploy" factoryName="docker-compose.yml" server-name="nxs">
+    <deployment type="docker-compose.yml">
+      <settings>
+        <option name="envFilePath" value="$PROJECT_DIR$/env/backend.env" />
+        <option name="envFilePaths">
+          <list>
+            <option value="$PROJECT_DIR$/env/backend.env" />
+            <option value="$PROJECT_DIR$/env/db.env" />
+            <option value="$PROJECT_DIR$/env/grafana.env" />
+            <option value="$PROJECT_DIR$/env/redis.env" />
+          </list>
+        </option>
+        <option name="sourceFilePath" value="docker-compose.yml" />
+      </settings>
+    </deployment>
+    <method v="2" />
+  </configuration>
+</component>
