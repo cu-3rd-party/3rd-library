@@ -20,6 +20,10 @@ pub struct Config {
 
     #[command(flatten)]
     pub storage: StorageConfig,
+
+    #[cfg(feature = "smtp")]
+    #[command(flatten)]
+    pub smtp: SmtpConfig,
 }
 
 impl Config {
@@ -92,4 +96,18 @@ pub struct CorsConfig {
 pub struct StorageConfig {
     #[arg(env = "PFP_UPLOAD_DIR", default_value = "/uploads")]
     pub pfp_upload_dir: String,
+}
+
+#[cfg(feature = "smtp")]
+#[derive(Parser, Debug, Clone)]
+#[group(id = "smtp")]
+pub struct SmtpConfig {
+    #[arg(env = "SMTP_HOST")]
+    pub host: String,
+    #[arg(env = "SMTP_PORT", default_value = "5432")]
+    pub port: u16,
+    #[arg(env = "SMTP_USER", default_value = "admin")]
+    pub user: String,
+    #[arg(env = "SMTP_PASSWORD", default_value = "admin")]
+    pub password: String,
 }

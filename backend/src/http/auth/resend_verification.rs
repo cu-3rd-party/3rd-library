@@ -2,15 +2,30 @@ use crate::http::{ApiContext, Result};
 use axum::Json;
 use axum::extract::State;
 
-use crate::http::error::Error;
-use rand::Rng;
-
 use super::models::*;
+use crate::http::error::Error;
+#[cfg(feature = "smtp")]
+use crate::smtp;
+use rand::Rng;
 
 pub async fn resend_verification_code(
     State(ctx): State<ApiContext>,
     Json(req): Json<ResendVerificationCodeRequest>,
 ) -> Result<Json<()>> {
+    let last_code_time: Option<chrono::DateTime<chrono::Utc>> = sqlx::query_scalar(
+        "select verification_code_issued_at from web_user where email = $1 and not is_email_verified",
+    )
+    .bind(&req.email)
+    .fetch_optional(&ctx.db)
+    .await?;
+
+    if let Some(last_time) = last_code_time {
+        let time_since_last = chrono::Utc::now() - last_time;
+        if time_since_last < chrono::Duration::minutes(1) {
+            return Err(Error::TooManyRequests);
+        }
+    }
+
     let code: String = (0..6)
         .map(|_| {
             let idx = rand::thread_rng().gen_range(0..10);
@@ -34,6 +49,13 @@ pub async fn resend_verification_code(
     }
 
     log::info!("Resent verification code to {}", req.email);
+
+    #[cfg(feature = "smtp")]
+    tokio::spawn(smtp::send_verification_code(
+        ctx,
+        req.email.clone(),
+        code.clone(),
+    ));
 
     Ok(Json(()))
 }

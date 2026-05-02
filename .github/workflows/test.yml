@@ -12,10 +12,46 @@ on:
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: admin
+          POSTGRES_DB: db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
+
       - name: Run backend tests
-        run: cargo test -p backend
+        run: cargo test -p backend -- --test-threads 1
+        env:
+          CORS_ALLOWD_ORIGIN: "*"
+          HMAC_KEY: dev
+          POSTGRES_DB: db
+          POSTGRES_HOST: localhost
+          POSTGRES_PASSWORD: admin
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: admin
+          RUST_LOG: info

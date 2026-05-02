@@ -31,10 +31,10 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 #[derive(Clone)]
 pub struct ApiContext {
-    config: Arc<Config>,
-    db: PgPool,
-    redis: ConnectionManager,
-    rate_limit_ttl_seconds: u64,
+    pub config: Arc<Config>,
+    pub db: PgPool,
+    pub redis: ConnectionManager,
+    pub rate_limit_ttl_seconds: u64,
 }
 
 pub async fn serve(config: Config, db: PgPool, redis: ConnectionManager) -> anyhow::Result<()> {
