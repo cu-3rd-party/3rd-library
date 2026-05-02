@@ -1,5 +1,5 @@
 import { User as UserIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Card } from "@/components/ui/card";
 import { User } from "@/models/user";
@@ -9,8 +9,31 @@ type AuthorCardProps = {
   onClick: (id: string) => void;
 };
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export const AuthorCard = ({ author, onClick }: AuthorCardProps) => {
-  const [imageError, setImageError] = useState(false);
+  const defaultAvatarPath = UUID_PATTERN.test(author.id)
+    ? `/avatars/${encodeURIComponent(author.id)}.png`
+    : null;
+
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(
+    author.image || defaultAvatarPath,
+  );
+
+  useEffect(() => {
+    setAvatarSrc(author.image || defaultAvatarPath);
+  }, [author.image, defaultAvatarPath]);
+
+  const handleImageError = () => {
+    if (defaultAvatarPath && avatarSrc !== defaultAvatarPath) {
+      setAvatarSrc(defaultAvatarPath);
+      return;
+    }
+
+    setAvatarSrc(null);
+  };
+
   return (
     <Card
       onClick={() => onClick(author.id)}
@@ -19,15 +42,15 @@ export const AuthorCard = ({ author, onClick }: AuthorCardProps) => {
     >
       <div className="w-full flex-1 flex items-start justify-start mb-2 lg:mb-4 min-h-0">
         <div className="h-full aspect-square rounded-xl flex items-center justify-center overflow-hidden">
-          {!imageError ? (
+          {avatarSrc ? (
             <img
-              src={`/avatars/${author.id}.png`}
+              src={avatarSrc}
               alt={author.name}
               className="w-full h-full object-cover"
-              onError={() => setImageError(true)}
+              onError={handleImageError}
             />
           ) : (
-            <UserIcon className="h-3/4 w-3/4 " />
+            <UserIcon className="h-3/4 w-3/4 text-muted-foreground/70" />
           )}
         </div>
       </div>

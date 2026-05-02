@@ -7,6 +7,11 @@ import {
 } from "@/common/organisms/Moderation";
 import { ModerationTabValue } from "@/constants";
 import { fetchJson, resolveApiUrl } from "@/lib/api";
+import {
+  mapArticleToMaterial,
+  RealWorldArticle,
+  RealWorldArticlesResponse,
+} from "@/lib/materialsApi";
 import { MOCK_SUBMISSIONS } from "@/mocks/mockData";
 import { MaterialSubmission, MaterialSubmissionFile } from "@/models";
 import { getSubmissionFiles } from "@/store";
@@ -20,17 +25,7 @@ const initialSubmissionCounts: Record<ModerationTabValue, number> = {
   approved: 0,
 };
 
-type ModerationResponse = {
-  items: MaterialSubmission[];
-  page: number;
-  limit: number;
-  total: number;
-  counters: Record<ModerationTabValue, number>;
-};
-
-const getFallbackModerationResponse = (
-  statusFilter: ModerationTabValue,
-): ModerationResponse => {
+const getFallbackModerationResponse = (statusFilter: ModerationTabValue) => {
   const items = MOCK_SUBMISSIONS.filter((submission) =>
     statusFilter === "all" ? true : submission.status === statusFilter,
   );
@@ -45,16 +40,28 @@ const getFallbackModerationResponse = (
 
   return {
     items,
-    page: 1,
-    limit: 20,
-    total: items.length,
     counters,
   };
 };
 
+const mapArticleToSubmission = (
+  article: RealWorldArticle,
+): MaterialSubmission => ({
+  id: article.slug,
+  material: mapArticleToMaterial(article),
+  files: [],
+  file: null,
+  status: "approved",
+  moderatorComment: "",
+  createdAt: article.createdAt,
+  updatedAt: article.updatedAt,
+  submittedAt: article.createdAt,
+  reviewedAt: article.updatedAt,
+  publishedAt: article.updatedAt,
+});
+
 const ModerationPage = () => {
-  const [statusFilter, setStatusFilter] =
-    useState<ModerationTabValue>("pending_review");
+  const [statusFilter, setStatusFilter] = useState<ModerationTabValue>("all");
   const [submissions, setSubmissions] = useState<MaterialSubmission[]>([]);
   const [submissionCounts, setSubmissionCounts] = useState<
     Record<ModerationTabValue, number>
@@ -72,11 +79,27 @@ const ModerationPage = () => {
     setIsError(false);
 
     try {
-      const payload = await fetchJson<ModerationResponse>(
-        resolveApiUrl(`/moderation/submissions?status=${statusFilter}`),
+      const payload = await fetchJson<RealWorldArticlesResponse>(
+        resolveApiUrl("/api/articles?limit=100"),
       );
-      setSubmissions(payload.items);
-      setSubmissionCounts(payload.counters);
+      const approvedSubmissions = payload.articles
+        .map(mapArticleToSubmission)
+        .sort(
+          (first, second) =>
+            new Date(second.updatedAt).getTime() -
+            new Date(first.updatedAt).getTime(),
+        );
+      const items =
+        statusFilter === "all" || statusFilter === "approved"
+          ? approvedSubmissions
+          : [];
+
+      setSubmissions(items);
+      setSubmissionCounts({
+        ...initialSubmissionCounts,
+        all: approvedSubmissions.length,
+        approved: approvedSubmissions.length,
+      });
     } catch (error) {
       if (import.meta.env.VITE_API === "mock") {
         console.warn(
@@ -124,19 +147,19 @@ const ModerationPage = () => {
     setIsActionLoading(true);
 
     try {
-      await fetchJson<MaterialSubmission>(
-        resolveApiUrl(
-          `/moderation/submissions/${selectedSubmission.id}/decision`,
-        ),
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ action: "approve" }),
-        },
+      if (selectedSubmission.status !== "approved") {
+        setSubmissions((current) =>
+          current.map((submission) =>
+            submission.id === selectedSubmission.id
+              ? { ...submission, status: "approved", moderatorComment: "" }
+              : submission,
+          ),
+        );
+      }
+
+      alert(
+        "В текущем backend модерация недоступна: материалы отображаются как опубликованные.",
       );
-      await loadSubmissions();
       closeDialog();
     } catch (error) {
       console.error(error);
@@ -152,22 +175,21 @@ const ModerationPage = () => {
     setIsActionLoading(true);
 
     try {
-      await fetchJson<MaterialSubmission>(
-        resolveApiUrl(
-          `/moderation/submissions/${selectedSubmission.id}/decision`,
+      setSubmissions((current) =>
+        current.map((submission) =>
+          submission.id === selectedSubmission.id
+            ? {
+                ...submission,
+                status: "rejected",
+                moderatorComment: rejectComment.trim(),
+              }
+            : submission,
         ),
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            action: "reject",
-            moderatorComment: rejectComment.trim(),
-          }),
-        },
       );
-      await loadSubmissions();
+
+      alert(
+        "В текущем backend нет endpoint для отклонения: изменения сохранены только локально.",
+      );
       closeDialog();
     } catch (error) {
       console.error(error);
@@ -188,9 +210,8 @@ const ModerationPage = () => {
           Модерация материалов
         </h1>
         <p className="max-w-3xl text-sm text-muted-foreground lg:text-base">
-          Здесь модераторы просматривают заявки авторов, открывают подробности,
-          проверяют файл и решают, публиковать материал или возвращать его на
-          доработку.
+          Backend сейчас отдает опубликованные материалы через `/api/articles`,
+          поэтому здесь показан список публикаций без серверной модерации.
         </p>
       </div>
 

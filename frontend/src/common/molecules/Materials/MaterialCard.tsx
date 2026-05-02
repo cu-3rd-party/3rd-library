@@ -47,7 +47,7 @@ export const MaterialCard = ({
       )}
     >
       <CardHeader className="pb-2">
-        { displayMaterialTags && (
+        {displayMaterialTags && (
           <div className="flex flex-wrap lg:flex-nowrap gap-2 lg:mb-1">
             <div className="flex grow flex-wrap gap-2">
               <div className="flex justify-between gap-2 w-full md:w-auto">
@@ -55,12 +55,9 @@ export const MaterialCard = ({
                   label={getCourseName(material.courses)}
                   className="bg-orange-badge text-orange-badge-foreground"
                 />
-                <MaterialBadge
-                  label={typeData.label}
-                  className="md:hidden"
-                />
+                <MaterialBadge label={typeData.label} className="md:hidden" />
               </div>
-              
+
               <div className="flex gap-2">
                 <MaterialBadge
                   label={material.subjects[0]}
@@ -78,7 +75,9 @@ export const MaterialCard = ({
                       <TooltipContent>
                         <div className="flex flex-col gap-1">
                           {material.subjects.slice(1).map((subject, idx) => (
-                            <span key={idx} className="text-xs">{subject}</span>
+                            <span key={idx} className="text-xs">
+                              {subject}
+                            </span>
                           ))}
                         </div>
                       </TooltipContent>
@@ -87,7 +86,7 @@ export const MaterialCard = ({
                 )}
               </div>
             </div>
-            
+
             <MaterialBadge
               label={typeData.label}
               className="hidden md:block md:ml-auto lg:self-start"

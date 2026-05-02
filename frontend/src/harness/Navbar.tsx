@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NAV_ITEMS_DESKTOP, NAV_ITEMS_MOBILE } from "@/constants";
+import { resolveCurrentProfilePath } from "@/lib/currentUser";
 
 import { DesktopHeader } from "./DesktopHeader";
 import { MobileHeader } from "./MobileHeader";
@@ -15,6 +16,10 @@ interface NavbarProps {
 export const Navbar = ({ children }: NavbarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const profilePath = resolveCurrentProfilePath();
+  const mobileNavItems = NAV_ITEMS_MOBILE.map((item) =>
+    item.label === "Профиль" ? { ...item, path: profilePath } : item,
+  );
 
   const isActive = (path: string) => {
     if (path === "/" && location.pathname !== "/") return false;
@@ -45,15 +50,15 @@ export const Navbar = ({ children }: NavbarProps) => {
       <nav className="md:hidden sticky bottom-0 z-50 border-t border-border/40 bg-background">
         <Tabs
           value={
-            NAV_ITEMS_MOBILE.find((item) => isActive(item.path))?.label ||
-            NAV_ITEMS_MOBILE[0].label
+            mobileNavItems.find((item) => isActive(item.path))?.label ||
+            mobileNavItems[0].label
           }
           className="flex w-full justify-center items-center h-12"
         >
           <TabsList className="w-full h-full">
-            {NAV_ITEMS_MOBILE.map((item) => (
+            {mobileNavItems.map((item) => (
               <TabsTrigger
-                key={item.path}
+                key={`${item.label}-${item.path}`}
                 value={item.label}
                 onClick={() => {
                   navigate(item.path);

@@ -14,6 +14,7 @@ export type SubmissionStatus =
   | "approved";
 
 export interface MaterialSubmissionFile {
+  id?: UUID;
   name: string;
   sizeBytes: number;
   extension: string;

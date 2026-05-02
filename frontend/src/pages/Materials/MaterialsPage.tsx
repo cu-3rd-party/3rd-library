@@ -2,15 +2,12 @@ import { useEffect, useState } from "react";
 
 import { MaterialsSection } from "@/common/organisms";
 import { fetchJson, resolveApiUrl } from "@/lib/api";
+import {
+  mapArticleToMaterial,
+  RealWorldArticlesResponse,
+} from "@/lib/materialsApi";
 import { MOCK_SUBMISSIONS } from "@/mocks/mockData";
 import { Material } from "@/models/material";
-
-type MaterialsResponse = {
-  items: Material[];
-  page: number;
-  limit: number;
-  total: number;
-};
 
 const getFallbackPublishedMaterials = () =>
   MOCK_SUBMISSIONS.filter((submission) => submission.status === "approved").map(
@@ -30,13 +27,13 @@ const MaterialsPage = () => {
       setIsError(false);
 
       try {
-        const payload = await fetchJson<MaterialsResponse>(
-          resolveApiUrl("/materials"),
+        const payload = await fetchJson<RealWorldArticlesResponse>(
+          resolveApiUrl("/api/articles"),
           {
             signal: abortController.signal,
           },
         );
-        setMaterials(payload.items);
+        setMaterials(payload.articles.map(mapArticleToMaterial));
       } catch (error) {
         if (abortController.signal.aborted) return;
 

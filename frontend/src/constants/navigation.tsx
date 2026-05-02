@@ -50,7 +50,7 @@ export const NAV_ITEMS_MOBILE: NavItemMobile[] = [
   },
   {
     label: "Профиль",
-    path: `${AUTHORS_PREFIX}/3fa85f64-5717-4562-b3fc-2c963f66afa6`,
+    path: `${AUTHORS_PREFIX}`,
     icon: <User className="size-5" />,
   },
 ];

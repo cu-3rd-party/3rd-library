@@ -34,6 +34,12 @@ export default defineConfig({
     port: 3000,
     host: "localhost",
     https: DEV_ENABLE_HTTPS,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     target: "esnext",

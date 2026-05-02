@@ -7,7 +7,21 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SUBMISSION_STATUS_UI } from "@/constants";
-import { fetchJson, resolveApiUrl } from "@/lib/api";
+import {
+  ApiRequestError,
+  fetchJson,
+  fetchWithAuth,
+  resolveApiUrl,
+} from "@/lib/api";
+import {
+  mapArticleToMaterial,
+  mapAttachmentToMaterialFile,
+  RealWorldArticle,
+  RealWorldArticleResponse,
+  RealWorldArticlesResponse,
+  RealWorldAttachment,
+  RealWorldAttachmentsResponse,
+} from "@/lib/materialsApi";
 import { MOCK_SUBMISSIONS, MOCK_USER } from "@/mocks/mockData";
 import {
   Course,
@@ -46,86 +60,118 @@ const createFormValues = (
       }
     : emptyFormValues;
 
-type SubmissionsListResponse = {
-  items: MaterialSubmission[];
-  page: number;
-  limit: number;
-  total: number;
+type CurrentUserResponse = {
+  user: {
+    username: string;
+  };
 };
 
-const resolveSubmissionsEndpoint = (submissionId?: string) => {
-  const path = submissionId
-    ? `/materials/submissions/${submissionId}`
-    : "/materials/submissions";
+type AttachmentResponse = {
+  attachment: RealWorldAttachment;
+};
 
-  return resolveApiUrl(path);
+const resolveCurrentUserId = () => {
+  const payload = globalThis.localStorage?.getItem("authUser");
+  if (!payload) return MOCK_USER.id;
+
+  try {
+    const parsed = JSON.parse(payload) as { username?: string };
+    return parsed.username?.trim() || MOCK_USER.id;
+  } catch {
+    return MOCK_USER.id;
+  }
 };
 
 const isBrowserFile = (
   file: UploadMaterialFormValues["files"][number],
 ): file is File => file instanceof File;
 
-const toExistingSubmissionFiles = (
-  files: UploadMaterialFormValues["files"],
-): MaterialSubmissionFile[] =>
-  files.filter((file): file is MaterialSubmissionFile => !isBrowserFile(file));
+const createApiSubmission = (
+  article: RealWorldArticle,
+  files: MaterialSubmissionFile[] = [],
+): MaterialSubmission => ({
+  id: article.slug,
+  material: mapArticleToMaterial(article),
+  files,
+  file: files[0] || null,
+  status: "approved",
+  moderatorComment: "",
+  createdAt: article.createdAt,
+  updatedAt: article.updatedAt,
+  submittedAt: article.createdAt,
+  reviewedAt: article.updatedAt,
+  publishedAt: article.updatedAt,
+});
 
-const buildSubmissionFormData = (params: {
-  authorId: string;
-  authorName: string;
-  values: UploadMaterialFormValues;
-}) => {
-  const { authorId, authorName, values } = params;
+const toArticleTags = (values: UploadMaterialFormValues) => [
+  ...values.courses.map((course) => `course:${course}`),
+  ...values.subjects.map((subject) => `subject:${subject}`),
+  `type:${values.type}`,
+  `difficulty:${values.difficulty}`,
+];
+
+const uploadAttachment = (articleSlug: string, file: File) => {
   const formData = new FormData();
+  formData.append("file", file);
 
-  formData.append("authorId", authorId);
-  formData.append("authorName", authorName);
-  formData.append("title", values.title.trim());
-  formData.append("description", values.description.trim());
-  values.courses.forEach((course) => formData.append("courses", course));
-  values.subjects.forEach((subject) => formData.append("subjects", subject));
-  formData.append("type", values.type);
-  formData.append("difficulty", values.difficulty);
-  values.files
-    .filter(isBrowserFile)
-    .forEach((file) => formData.append("files", file));
-
-  const existingFiles = toExistingSubmissionFiles(values.files);
-  if (existingFiles.length > 0) {
-    formData.append("existingFiles", JSON.stringify(existingFiles));
-  }
-
-  return formData;
-};
-
-const submitSubmissionToApi = async (params: {
-  submissionId?: string;
-  authorId: string;
-  authorName: string;
-  values: UploadMaterialFormValues;
-}) => {
-  const { submissionId, authorId, authorName, values } = params;
-  return fetchJson<MaterialSubmission>(
-    resolveSubmissionsEndpoint(submissionId),
+  return fetchJson<AttachmentResponse>(
+    resolveApiUrl(
+      `/api/articles/${encodeURIComponent(articleSlug)}/attachments`,
+    ),
     {
-      method: submissionId ? "PATCH" : "POST",
-      body: buildSubmissionFormData({ authorId, authorName, values }),
+      method: "POST",
+      body: formData,
     },
   );
 };
 
+const deleteArticle = async (articleSlug: string) => {
+  const response = await fetchWithAuth(
+    resolveApiUrl(`/api/articles/${encodeURIComponent(articleSlug)}`),
+    {
+      method: "DELETE",
+    },
+  );
+
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`Failed to rollback article: ${response.status}`);
+  }
+};
+
+const getSubmitErrorMessage = (error: unknown) => {
+  if (error instanceof ApiRequestError) {
+    if (error.status === 413) {
+      return "Размер одного из файлов превышает лимит сервера. Уменьшите файл и попробуйте снова.";
+    }
+
+    if (error.status === 422) {
+      const details =
+        typeof error.payload === "string" ? error.payload.trim() : "";
+
+      if (details) {
+        return `Не удалось отправить материал: ${details}.`;
+      }
+
+      return "Сервер не принял данные заявки. Проверьте название и описание, затем повторите попытку.";
+    }
+  }
+
+  return "Не удалось отправить материал. Попробуйте еще раз.";
+};
+
 const UploadMaterialPage = () => {
+  const [currentUserId, setCurrentUserId] = useState(resolveCurrentUserId);
   const [submissions, setSubmissions] = useState<MaterialSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
   const editableSubmission = useMemo(
-    () => getAuthorEditableSubmission(submissions, MOCK_USER.id),
-    [submissions],
+    () => getAuthorEditableSubmission(submissions, currentUserId),
+    [currentUserId, submissions],
   );
   const latestSubmission = useMemo(
-    () => getAuthorLatestSubmission(submissions, MOCK_USER.id),
-    [submissions],
+    () => getAuthorLatestSubmission(submissions, currentUserId),
+    [currentUserId, submissions],
   );
   const latestStatusUi = latestSubmission
     ? SUBMISSION_STATUS_UI[latestSubmission.status]
@@ -144,16 +190,35 @@ const UploadMaterialPage = () => {
       setIsError(false);
 
       try {
-        const payload = await fetchJson<SubmissionsListResponse>(
-          resolveApiUrl(`/materials/submissions?authorId=${MOCK_USER.id}`),
+        const currentUserPayload = await fetchJson<CurrentUserResponse>(
+          resolveApiUrl("/api/user"),
           { signal: abortController.signal },
         );
-        setSubmissions(payload.items);
+        const nextCurrentUserId = currentUserPayload.user.username;
+        setCurrentUserId(nextCurrentUserId);
+
+        const articlesPayload = await fetchJson<RealWorldArticlesResponse>(
+          resolveApiUrl(
+            `/api/articles?author=${encodeURIComponent(nextCurrentUserId)}&limit=100`,
+          ),
+          { signal: abortController.signal },
+        );
+
+        setSubmissions(
+          articlesPayload.articles
+            .map((article) => createApiSubmission(article))
+            .sort(
+              (first, second) =>
+                new Date(second.updatedAt).getTime() -
+                new Date(first.updatedAt).getTime(),
+            ),
+        );
       } catch (error) {
         if (abortController.signal.aborted) return;
 
         if (import.meta.env.VITE_API === "mock") {
           console.warn("[Upload] Falling back to local submissions list.");
+          setCurrentUserId(MOCK_USER.id);
           setSubmissions(
             MOCK_SUBMISSIONS.filter(
               (submission) => submission.material.authorId === MOCK_USER.id,
@@ -230,40 +295,70 @@ const UploadMaterialPage = () => {
       return;
     }
 
-    const baseInput = {
-      authorId: MOCK_USER.id,
-      authorName: MOCK_USER.name,
-      title: values.title,
-      description: values.description,
-      courses: values.courses,
-      subjects: values.subjects,
-      difficulty: values.difficulty,
-      type: values.type,
-      files: values.files,
-    };
-
     setIsSubmitting(true);
+    let createdArticleSlug: string | null = null;
 
     try {
-      const submitted = await submitSubmissionToApi({
-        submissionId: editableSubmission?.id,
-        authorId: baseInput.authorId,
-        authorName: baseInput.authorName,
-        values,
-      });
+      const browserFiles = values.files.filter(isBrowserFile);
+      const articlePayload = await fetchJson<RealWorldArticleResponse>(
+        resolveApiUrl("/api/articles"),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            article: {
+              title: values.title.trim(),
+              description: values.description.trim() || values.title.trim(),
+              body: values.description.trim(),
+              tagList: toArticleTags(values),
+            },
+          }),
+        },
+      );
+      createdArticleSlug = articlePayload.article.slug;
+
+      await Promise.all(
+        browserFiles.map((file) =>
+          uploadAttachment(articlePayload.article.slug, file),
+        ),
+      );
+
+      const attachmentsPayload = await fetchJson<RealWorldAttachmentsResponse>(
+        resolveApiUrl(
+          `/api/articles/${encodeURIComponent(articlePayload.article.slug)}/attachments`,
+        ),
+      );
+
+      const submitted = createApiSubmission(
+        articlePayload.article,
+        attachmentsPayload.attachments.map((attachment) =>
+          mapAttachmentToMaterialFile(articlePayload.article.slug, attachment),
+        ),
+      );
 
       setSubmissions((current) => {
-        const index = current.findIndex((item) => item.id === submitted.id);
-        if (index === -1) return [submitted, ...current];
-
-        return current.map((item, itemIndex) =>
-          itemIndex === index ? submitted : item,
+        const nextSubmissions = current.filter(
+          (item) => item.id !== submitted.id,
         );
+        return [submitted, ...nextSubmissions];
       });
 
       setValues(emptyFormValues);
-      alert("Материал отправлен на модерацию.");
+      alert("Материал успешно отправлен на модерацию.");
     } catch (error) {
+      if (createdArticleSlug) {
+        try {
+          await deleteArticle(createdArticleSlug);
+        } catch (rollbackError) {
+          console.warn(
+            `[Upload] Failed to rollback article ${createdArticleSlug}.`,
+            rollbackError,
+          );
+        }
+      }
+
       if (import.meta.env.VITE_API === "mock") {
         console.warn("[Submissions] Mock API unavailable.");
         alert("Не удалось отправить материал в mock API.");
@@ -271,7 +366,7 @@ const UploadMaterialPage = () => {
       }
 
       console.error(error);
-      alert("Не удалось отправить материал. Попробуйте еще раз.");
+      alert(getSubmitErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }

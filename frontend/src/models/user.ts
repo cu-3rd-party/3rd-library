@@ -5,6 +5,9 @@ export interface User {
   id: UUID;
   name: string;
   bio: string;
-  verified: boolean;
+  image?: string | null;
+  isEmailVerified?: boolean;
+  verified?: boolean;
+  materialsCount?: number;
   materials?: Material[];
 }

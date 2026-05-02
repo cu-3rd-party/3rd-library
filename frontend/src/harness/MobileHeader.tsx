@@ -1,10 +1,18 @@
 import { LogOut, Moon, Sun } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
+import { AUTHORIZATION_PREFIX } from "@/constants";
 import { useTheme } from "@/hooks";
+import { clearCurrentSession } from "@/lib/currentUser";
 
 export const MobileHeader = () => {
+  const navigate = useNavigate();
   const { setTheme, theme } = useTheme();
+  const handleLogout = () => {
+    clearCurrentSession();
+    navigate(`${AUTHORIZATION_PREFIX}/login`, { replace: true });
+  };
 
   return (
     <div className="flex md:hidden flex-1 items-center justify-end gap-6">
@@ -21,9 +29,7 @@ export const MobileHeader = () => {
       <Button
         variant="ghost"
         size="icon-lg"
-        onClick={() => {
-          /* TODO: implement logout */
-        }}
+        onClick={handleLogout}
         title="Выход"
       >
         <LogOut className="absolute size-5" />

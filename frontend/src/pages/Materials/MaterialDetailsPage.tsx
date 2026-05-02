@@ -10,8 +10,15 @@ import {
   MATERIALS_PREFIX,
   TYPE_CONFIG,
 } from "@/constants";
-import { cn } from "@/lib/utils";
 import { fetchJson, resolveApiUrl } from "@/lib/api";
+import {
+  mapArticleToMaterialDetails,
+  mapAttachmentToMaterialFile,
+  RealWorldArticleResponse,
+  RealWorldAttachmentsResponse,
+  RealWorldProfileResponse,
+} from "@/lib/materialsApi";
+import { cn } from "@/lib/utils";
 import { MOCK_SUBMISSIONS } from "@/mocks/mockData";
 import { Material, MaterialSubmissionFile } from "@/models";
 import {
@@ -35,10 +42,14 @@ const formatUploadDate = (submittedAt?: string, fallback?: string) => {
 };
 
 type MaterialDetailsResponse = Material & {
+  authorImage?: string | null;
   files: MaterialSubmissionFile[];
   submittedAt?: string;
   publishedAt?: string;
 };
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const getFallbackMaterial = (
   materialId: string,
@@ -65,6 +76,7 @@ const MaterialDetailsPage = () => {
     useState<MaterialDetailsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     const materialId = id || "";
@@ -81,11 +93,50 @@ const MaterialDetailsPage = () => {
       setIsError(false);
 
       try {
-        const payload = await fetchJson<MaterialDetailsResponse>(
-          resolveApiUrl(`/materials/${materialId}`),
-          { signal: abortController.signal },
+        const articlePath = `/api/articles/${encodeURIComponent(materialId)}`;
+        const [articlePayload, attachmentsPayload] = await Promise.all([
+          fetchJson<RealWorldArticleResponse>(resolveApiUrl(articlePath), {
+            signal: abortController.signal,
+          }),
+          fetchJson<RealWorldAttachmentsResponse>(
+            resolveApiUrl(`${articlePath}/attachments`),
+            { signal: abortController.signal },
+          ).catch((error: unknown) => {
+            if (!abortController.signal.aborted) {
+              console.warn(
+                "[MaterialDetails] Failed to load attachments.",
+                error,
+              );
+            }
+            return { attachments: [] };
+          }),
+        ]);
+
+        const mappedMaterial = mapArticleToMaterialDetails(
+          articlePayload.article,
         );
-        setMaterialDetails(payload);
+        const encodedAuthorId = encodeURIComponent(mappedMaterial.authorId);
+        const authorProfilePayload = await fetchJson<RealWorldProfileResponse>(
+          resolveApiUrl(`/api/profiles/${encodedAuthorId}`),
+          {
+            signal: abortController.signal,
+          },
+        ).catch((error: unknown) => {
+          if (!abortController.signal.aborted) {
+            console.warn("[MaterialDetails] Failed to load author profile.", error);
+          }
+          return null;
+        });
+
+        const files = attachmentsPayload.attachments.map((attachment) =>
+          mapAttachmentToMaterialFile(materialId, attachment),
+        );
+        setMaterialDetails({
+          ...mappedMaterial,
+          authorImage:
+            authorProfilePayload?.profile.image ?? articlePayload.article.author.image,
+          files,
+        });
       } catch (error) {
         if (abortController.signal.aborted) return;
 
@@ -115,6 +166,10 @@ const MaterialDetailsPage = () => {
     return () => abortController.abort();
   }, [id]);
 
+  useEffect(() => {
+    setImageError(false);
+  }, [materialDetails?.authorId, materialDetails?.authorImage]);
+
   const handleOpenFile = openMaterialFile;
 
   const typeData = materialDetails ? TYPE_CONFIG[materialDetails.type] : null;
@@ -132,6 +187,12 @@ const MaterialDetailsPage = () => {
     ? formatUploadDate(materialDetails.submittedAt, materialDetails.pubDate)
     : "Не указана";
   const files = materialDetails?.files || [];
+  const authorAvatarSrc = materialDetails
+    ? materialDetails.authorImage ||
+      (UUID_PATTERN.test(materialDetails.authorId)
+        ? `/avatars/${encodeURIComponent(materialDetails.authorId)}.png`
+        : null)
+    : null;
 
   if (isLoading) {
     return (
@@ -194,13 +255,22 @@ const MaterialDetailsPage = () => {
         </div>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-muted/40">
-            <User className="h-4 w-4 text-foreground/80" />
+            {!imageError && authorAvatarSrc ? (
+              <img
+                src={authorAvatarSrc}
+                alt={materialDetails.authorName || "Автор"}
+                className="h-full w-full rounded-full object-cover"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <User className="h-4 w-4 text-foreground/80" />
+            )}
           </span>
           <p>
             {materialDetails.authorName ? (
               materialDetails.authorId ? (
                 <Link
-                  to={`${AUTHORS_PREFIX}/${materialDetails.authorId}`}
+                  to={`${AUTHORS_PREFIX}/${encodeURIComponent(materialDetails.authorId)}`}
                   className="font-medium text-foreground underline-offset-4 hover:underline"
                 >
                   {materialDetails.authorName}
