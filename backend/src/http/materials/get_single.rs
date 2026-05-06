@@ -83,37 +83,14 @@ pub async fn get_submission_by_id(
         })
         .collect();
 
-    let pub_date: Option<String> = row
-        .get::<Option<DateTime<Utc>>, _>("published_at")
-        .map(helpers::to_rfc3339);
-
     Ok(Json(Submission {
         id: row.get::<uuid::Uuid, _>("submission_id"),
-        material: Material {
-            id: uuid::Uuid::nil(),
-            author_id: submission_user_id,
-            author_name: row.get::<Option<String>, _>("author_name"),
-            title: row.get::<String, _>("title"),
-            description: row
-                .get::<Option<String>, _>("description")
-                .unwrap_or_default(),
-            courses: row
-                .get::<Option<Vec<String>>, _>("courses")
-                .unwrap_or_default(),
-            subjects: row
-                .get::<Option<Vec<String>>, _>("subjects")
-                .unwrap_or_default(),
-            r#type: row.get::<String, _>("type"),
-            difficulty: row
-                .get::<Option<String>, _>("difficulty")
-                .unwrap_or_else(|| "none".to_string()),
-            pub_date,
-        },
         files,
         status: row.get::<String, _>("status"),
-        moderator_comment: row
-            .get::<Option<String>, _>("moderator_comment")
-            .unwrap_or_default(),
+        moderator_comment: Some(
+            row.get::<Option<String>, _>("moderator_comment")
+                .unwrap_or_default(),
+        ),
         created_at: helpers::to_rfc3339(row.get::<DateTime<Utc>, _>("created_at")),
         updated_at: helpers::to_rfc3339(row.get::<DateTime<Utc>, _>("updated_at")),
         submitted_at: row

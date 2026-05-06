@@ -24,7 +24,6 @@ use crate::metrics;
 use axum::http::HeaderValue;
 use axum::response::IntoResponse;
 use axum::routing::get;
-use itertools::Itertools;
 use log::info;
 use serde::Serialize;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};

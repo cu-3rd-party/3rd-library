@@ -13,6 +13,7 @@ pub struct WebUser {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)] // keep it for now, because currently we don't have api for that
 pub struct UpdateUserRequest {
     pub name: Option<String>,
     pub bio: Option<String>,

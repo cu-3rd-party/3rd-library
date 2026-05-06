@@ -6,7 +6,7 @@ use axum::extract::State;
 use crate::http::error::Error;
 use crate::http::extractor::AuthUser;
 use chrono::{DateTime, Utc};
-use sqlx::{Executor, Row};
+use sqlx::Row;
 use uuid::Uuid;
 
 use super::models::*;

@@ -145,7 +145,7 @@ pub async fn update_submission(
                     id: file_id,
                     name: file_name.name.clone(),
                     extension: file_name.extension,
-                    size_bytes: content.as_bytes().len() as u64,
+                    size_bytes: content.as_bytes().len() as i64,
                     mime_type,
                     url: None,
                 };
@@ -246,7 +246,7 @@ pub async fn update_submission(
         .map(|f| MaterialFile {
             id: f.get::<Uuid, _>("file_id"),
             name: f.get::<String, _>("name"),
-            size_bytes: f.get::<i64, _>("size_bytes") as u64,
+            size_bytes: f.get::<i64, _>("size_bytes"),
             extension: f.get::<String, _>("extension"),
             mime_type: f.get::<Option<String>, _>("mime_type"),
             url: None,

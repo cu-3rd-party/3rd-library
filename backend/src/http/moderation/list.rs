@@ -1,19 +1,14 @@
 use crate::http::{ApiContext, Result};
 use axum::Json;
 use axum::extract::{Query, State};
-use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::Row;
 
 use crate::http::error::Error;
 use crate::http::extractor::AuthUser;
-use crate::http::materials::models::{Material, Submission};
+use crate::http::materials::models::Submission;
 
 use super::models::*;
-
-fn to_rfc3339(dt: DateTime<Utc>) -> String {
-    dt.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string()
-}
 
 #[derive(Deserialize)]
 pub struct ModerationQuery {
@@ -98,50 +93,7 @@ pub async fn list_moderation_submissions(
     let items: Vec<Submission> = rows
         .into_iter()
         .take(limit as usize)
-        .map(|s| {
-            let pub_date: Option<String> = s
-                .get::<Option<DateTime<Utc>>, _>("published_at")
-                .map(to_rfc3339);
-            Submission {
-                id: s.get::<uuid::Uuid, _>("submission_id"),
-                material: Material {
-                    id: uuid::Uuid::nil(),
-                    author_id: s.get::<uuid::Uuid, _>("user_id"),
-                    author_name: s.get::<Option<String>, _>("author_name"),
-                    title: s.get::<String, _>("title"),
-                    description: s
-                        .get::<Option<String>, _>("description")
-                        .unwrap_or_default(),
-                    courses: s
-                        .get::<Option<Vec<String>>, _>("courses")
-                        .unwrap_or_default(),
-                    subjects: s
-                        .get::<Option<Vec<String>>, _>("subjects")
-                        .unwrap_or_default(),
-                    r#type: s.get::<String, _>("type"),
-                    difficulty: s
-                        .get::<Option<String>, _>("difficulty")
-                        .unwrap_or_else(|| "none".to_string()),
-                    pub_date,
-                },
-                files: vec![],
-                status: s.get::<String, _>("status"),
-                moderator_comment: s
-                    .get::<Option<String>, _>("moderator_comment")
-                    .unwrap_or_default(),
-                created_at: to_rfc3339(s.get::<DateTime<Utc>, _>("created_at")),
-                updated_at: to_rfc3339(s.get::<DateTime<Utc>, _>("updated_at")),
-                submitted_at: s
-                    .get::<Option<DateTime<Utc>>, _>("submitted_at")
-                    .map(to_rfc3339),
-                reviewed_at: s
-                    .get::<Option<DateTime<Utc>>, _>("reviewed_at")
-                    .map(to_rfc3339),
-                published_at: s
-                    .get::<Option<DateTime<Utc>>, _>("published_at")
-                    .map(to_rfc3339),
-            }
-        })
+        .map(|s| s.into())
         .collect();
 
     Ok(Json(PaginatedModerationResponse {

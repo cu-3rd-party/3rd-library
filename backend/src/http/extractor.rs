@@ -23,6 +23,7 @@ pub struct AuthUser {
 }
 
 /// Вспомогательная структура, чтоб обозначать пользователя, который уже подтвердил свой емэйл
+#[allow(dead_code)]
 pub struct VerifiedUser {
     pub user_id: Uuid,
     pub session_id: Uuid,
@@ -137,6 +138,7 @@ impl AuthUser {
 }
 
 impl MaybeAuthUser {
+    #[allow(dead_code)] // тут полезный код, но пока не используемый
     pub fn user_id(&self) -> Option<Uuid> {
         self.0.as_ref().map(|auth_user| auth_user.user_id)
     }

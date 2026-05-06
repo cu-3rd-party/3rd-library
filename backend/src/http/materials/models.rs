@@ -1,5 +1,9 @@
 use crate::constants::ALLOWED_EXTENSIONS;
+use crate::http::materials::helpers::to_rfc3339;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use sqlx::Row;
+use sqlx::postgres::PgRow;
 use uuid::Uuid;
 
 #[derive(Serialize)]
@@ -21,7 +25,7 @@ pub struct Material {
 pub struct MaterialFile {
     pub id: Uuid,
     pub name: String,
-    pub size_bytes: u64,
+    pub size_bytes: i64,
     pub extension: String,
     pub mime_type: Option<String>,
     pub url: Option<String>,
@@ -75,6 +79,31 @@ pub struct Submission {
     pub submitted_at: Option<String>,
     pub reviewed_at: Option<String>,
     pub published_at: Option<String>,
+}
+
+impl From<PgRow> for Submission {
+    fn from(s: PgRow) -> Self {
+        Submission {
+            id: s.get::<Uuid, _>("submission_id"),
+            files: vec![],
+            status: s.get::<String, _>("status"),
+            moderator_comment: Some(
+                s.get::<Option<String>, _>("moderator_comment")
+                    .unwrap_or_default(),
+            ),
+            created_at: to_rfc3339(s.get::<DateTime<Utc>, _>("created_at")),
+            updated_at: to_rfc3339(s.get::<DateTime<Utc>, _>("updated_at")),
+            submitted_at: s
+                .get::<Option<DateTime<Utc>>, _>("submitted_at")
+                .map(to_rfc3339),
+            reviewed_at: s
+                .get::<Option<DateTime<Utc>>, _>("reviewed_at")
+                .map(to_rfc3339),
+            published_at: s
+                .get::<Option<DateTime<Utc>>, _>("published_at")
+                .map(to_rfc3339),
+        }
+    }
 }
 
 #[derive(Serialize)]

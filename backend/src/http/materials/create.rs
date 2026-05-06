@@ -27,7 +27,7 @@ pub async fn create_submission(
         match name.as_str() {
             "data" => {
                 let req: CreateSubmissionRequest =
-                    serde_json::from_str(&field.text().await.map_err(|err| Error::BadRequest)?)
+                    serde_json::from_str(&field.text().await.map_err(|_| Error::BadRequest)?)
                         .map_err(|_| Error::BadRequest)?;
 
                 sqlx::query(
@@ -61,7 +61,7 @@ pub async fn create_submission(
                     id: Uuid::new_v4(),
                     name: file_name.name,
                     extension: file_name.extension,
-                    size_bytes: content.as_bytes().len() as u64,
+                    size_bytes: content.as_bytes().len() as i64,
                     mime_type,
                     url: None, // TODO: Uploading to s3 storage
                 };
