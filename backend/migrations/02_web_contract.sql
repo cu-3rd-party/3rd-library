@@ -65,6 +65,7 @@ create table if not exists submission (
     type text not null,
     difficulty text not null default 'none',
     status text not null default 'draft',
+    moderator_id uuid references web_user(user_id),
     moderator_comment text default '',
     created_at timestamptz default now(),
     updated_at timestamptz default now(),
@@ -86,3 +87,4 @@ create index if not exists idx_material_published on material(published_at) wher
 create index if not exists idx_submission_user on submission(user_id);
 create index if not exists idx_submission_status on submission(status);
 create index if not exists idx_web_user_email on web_user(email);
+create index if not exists idx_submission_moderator on submission(moderator_id);
