@@ -1,19 +1,19 @@
-// Placeholder - update functionality is in get_single.rs
-
-use axum::extract::{Path, State};
+use crate::http;
+use crate::http::extractor::VerifiedUser;
+use crate::http::materials::{FileName, MaterialFile, Submission, helpers};
+use crate::http::{ApiContext, Error};
+use anyhow::anyhow;
 use axum::Json;
+use axum::extract::{Multipart, Path, State};
 use chrono::{DateTime, Utc};
 use sqlx::Row;
-use crate::http;
-use crate::http::{ApiContext, Error};
-use crate::http::extractor::{VerifiedUser};
-use crate::http::materials::{helpers, Material, Submission, UpdateSubmissionRequest};
+use uuid::Uuid;
 
 pub async fn update_submission(
-    Path(submission_id): Path<uuid::Uuid>,
+    Path(submission_id): Path<Uuid>,
     user: VerifiedUser,
     State(ctx): State<ApiContext>,
-    Json(req): Json<UpdateSubmissionRequest>,
+    mut multipart: Multipart,
 ) -> http::Result<Json<Submission>> {
     let row = sqlx::query("select user_id, status from submission where submission_id = $1")
         .bind(submission_id)
@@ -21,7 +21,7 @@ pub async fn update_submission(
         .await?
         .ok_or(Error::NotFound)?;
 
-    let submission_user_id = row.get::<uuid::Uuid, _>("user_id");
+    let submission_user_id = row.get::<Uuid, _>("user_id");
     if submission_user_id != user.user_id {
         return Err(Error::Forbidden);
     }
@@ -35,32 +35,171 @@ pub async fn update_submission(
     }
 
     let now = Utc::now();
+    let mut has_updates = false; // если есть изменения, то и меняем статус ревью
+    let mut keep_file_ids: Option<Vec<Uuid>> = None;
+    let mut new_files: Vec<MaterialFile> = vec![];
 
-    sqlx::query(
-        r#"
-            update submission 
-            set title = coalesce($1, title),
-                description = coalesce($2, description),
-                courses = coalesce($3, courses),
-                subjects = coalesce($4, subjects),
-                type = coalesce($5, type),
-                difficulty = coalesce($6, difficulty),
-                status = 'pending_review',
-                submitted_at = $7,
-                updated_at = $7
-            where submission_id = $8
-        "#,
-    )
-    .bind(&req.title)
-    .bind(&req.description)
-    .bind(&req.courses)
-    .bind(&req.subjects)
-    .bind(&req.r#type)
-    .bind(&req.difficulty)
-    .bind(now)
-    .bind(submission_id)
-    .execute(&ctx.db)
-    .await?;
+    let mut tx = ctx.db.begin().await?;
+
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|err| Error::Anyhow(anyhow!(err)))?
+    {
+        let name = field.name().ok_or_else(|| Error::BadRequest)?.to_string();
+
+        match name.as_str() {
+            "title" => {
+                let value = field.text().await.map_err(|_| Error::BadRequest)?;
+                if !value.is_empty() {
+                    sqlx::query("update submission set title = $1, updated_at = $2 where submission_id = $3")
+                        .bind(&value)
+                        .bind(now)
+                        .bind(submission_id)
+                        .execute(&mut *tx)
+                        .await?;
+                    has_updates = true;
+                }
+            }
+            "description" => {
+                let value = field.text().await.map_err(|_| Error::BadRequest)?;
+                sqlx::query("update submission set description = $1, updated_at = $2 where submission_id = $3")
+                    .bind(&value)
+                    .bind(now)
+                    .bind(submission_id)
+                    .execute(&mut *tx)
+                    .await?;
+                has_updates = true;
+            }
+            "courses" => {
+                let value = field.text().await.map_err(|_| Error::BadRequest)?;
+                let courses: Vec<String> =
+                    serde_json::from_str(&value).map_err(|_| Error::BadRequest)?;
+                if !courses.is_empty() {
+                    sqlx::query("update submission set courses = $1, updated_at = $2 where submission_id = $3")
+                        .bind(&courses)
+                        .bind(now)
+                        .bind(submission_id)
+                        .execute(&mut *tx)
+                        .await?;
+                    has_updates = true;
+                }
+            }
+            "subjects" => {
+                let value = field.text().await.map_err(|_| Error::BadRequest)?;
+                let subjects: Vec<String> =
+                    serde_json::from_str(&value).map_err(|_| Error::BadRequest)?;
+                if !subjects.is_empty() {
+                    sqlx::query("update submission set subjects = $1, updated_at = $2 where submission_id = $3")
+                        .bind(&subjects)
+                        .bind(now)
+                        .bind(submission_id)
+                        .execute(&mut *tx)
+                        .await?;
+                    has_updates = true;
+                }
+            }
+            "type" => {
+                let value = field.text().await.map_err(|_| Error::BadRequest)?;
+                if !value.is_empty() {
+                    sqlx::query(
+                        "update submission set type = $1, updated_at = $2 where submission_id = $3",
+                    )
+                    .bind(&value)
+                    .bind(now)
+                    .bind(submission_id)
+                    .execute(&mut *tx)
+                    .await?;
+                    has_updates = true;
+                }
+            }
+            "difficulty" => {
+                let value = field.text().await.map_err(|_| Error::BadRequest)?;
+                if !value.is_empty() {
+                    sqlx::query("update submission set difficulty = $1, updated_at = $2 where submission_id = $3")
+                        .bind(&value)
+                        .bind(now)
+                        .bind(submission_id)
+                        .execute(&mut *tx)
+                        .await?;
+                    has_updates = true;
+                }
+            }
+            "keepFileIds" => {
+                let value = field.text().await.map_err(|_| Error::BadRequest)?;
+                keep_file_ids = Some(serde_json::from_str(&value).map_err(|_| Error::BadRequest)?);
+            }
+            "files" => {
+                let file_name = FileName::new_valid(
+                    field
+                        .file_name()
+                        .ok_or_else(|| Error::BadRequest)?
+                        .to_string(),
+                )
+                .ok_or_else(|| Error::BadRequest)?;
+                let mime_type = field.content_type().map(|s| s.to_string());
+                let content = field.text().await.map_err(|_| Error::BadRequest)?;
+
+                let file_id = Uuid::new_v4();
+                let file = MaterialFile {
+                    id: file_id,
+                    name: file_name.name.clone(),
+                    extension: file_name.extension,
+                    size_bytes: content.as_bytes().len() as u64,
+                    mime_type,
+                    url: None,
+                };
+
+                sqlx::query(
+                    r#"insert into material_file (file_id, user_id, name, size_bytes, extension, mime_type, storage_key) 
+                    values ($1, $2, $3, $4, $5, $6, $7)"#,
+                )
+                .bind(&file_id)
+                .bind(&user.user_id)
+                .bind(&file.name)
+                .bind(file.size_bytes as i64)
+                .bind(&file.extension)
+                .bind(&file.mime_type)
+                .bind(&file.url)
+                .execute(&mut *tx)
+                .await?;
+
+                sqlx::query(
+                    r#"insert into submission_file_rel (submission_id, file_id) values ($1, $2)"#,
+                )
+                .bind(submission_id)
+                .bind(&file_id)
+                .execute(&mut *tx)
+                .await?;
+
+                new_files.push(file);
+                has_updates = true;
+            }
+            _ => {}
+        }
+    }
+
+    if let Some(ids) = keep_file_ids {
+        sqlx::query(
+            r#"delete from submission_file_rel where submission_id = $1 and file_id not in (select unnest($2))"#,
+        )
+        .bind(submission_id)
+        .bind(&ids)
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    if has_updates {
+        sqlx::query(
+            "update submission set status = 'pending_review', submitted_at = coalesce(submitted_at, $1), updated_at = $1 where submission_id = $2",
+        )
+        .bind(now)
+        .bind(submission_id)
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    tx.commit().await?;
 
     let updated_row = sqlx::query(
         r#"
@@ -90,37 +229,39 @@ pub async fn update_submission(
     .fetch_one(&ctx.db)
     .await?;
 
-    let pub_date: Option<String> = updated_row
-        .get::<Option<DateTime<Utc>>, _>("published_at")
-        .map(helpers::to_rfc3339);
+    let files_rows = sqlx::query(
+        r#"
+            select mf.file_id, mf.name, mf.size_bytes, mf.extension, mf.mime_type
+            from material_file mf
+            inner join submission_file_rel sfr on mf.file_id = sfr.file_id
+            where sfr.submission_id = $1
+        "#,
+    )
+    .bind(submission_id)
+    .fetch_all(&ctx.db)
+    .await?;
+
+    let files: Vec<MaterialFile> = files_rows
+        .into_iter()
+        .map(|f| MaterialFile {
+            id: f.get::<Uuid, _>("file_id"),
+            name: f.get::<String, _>("name"),
+            size_bytes: f.get::<i64, _>("size_bytes") as u64,
+            extension: f.get::<String, _>("extension"),
+            mime_type: f.get::<Option<String>, _>("mime_type"),
+            url: None,
+        })
+        .collect();
 
     Ok(Json(Submission {
-        id: updated_row.get::<uuid::Uuid, _>("submission_id"),
-        material: Material {
-            id: uuid::Uuid::nil(),
-            author_id: updated_row.get::<uuid::Uuid, _>("user_id"),
-            author_name: updated_row.get::<Option<String>, _>("author_name"),
-            title: updated_row.get::<String, _>("title"),
-            description: updated_row
-                .get::<Option<String>, _>("description")
-                .unwrap_or_default(),
-            courses: updated_row
-                .get::<Option<Vec<String>>, _>("courses")
-                .unwrap_or_default(),
-            subjects: updated_row
-                .get::<Option<Vec<String>>, _>("subjects")
-                .unwrap_or_default(),
-            r#type: updated_row.get::<String, _>("type"),
-            difficulty: updated_row
-                .get::<Option<String>, _>("difficulty")
-                .unwrap_or_else(|| "none".to_string()),
-            pub_date,
-        },
-        files: vec![],
+        id: updated_row.get::<Uuid, _>("submission_id"),
+        files,
         status: updated_row.get::<String, _>("status"),
-        moderator_comment: updated_row
-            .get::<Option<String>, _>("moderator_comment")
-            .unwrap_or_default(),
+        moderator_comment: Some(
+            updated_row
+                .get::<Option<String>, _>("moderator_comment")
+                .unwrap_or_default(),
+        ),
         created_at: helpers::to_rfc3339(updated_row.get::<DateTime<Utc>, _>("created_at")),
         updated_at: helpers::to_rfc3339(updated_row.get::<DateTime<Utc>, _>("updated_at")),
         submitted_at: updated_row
