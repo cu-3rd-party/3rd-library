@@ -9,28 +9,16 @@ type AuthorCardProps = {
   onClick: (id: string) => void;
 };
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 export const AuthorCard = ({ author, onClick }: AuthorCardProps) => {
-  const defaultAvatarPath = UUID_PATTERN.test(author.id)
-    ? `/avatars/${encodeURIComponent(author.id)}.png`
-    : null;
-
   const [avatarSrc, setAvatarSrc] = useState<string | null>(
-    author.image || defaultAvatarPath,
+    author.image || null,
   );
 
   useEffect(() => {
-    setAvatarSrc(author.image || defaultAvatarPath);
-  }, [author.image, defaultAvatarPath]);
+    setAvatarSrc(author.image || null);
+  }, [author.image]);
 
   const handleImageError = () => {
-    if (defaultAvatarPath && avatarSrc !== defaultAvatarPath) {
-      setAvatarSrc(defaultAvatarPath);
-      return;
-    }
-
     setAvatarSrc(null);
   };
 

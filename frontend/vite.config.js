@@ -35,6 +35,36 @@ export default defineConfig({
     host: "localhost",
     https: DEV_ENABLE_HTTPS,
     proxy: {
+      "/api/auth": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/auth/, "/auth"),
+      },
+      "/api/users": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/users/, "/users"),
+      },
+      "/api/user": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/user$/, "/users/me"),
+      },
+      "/api/materials": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/materials/, "/materials"),
+      },
+      "/api/articles": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/articles/, "/materials"),
+      },
+      "/api/moderation": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/moderation/, "/moderation"),
+      },
       "/api": {
         target: "http://localhost:8080",
         changeOrigin: true,

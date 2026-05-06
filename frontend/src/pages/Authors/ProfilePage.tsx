@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AUTHORS_PREFIX } from "@/constants";
-import { fetchJson, resolveApiUrl } from "@/lib/api";
+import { ApiRequestError, fetchJson, resolveApiUrl } from "@/lib/api";
 import { updateCurrentUser } from "@/lib/authApi";
 import {
   getCurrentAuthUser,
@@ -24,7 +24,12 @@ import {
   StoredAuthUser,
 } from "@/lib/currentUser";
 import {
+  LibraryCurrentUserResponse,
+  LibraryUsersResponse,
+  LibraryUserWithMaterialsResponse,
   mapArticleToMaterial,
+  mapLibraryMaterialToMaterial,
+  mapLibraryUserToUser,
   mapProfileToUser,
   RealWorldArticlesResponse,
   RealWorldProfileResponse,
@@ -45,6 +50,9 @@ type UserProfileResponse = {
 const MAX_BIO_LENGTH = 2_000;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const isNotFoundError = (error: unknown) =>
+  error instanceof ApiRequestError && error.status === 404;
 
 const decodeRouteUserId = (value?: string) => {
   const fallback = (value || "").trim();
@@ -79,7 +87,8 @@ const isSameAuthUser = (
     ? first.email === second.email &&
       first.username === second.username &&
       first.bio === second.bio &&
-      first.image === second.image
+      first.image === second.image &&
+      first.roles.join(",") === second.roles.join(",")
     : false;
 
 const getFallbackProfile = (userId: string): UserProfileResponse | null => {
@@ -140,29 +149,153 @@ const ProfilePage = () => {
 
       try {
         const encodedUserId = encodeURIComponent(userId);
-        const [profilePayload, articlesPayload] = await Promise.all([
-          fetchJson<RealWorldProfileResponse>(
-            resolveApiUrl(`/api/profiles/${encodedUserId}`),
-            { signal: abortController.signal },
-          ),
-          fetchJson<RealWorldArticlesResponse>(
-            resolveApiUrl(`/api/articles?author=${encodedUserId}&limit=100`),
-            { signal: abortController.signal },
-          ),
-        ]);
+        const currentUsername = currentAuthUser?.username || "";
+        const isOwnProfileByName =
+          currentUsername.length > 0 && userId === currentUsername;
+        let resolvedCurrentUserEmail = currentAuthUser?.email || "";
 
-        const user = mapProfileToUser(profilePayload.profile);
+        const mapNewProfilePayload = (
+          payload: LibraryUserWithMaterialsResponse,
+        ): UserProfileResponse => ({
+          user: mapLibraryUserToUser(payload.user),
+          materials: {
+            items: payload.materials.items.map(mapLibraryMaterialToMaterial),
+            page: payload.materials.page,
+            limit: payload.materials.limit,
+            total: payload.materials.total,
+          },
+        });
+
+        let nextProfile: UserProfileResponse | null = null;
+
+        if (UUID_PATTERN.test(userId)) {
+          try {
+            const payload = await fetchJson<LibraryUserWithMaterialsResponse>(
+              resolveApiUrl(`/api/users/${encodedUserId}?limit=100`),
+              { signal: abortController.signal },
+            );
+            nextProfile = mapNewProfilePayload(payload);
+          } catch (error) {
+            if (!isNotFoundError(error)) {
+              throw error;
+            }
+          }
+        }
+
+        if (!nextProfile && isOwnProfileByName) {
+          try {
+            const mePayload = await fetchJson<LibraryCurrentUserResponse>(
+              resolveApiUrl("/api/users/me"),
+              { signal: abortController.signal },
+            );
+            resolvedCurrentUserEmail = mePayload.email || resolvedCurrentUserEmail;
+
+            try {
+              const payload = await fetchJson<LibraryUserWithMaterialsResponse>(
+                resolveApiUrl(
+                  `/api/users/${encodeURIComponent(mePayload.id)}?limit=100`,
+                ),
+                { signal: abortController.signal },
+              );
+              nextProfile = mapNewProfilePayload(payload);
+            } catch (error) {
+              if (!isNotFoundError(error)) {
+                throw error;
+              }
+
+              nextProfile = {
+                user: {
+                  id: mePayload.id,
+                  name: mePayload.name,
+                  bio: mePayload.bio || "",
+                  image: mePayload.image || currentAuthUser?.image || null,
+                  isEmailVerified: mePayload.is_email_verified,
+                  verified: mePayload.is_email_verified,
+                  materialsCount: 0,
+                },
+                materials: {
+                  items: [],
+                  page: 1,
+                  limit: 20,
+                  total: 0,
+                },
+              };
+            }
+          } catch (error) {
+            if (!isNotFoundError(error)) {
+              throw error;
+            }
+          }
+        }
+
+        if (!nextProfile && !UUID_PATTERN.test(userId)) {
+          try {
+            const usersPayload = await fetchJson<LibraryUsersResponse>(
+              resolveApiUrl(`/api/users?search=${encodedUserId}&limit=100`),
+              {
+                signal: abortController.signal,
+              },
+            );
+            const matchedUser = usersPayload.items.find(
+              (item) =>
+                item.name.trim().toLowerCase() === userId.trim().toLowerCase(),
+            );
+
+            if (matchedUser) {
+              const payload = await fetchJson<LibraryUserWithMaterialsResponse>(
+                resolveApiUrl(
+                  `/api/users/${encodeURIComponent(matchedUser.id)}?limit=100`,
+                ),
+                { signal: abortController.signal },
+              );
+              nextProfile = mapNewProfilePayload(payload);
+            }
+          } catch (error) {
+            if (!isNotFoundError(error)) {
+              throw error;
+            }
+          }
+        }
+
+        if (!nextProfile) {
+          const [profilePayload, articlesPayload] = await Promise.all([
+            fetchJson<RealWorldProfileResponse>(
+              resolveApiUrl(`/api/profiles/${encodedUserId}`),
+              { signal: abortController.signal },
+            ),
+            fetchJson<RealWorldArticlesResponse>(
+              resolveApiUrl(`/api/articles?author=${encodedUserId}&limit=100`),
+              { signal: abortController.signal },
+            ),
+          ]);
+
+          const user = mapProfileToUser(profilePayload.profile);
+          const userMaterials = articlesPayload.articles.map(mapArticleToMaterial);
+
+          nextProfile = {
+            user,
+            materials: {
+              items: userMaterials,
+              page: 1,
+              limit: userMaterials.length,
+              total: articlesPayload.articlesCount,
+            },
+          };
+        }
+
         const isCurrentUserProfile =
-          Boolean(currentAuthUser?.username) &&
-          (userId === currentAuthUser?.username ||
-            user.id === currentAuthUser?.username);
+          currentUsername.length > 0 &&
+          (userId === currentUsername ||
+            nextProfile.user.name === currentUsername ||
+            nextProfile.user.id === currentUsername);
 
         if (isCurrentUserProfile) {
           const syncedAuthUser: StoredAuthUser = {
-            email: currentAuthUser?.email || "",
-            username: user.id,
-            bio: user.bio,
-            image: user.image || null,
+            email: resolvedCurrentUserEmail,
+            username: nextProfile.user.name,
+            bio: nextProfile.user.bio,
+            image: nextProfile.user.image || null,
+            roles: currentAuthUser?.roles || ["user"],
           };
 
           if (!isSameAuthUser(currentAuthUser, syncedAuthUser)) {
@@ -171,18 +304,7 @@ const ProfilePage = () => {
           }
         }
 
-        const userMaterials =
-          articlesPayload.articles.map(mapArticleToMaterial);
-
-        setProfile({
-          user,
-          materials: {
-            items: userMaterials,
-            page: 1,
-            limit: userMaterials.length,
-            total: articlesPayload.articlesCount,
-          },
-        });
+        setProfile(nextProfile);
       } catch (error) {
         if (abortController.signal.aborted) return;
 
@@ -259,11 +381,7 @@ const ProfilePage = () => {
     Boolean(currentAuthUser?.username) &&
     (routeUserId === currentAuthUser?.username ||
       profile.user.id === currentAuthUser?.username);
-  const avatarSrc =
-    profile.user.image ||
-    (UUID_PATTERN.test(profile.user.id)
-      ? `/avatars/${encodeURIComponent(profile.user.id)}.png`
-      : null);
+  const avatarSrc = profile.user.image || null;
 
   const openEditDialog = () => {
     setNicknameDraft(profile.user.name);
@@ -331,6 +449,7 @@ const ProfilePage = () => {
         username: response.user.username,
         bio: response.user.bio || "",
         image: response.user.image,
+        roles: response.user.roles || currentAuthUser.roles || ["user"],
       };
 
       globalThis.localStorage?.setItem(

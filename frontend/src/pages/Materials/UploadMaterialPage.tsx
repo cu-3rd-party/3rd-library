@@ -1,10 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   UploadMaterialForm,
   type UploadMaterialFormValues,
 } from "@/common/organisms/Materials/UploadMaterialForm";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SUBMISSION_STATUS_UI } from "@/constants";
 import {
@@ -16,6 +23,10 @@ import {
 import {
   mapArticleToMaterial,
   mapAttachmentToMaterialFile,
+  mapLibrarySubmissionToMaterialSubmission,
+  LibraryCurrentUserResponse,
+  LibraryPaginatedSubmissionsResponse,
+  LibrarySubmission,
   RealWorldArticle,
   RealWorldArticleResponse,
   RealWorldArticlesResponse,
@@ -31,7 +42,6 @@ import {
 } from "@/models";
 import {
   getAuthorEditableSubmission,
-  getAuthorLatestSubmission,
   getSubmissionFiles,
 } from "@/store";
 
@@ -85,6 +95,10 @@ const resolveCurrentUserId = () => {
 const isBrowserFile = (
   file: UploadMaterialFormValues["files"][number],
 ): file is File => file instanceof File;
+
+const isStoredSubmissionFile = (
+  file: UploadMaterialFormValues["files"][number],
+): file is MaterialSubmissionFile => !isBrowserFile(file);
 
 const createApiSubmission = (
   article: RealWorldArticle,
@@ -159,23 +173,104 @@ const getSubmitErrorMessage = (error: unknown) => {
   return "Не удалось отправить материал. Попробуйте еще раз.";
 };
 
+const getUpdateSubmitErrorMessage = (error: unknown) => {
+  if (error instanceof ApiRequestError) {
+    if (error.status === 403) {
+      return "Эту заявку нельзя обновить в текущем статусе.";
+    }
+
+    if (error.status === 400 || error.status === 422) {
+      const details =
+        typeof error.payload === "string" ? error.payload.trim() : "";
+
+      if (details) {
+        return `Не удалось обновить заявку: ${details}.`;
+      }
+
+      return "Сервер не принял изменения. Проверьте данные и повторите попытку.";
+    }
+  }
+
+  return "Не удалось обновить заявку. Попробуйте еще раз.";
+};
+
+const createSubmissionUpdateFormData = (values: UploadMaterialFormValues) => {
+  const formData = new FormData();
+
+  formData.append("title", values.title.trim());
+  formData.append("description", values.description.trim());
+  formData.append("type", values.type);
+  formData.append("difficulty", values.difficulty);
+
+  values.courses.forEach((course) => {
+    formData.append("courses", course);
+  });
+  values.subjects.forEach((subject) => {
+    formData.append("subjects", subject);
+  });
+
+  values.files.forEach((file) => {
+    if (isBrowserFile(file)) {
+      formData.append("files", file);
+      return;
+    }
+
+    if (isStoredSubmissionFile(file) && file.id) {
+      formData.append("keepFileIds", file.id);
+    }
+  });
+
+  return formData;
+};
+
+const formatSubmissionDate = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Дата не указана";
+
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
+
 const UploadMaterialPage = () => {
   const [currentUserId, setCurrentUserId] = useState(resolveCurrentUserId);
   const [submissions, setSubmissions] = useState<MaterialSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const formSectionRef = useRef<HTMLDivElement>(null);
 
   const editableSubmission = useMemo(
     () => getAuthorEditableSubmission(submissions, currentUserId),
     [currentUserId, submissions],
   );
-  const latestSubmission = useMemo(
-    () => getAuthorLatestSubmission(submissions, currentUserId),
+  const authorSubmissions = useMemo(
+    () =>
+      submissions
+        .filter((submission) => submission.material.authorId === currentUserId)
+        .sort(
+          (first, second) =>
+            new Date(second.updatedAt).getTime() -
+            new Date(first.updatedAt).getTime(),
+        ),
     [currentUserId, submissions],
   );
-  const latestStatusUi = latestSubmission
-    ? SUBMISSION_STATUS_UI[latestSubmission.status]
-    : null;
+  const [editingSubmissionId, setEditingSubmissionId] = useState<string | null>(
+    null,
+  );
+  const editingSubmission = useMemo(
+    () =>
+      editingSubmissionId
+        ? authorSubmissions.find(
+            (submission) => submission.id === editingSubmissionId,
+          ) || null
+        : null,
+    [authorSubmissions, editingSubmissionId],
+  );
+  const isEditingSubmission = Boolean(editingSubmission);
 
   const [values, setValues] = useState<UploadMaterialFormValues>(() =>
     createFormValues(editableSubmission),
@@ -190,6 +285,49 @@ const UploadMaterialPage = () => {
       setIsError(false);
 
       try {
+        try {
+          const currentUserPayload = await fetchJson<LibraryCurrentUserResponse>(
+            resolveApiUrl("/api/users/me"),
+            { signal: abortController.signal },
+          );
+          const nextCurrentUserId = currentUserPayload.id;
+          setCurrentUserId(nextCurrentUserId);
+
+          try {
+            const submissionsPayload =
+              await fetchJson<LibraryPaginatedSubmissionsResponse>(
+                resolveApiUrl("/api/materials/submissions?limit=100"),
+                { signal: abortController.signal },
+              );
+
+            const mergedSubmissions = submissionsPayload.items
+              .map(mapLibrarySubmissionToMaterialSubmission)
+              .sort(
+                (first, second) =>
+                  new Date(second.updatedAt).getTime() -
+                  new Date(first.updatedAt).getTime(),
+              );
+
+            setSubmissions(mergedSubmissions);
+            return;
+          } catch (error) {
+            if (error instanceof ApiRequestError && error.status === 500) {
+              console.warn(
+                "[Upload] Backend submissions endpoint returned 500. Falling back to empty list.",
+                error,
+              );
+              setSubmissions([]);
+              setIsError(false);
+              return;
+            }
+            throw error;
+          }
+        } catch (error) {
+          if (!(error instanceof ApiRequestError) || error.status !== 404) {
+            throw error;
+          }
+        }
+
         const currentUserPayload = await fetchJson<CurrentUserResponse>(
           resolveApiUrl("/api/user"),
           { signal: abortController.signal },
@@ -246,6 +384,12 @@ const UploadMaterialPage = () => {
     setValues(createFormValues(editableSubmission));
   }, [editableSubmission]);
 
+  useEffect(() => {
+    if (!editingSubmissionId) return;
+    if (editingSubmission) return;
+    setEditingSubmissionId(null);
+  }, [editingSubmission, editingSubmissionId]);
+
   const updateValue = <K extends keyof UploadMaterialFormValues>(
     key: K,
     value: UploadMaterialFormValues[K],
@@ -281,6 +425,25 @@ const UploadMaterialPage = () => {
     }));
   };
 
+  const handleStartSubmissionEdit = (submission: MaterialSubmission) => {
+    if (submission.status !== "rejected") return;
+
+    setEditingSubmissionId(submission.id);
+    setValues(createFormValues(submission));
+
+    globalThis.requestAnimationFrame(() => {
+      formSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
+
+  const handleCancelSubmissionEdit = () => {
+    setEditingSubmissionId(null);
+    setValues(createFormValues(editableSubmission));
+  };
+
   const handleSubmit = async () => {
     const hasInvalidState =
       !values.title.trim() ||
@@ -299,7 +462,80 @@ const UploadMaterialPage = () => {
     let createdArticleSlug: string | null = null;
 
     try {
+      if (editingSubmissionId) {
+        const payload = createSubmissionUpdateFormData(values);
+        const updatedPayload = await fetchJson<LibrarySubmission>(
+          resolveApiUrl(
+            `/api/materials/submissions/${encodeURIComponent(editingSubmissionId)}`,
+          ),
+          {
+            method: "PATCH",
+            body: payload,
+          },
+        );
+
+        const updatedSubmission =
+          mapLibrarySubmissionToMaterialSubmission(updatedPayload);
+        setSubmissions((current) =>
+          current.map((submission) =>
+            submission.id === updatedSubmission.id
+              ? updatedSubmission
+              : submission,
+          ),
+        );
+
+        setEditingSubmissionId(null);
+        setValues(emptyFormValues);
+        alert("Заявка обновлена и повторно отправлена на модерацию.");
+        return;
+      }
+
       const browserFiles = values.files.filter(isBrowserFile);
+      try {
+        const binaryFiles = await Promise.all(
+          browserFiles.map(async (file) =>
+            Array.from(new Uint8Array(await file.arrayBuffer())),
+          ),
+        );
+
+        const submissionPayload = await fetchJson<LibrarySubmission>(
+          resolveApiUrl("/api/materials/submissions"),
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              title: values.title.trim(),
+              description: values.description.trim() || values.title.trim(),
+              courses: values.courses,
+              subjects: values.subjects,
+              type: values.type,
+              difficulty: values.difficulty,
+              files: binaryFiles,
+            }),
+          },
+        );
+
+        const submitted = mapLibrarySubmissionToMaterialSubmission(
+          submissionPayload,
+        );
+        setSubmissions((current) => {
+          const nextSubmissions = current.filter(
+            (item) => item.id !== submitted.id,
+          );
+          return [submitted, ...nextSubmissions];
+        });
+
+        setValues(emptyFormValues);
+        alert("Материал успешно отправлен на модерацию.");
+        return;
+      } catch (error) {
+        if (!(error instanceof ApiRequestError) || error.status !== 404) {
+          throw error;
+        }
+      }
+
       const articlePayload = await fetchJson<RealWorldArticleResponse>(
         resolveApiUrl("/api/articles"),
         {
@@ -366,6 +602,11 @@ const UploadMaterialPage = () => {
       }
 
       console.error(error);
+      if (editingSubmissionId) {
+        alert(getUpdateSubmitErrorMessage(error));
+        return;
+      }
+
       alert(getSubmitErrorMessage(error));
     } finally {
       setIsSubmitting(false);
@@ -394,44 +635,124 @@ const UploadMaterialPage = () => {
         </div>
       ) : null}
 
-      {latestSubmission && (
+      {authorSubmissions.length > 0 && (
         <Card className="border-border">
-          <CardHeader className="pb-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <CardTitle className="text-lg">Последняя заявка</CardTitle>
-              <Badge
-                variant="secondary"
-                className={latestStatusUi?.badgeClassName}
-              >
-                {latestStatusUi?.label}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="font-medium text-foreground">
-              {latestSubmission.material.title}
-            </p>
-            {latestSubmission.status === "rejected" ? (
-              <div className="rounded-lg border border-red-500/20 bg-destructive/5 p-4">
-                <p className="text-sm font-medium text-foreground">
-                  Комментарий модератора
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {latestSubmission.moderatorComment}
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {latestSubmission.status === "pending_review"
-                  ? "Заявка уже находится на проверке."
-                  : "Этот материал уже опубликован в библиотеке."}
-              </p>
-            )}
-          </CardContent>
+          <Accordion type="single" collapsible>
+            <AccordionItem value="history" className="border-b-0">
+              <CardHeader className="pb-2">
+                <AccordionTrigger className="py-0 hover:no-underline">
+                  <div className="space-y-1 text-left">
+                    <CardTitle className="text-lg">
+                      История заявок ({authorSubmissions.length})
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Здесь отображаются все отправленные материалы и их
+                      текущий статус.
+                    </p>
+                  </div>
+                </AccordionTrigger>
+              </CardHeader>
+
+              <AccordionContent>
+                <CardContent className="space-y-3 pt-0">
+                  {authorSubmissions.map((submission) => {
+                    const statusUi = SUBMISSION_STATUS_UI[submission.status];
+                    const updatedAt = formatSubmissionDate(
+                      submission.updatedAt || submission.createdAt,
+                    );
+                    const isEditingCurrent =
+                      editingSubmissionId === submission.id;
+
+                    return (
+                      <div
+                        key={`${submission.id}-${submission.updatedAt}`}
+                        className="rounded-lg border border-border bg-card/70 p-4 space-y-2"
+                      >
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0 space-y-1">
+                            <p className="break-words font-medium text-foreground">
+                              {submission.material.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Обновлено: {updatedAt}
+                            </p>
+                          </div>
+                          <Badge
+                            variant="secondary"
+                            className={statusUi.badgeClassName}
+                          >
+                            {statusUi.label}
+                          </Badge>
+                        </div>
+
+                        {submission.status === "rejected" ? (
+                          <div className="rounded-lg border border-red-500/20 bg-destructive/5 p-3 space-y-3">
+                            <div>
+                              <p className="text-sm font-medium text-foreground">
+                                Комментарий модератора
+                              </p>
+                              <p className="mt-1 text-sm text-muted-foreground break-words">
+                                {submission.moderatorComment ||
+                                  "Комментарий отсутствует"}
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant={isEditingCurrent ? "secondary" : "outline"}
+                              size="sm"
+                              onClick={() => handleStartSubmissionEdit(submission)}
+                              disabled={isSubmitting}
+                            >
+                              {isEditingCurrent
+                                ? "Редактирование открыто"
+                                : "Обновить заявку"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            {submission.status === "pending_review"
+                              ? "Заявка находится на модерации."
+                              : submission.status === "approved"
+                                ? "Материал опубликован."
+                                : "Черновик доступен для доработки."}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </Card>
       )}
 
-      <div className="rounded-xl border border-border bg-card p-4 lg:p-8">
+      <div
+        ref={formSectionRef}
+        className="rounded-xl border border-border bg-card p-4 lg:p-8"
+      >
+        {isEditingSubmission && editingSubmission ? (
+          <div className="mb-4 rounded-lg border border-orange-500/30 bg-orange-500/10 p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">
+                Редактирование отклоненной заявки
+              </p>
+              <p className="text-sm text-muted-foreground break-words">
+                {editingSubmission.material.title}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleCancelSubmissionEdit}
+              disabled={isSubmitting}
+            >
+              Отменить
+            </Button>
+          </div>
+        ) : null}
+
         <UploadMaterialForm
           values={values}
           onTitleChange={(value) => updateValue("title", value)}
@@ -450,6 +771,9 @@ const UploadMaterialPage = () => {
           onSelectType={(value) => updateValue("type", value)}
           onSelectDifficulty={(value) => updateValue("difficulty", value)}
           onSubmit={handleSubmit}
+          submitLabel={
+            isEditingSubmission ? "Обновить заявку" : "Отправить материал"
+          }
           submitDisabled={isSubmitting}
         />
       </div>

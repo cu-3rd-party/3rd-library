@@ -5,6 +5,7 @@ type RawStoredAuthUser = {
   username?: unknown;
   bio?: unknown;
   image?: unknown;
+  roles?: unknown;
 };
 
 export type StoredAuthUser = {
@@ -12,11 +13,26 @@ export type StoredAuthUser = {
   username: string;
   bio: string;
   image: string | null;
+  roles: string[];
 };
 
 const AUTH_USER_STORAGE_KEY = "authUser";
 const ACCESS_TOKEN_STORAGE_KEY = "accessToken";
 const AUTH_USER_UPDATED_EVENT = "auth-user-updated";
+const DEFAULT_USER_ROLE = "user";
+const MODERATOR_ROLE = "moderator";
+
+const normalizeRoles = (value: unknown) => {
+  if (!Array.isArray(value)) return [DEFAULT_USER_ROLE];
+
+  const roles = value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (roles.length === 0) return [DEFAULT_USER_ROLE];
+  return Array.from(new Set(roles));
+};
 
 const notifyAuthUserUpdated = () => {
   globalThis.window?.dispatchEvent(new Event(AUTH_USER_UPDATED_EVENT));
@@ -42,6 +58,7 @@ const resolveStoredAuthUser = () => {
           : parsed.image === null
             ? null
             : null,
+      roles: normalizeRoles(parsed.roles),
     } satisfies StoredAuthUser;
   } catch {
     return null;
@@ -51,7 +68,14 @@ const resolveStoredAuthUser = () => {
 export const getCurrentAuthUser = () => resolveStoredAuthUser();
 
 export const persistCurrentAuthUser = (user: StoredAuthUser) => {
-  globalThis.localStorage?.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user));
+  const normalizedUser: StoredAuthUser = {
+    ...user,
+    roles: normalizeRoles(user.roles),
+  };
+  globalThis.localStorage?.setItem(
+    AUTH_USER_STORAGE_KEY,
+    JSON.stringify(normalizedUser),
+  );
   notifyAuthUserUpdated();
 };
 
@@ -97,3 +121,8 @@ export const resolveCurrentProfilePath = () => {
 
   return `${AUTHORS_PREFIX}/${encodeURIComponent(user.username)}`;
 };
+
+export const isModerator = (user: StoredAuthUser | null) =>
+  Boolean(user?.roles?.includes(MODERATOR_ROLE));
+
+export const canAccessModeration = () => isModerator(resolveStoredAuthUser());

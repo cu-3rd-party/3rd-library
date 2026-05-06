@@ -19,10 +19,68 @@ type AuthUser = {
   username: string;
   bio: string;
   image: string | null;
+  roles: string[];
 };
 
 type AuthUserResponse = {
   user: AuthUser;
+};
+
+export type RegisterUserResult =
+  | {
+      status: "authorized";
+      response: AuthUserResponse;
+    }
+  | {
+      status: "verification_required";
+      email: string;
+      channel?: string | null;
+    };
+
+type LegacyAuthUserResponse = AuthUserResponse;
+
+type NewAuthResponse = {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    bio: string;
+    image?: string | null;
+    is_email_verified: boolean;
+    can_submit_materials: boolean;
+    roles: string[];
+  };
+  tokens: {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+  };
+};
+
+type NewRegisterResponse = {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    bio: string;
+    image?: string | null;
+    is_email_verified: boolean;
+    can_submit_materials: boolean;
+    roles: string[];
+  };
+  verification_required?: boolean;
+  verification_channel?: string | null;
+};
+
+type NewCurrentUserResponse = {
+  id: string;
+  name: string;
+  email: string;
+  bio: string;
+  image?: string | null;
+  is_email_verified: boolean;
+  can_submit_materials: boolean;
+  roles: string[];
 };
 
 type AuthApiError = {
@@ -30,6 +88,37 @@ type AuthApiError = {
 };
 
 const DEFAULT_AUTH_ERROR_MESSAGE = "Не удалось выполнить запрос";
+
+class AuthRequestError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "AuthRequestError";
+    this.status = status;
+  }
+}
+
+const mapNewAuthResponse = (response: NewAuthResponse): AuthUserResponse => ({
+  user: {
+    email: response.user.email,
+    token: response.tokens.access_token,
+    username: response.user.name,
+    bio: response.user.bio || "",
+    image: response.user.image || null,
+    roles: response.user.roles || ["user"],
+  },
+});
+
+const withDefaultRoles = (response: AuthUserResponse): AuthUserResponse => ({
+  user: {
+    ...response.user,
+    roles:
+      Array.isArray(response.user.roles) && response.user.roles.length > 0
+        ? response.user.roles
+        : ["user"],
+  },
+});
 
 const parseAuthError = (payload: unknown) => {
   if (!payload || typeof payload !== "object") {
@@ -56,7 +145,7 @@ const requestAuth = async <T>(
   path: string,
   payload: Record<string, unknown>,
   options?: {
-    method?: "POST" | "PUT";
+    method?: "POST" | "PUT" | "PATCH";
     withAuth?: boolean;
   },
 ): Promise<T> => {
@@ -76,23 +165,24 @@ const requestAuth = async <T>(
 
   if (!response.ok) {
     const parsedApiMessage = extractApiErrorMessage(body);
+    const fallbackMessage =
+      response.status === 401
+        ? "Неверный email или пароль"
+        : DEFAULT_AUTH_ERROR_MESSAGE;
+
     if (parsedApiMessage) {
-      throw new Error(parsedApiMessage);
+      throw new AuthRequestError(response.status, parsedApiMessage);
     }
 
     const parsedMessage = parseAuthError(body);
     if (parsedMessage) {
-      throw new Error(parsedMessage);
+      throw new AuthRequestError(response.status, parsedMessage);
     }
 
-    if (response.status === 401) {
-      throw new Error("Неверный email или пароль");
-    }
-
-    throw new Error(DEFAULT_AUTH_ERROR_MESSAGE);
+    throw new AuthRequestError(response.status, fallbackMessage);
   }
 
-  if (!isJson || !body) {
+  if (!isJson) {
     throw new Error("Сервер вернул ответ в неожиданном формате");
   }
 
@@ -100,14 +190,71 @@ const requestAuth = async <T>(
 };
 
 export const loginUser = (payload: AuthUserPayload) =>
-  requestAuth<AuthUserResponse>("/api/users/login", {
-    user: payload,
-  });
+  requestAuth<NewAuthResponse>("/api/auth/login", payload)
+    .then(mapNewAuthResponse)
+    .catch(async (error: unknown) => {
+      if (!(error instanceof AuthRequestError) || error.status !== 404) {
+        throw error;
+      }
+
+      const response = await requestAuth<LegacyAuthUserResponse>("/api/users/login", {
+        user: payload,
+      });
+
+      return withDefaultRoles(response);
+    });
 
 export const registerUser = (payload: RegisterUserPayload) =>
-  requestAuth<AuthUserResponse>("/api/users", {
-    user: payload,
+  requestAuth<NewRegisterResponse>("/api/auth/register", {
+    name: payload.username,
+    email: payload.email,
+    password: payload.password,
+  })
+    .then((response) => {
+      if (response.verification_required) {
+        return {
+          status: "verification_required",
+          email: response.user.email,
+          channel: response.verification_channel,
+        } as const;
+      }
+
+      throw new Error(
+        "Регистрация выполнена, но сервер не вернул токен авторизации. Подтвердите email кодом из письма или выполните вход.",
+      );
+    })
+    .catch(async (error: unknown) => {
+      if (!(error instanceof AuthRequestError) || error.status !== 404) {
+        throw error;
+      }
+
+      const response = await requestAuth<AuthUserResponse>("/api/users", {
+        user: payload,
+      });
+
+      return {
+        status: "authorized",
+        response: withDefaultRoles(response),
+      } as const;
+    });
+
+export const resendVerificationCode = async (payload: { email: string }) => {
+  await requestAuth<null>("/api/auth/resend-verification-code", {
+    email: payload.email,
   });
+};
+
+export const verifyEmailCode = async (payload: {
+  email: string;
+  code: string;
+}) => {
+  const response = await requestAuth<NewAuthResponse>("/api/auth/verify-email", {
+    email: payload.email,
+    code: payload.code,
+  });
+
+  return mapNewAuthResponse(response);
+};
 
 type UpdateCurrentUserPayload = {
   email: string;
@@ -117,13 +264,51 @@ type UpdateCurrentUserPayload = {
 };
 
 export const updateCurrentUser = (payload: UpdateCurrentUserPayload) =>
-  requestAuth<AuthUserResponse>(
-    "/api/user",
+  requestAuth<NewCurrentUserResponse>(
+    "/api/users/me",
     {
-      user: payload,
+      name: payload.username,
+      bio: payload.bio,
+      image: payload.image,
     },
     {
-      method: "PUT",
+      method: "PATCH",
       withAuth: true,
     },
-  );
+  )
+    .then((response) => {
+      const storedToken =
+        globalThis.localStorage
+          ?.getItem("accessToken")
+          ?.replace(/^Token\s+/i, "")
+          .replace(/^Bearer\s+/i, "")
+          .trim() || "";
+
+      return {
+        user: {
+          email: response.email,
+          token: storedToken,
+          username: response.name,
+          bio: response.bio || "",
+          image:
+            response.image !== undefined ? response.image || null : payload.image,
+          roles: response.roles || ["user"],
+        },
+      } satisfies AuthUserResponse;
+    })
+    .catch(async (error: unknown) => {
+      if (!(error instanceof AuthRequestError) || error.status !== 404) {
+        throw error;
+      }
+
+      return requestAuth<AuthUserResponse>(
+        "/api/user",
+        {
+          user: payload,
+        },
+        {
+          method: "PUT",
+          withAuth: true,
+        },
+      ).then(withDefaultRoles);
+    });

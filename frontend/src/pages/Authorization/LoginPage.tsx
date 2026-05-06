@@ -1,4 +1,4 @@
-import { LoaderCircle, LogIn } from "lucide-react";
+import { Eye, EyeOff, LoaderCircle, LogIn } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -20,6 +20,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,6 +65,7 @@ const LoginPage = () => {
         username: response.user.username,
         bio: response.user.bio || "",
         image: response.user.image,
+        roles: response.user.roles || ["user"],
       });
       navigate(MATERIALS_PREFIX, { replace: true });
     } catch (error) {
@@ -116,16 +118,34 @@ const LoginPage = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="login-password">Пароль</Label>
-                <Input
-                  id="login-password"
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="Введите пароль"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  disabled={isSubmitting}
-                  aria-invalid={Boolean(fieldErrors.password)}
-                />
+                <div className="relative">
+                  <Input
+                    id="login-password"
+                    type={isPasswordVisible ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="Введите пароль"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    disabled={isSubmitting}
+                    aria-invalid={Boolean(fieldErrors.password)}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 inline-flex items-center px-3 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => setIsPasswordVisible((current) => !current)}
+                    disabled={isSubmitting}
+                    aria-label={
+                      isPasswordVisible ? "Скрыть пароль" : "Показать пароль"
+                    }
+                  >
+                    {isPasswordVisible ? (
+                      <EyeOff className="size-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="size-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
                 {fieldErrors.password ? (
                   <p className="text-sm text-destructive">
                     {fieldErrors.password}

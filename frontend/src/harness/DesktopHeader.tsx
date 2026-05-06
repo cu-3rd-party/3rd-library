@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AUTHORIZATION_PREFIX } from "@/constants";
 import { useTheme } from "@/hooks";
-import { fetchJson, resolveApiUrl } from "@/lib/api";
+import { ApiRequestError, fetchJson, resolveApiUrl } from "@/lib/api";
 import {
   clearCurrentSession,
   getCurrentAuthUser,
@@ -30,6 +30,15 @@ type CurrentUserResponse = {
     bio: string;
     image: string | null;
   };
+};
+
+type LibraryCurrentUserResponse = {
+  id: string;
+  name: string;
+  email: string;
+  bio: string;
+  image?: string | null;
+  roles?: string[];
 };
 
 export const DesktopHeader = () => {
@@ -60,27 +69,52 @@ export const DesktopHeader = () => {
 
     const syncCurrentUser = async () => {
       try {
-        const response = await fetchJson<CurrentUserResponse>(
-          resolveApiUrl("/api/user"),
-          {
-            signal: abortController.signal,
-          },
-        );
+        let syncedUser: StoredAuthUser;
+        try {
+          const response = await fetchJson<LibraryCurrentUserResponse>(
+            resolveApiUrl("/api/users/me"),
+            {
+              signal: abortController.signal,
+            },
+          );
+          syncedUser = {
+            email: response.email,
+            username: response.name,
+            bio: response.bio || "",
+            image:
+              response.image !== undefined
+                ? response.image || null
+                : getCurrentAuthUser()?.image || null,
+            roles: response.roles || ["user"],
+          };
+        } catch (error) {
+          if (!(error instanceof ApiRequestError) || error.status !== 404) {
+            throw error;
+          }
 
+          const response = await fetchJson<CurrentUserResponse>(
+            resolveApiUrl("/api/user"),
+            {
+              signal: abortController.signal,
+            },
+          );
+          syncedUser = {
+            email: response.user.email,
+            username: response.user.username,
+            bio: response.user.bio || "",
+            image: response.user.image,
+            roles: getCurrentAuthUser()?.roles || ["user"],
+          };
+        }
         const storedUser = getCurrentAuthUser();
-        const syncedUser: StoredAuthUser = {
-          email: response.user.email,
-          username: response.user.username,
-          bio: response.user.bio || "",
-          image: response.user.image,
-        };
 
         if (
           !storedUser ||
           storedUser.email !== syncedUser.email ||
           storedUser.username !== syncedUser.username ||
           storedUser.bio !== syncedUser.bio ||
-          storedUser.image !== syncedUser.image
+          storedUser.image !== syncedUser.image ||
+          storedUser.roles.join(",") !== syncedUser.roles.join(",")
         ) {
           persistCurrentAuthUser(syncedUser);
         }

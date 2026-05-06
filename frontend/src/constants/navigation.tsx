@@ -18,7 +18,11 @@ import {
 export const NAV_ITEMS_DESKTOP: NavItemDesktop[] = [
   { label: "Материалы", path: `${MATERIALS_PREFIX}` },
   { label: "Авторы", path: `${AUTHORS_PREFIX}` },
-  { label: "Модерация", path: `${MATERIALS_PREFIX}/moderation` },
+  {
+    label: "Модерация",
+    path: `${MATERIALS_PREFIX}/moderation`,
+    requiredRole: "moderator",
+  },
   { label: "О проекте", path: `${ABOUT_PREFIX}` },
 ];
 
@@ -42,6 +46,7 @@ export const NAV_ITEMS_MOBILE: NavItemMobile[] = [
     label: "Модерация",
     path: `${MATERIALS_PREFIX}/moderation`,
     icon: <ShieldCheck className="size-5" />,
+    requiredRole: "moderator",
   },
   {
     label: "Опубликовать материал",

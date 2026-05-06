@@ -10,10 +10,13 @@ import {
   MATERIALS_PREFIX,
   TYPE_CONFIG,
 } from "@/constants";
-import { fetchJson, resolveApiUrl } from "@/lib/api";
+import { ApiRequestError, fetchJson, resolveApiUrl } from "@/lib/api";
 import {
+  LibraryMaterialDetailsResponse,
   mapArticleToMaterialDetails,
   mapAttachmentToMaterialFile,
+  mapLibraryMaterialFileToSubmissionFile,
+  mapLibraryMaterialToMaterial,
   RealWorldArticleResponse,
   RealWorldAttachmentsResponse,
   RealWorldProfileResponse,
@@ -47,9 +50,6 @@ type MaterialDetailsResponse = Material & {
   submittedAt?: string;
   publishedAt?: string;
 };
-
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const getFallbackMaterial = (
   materialId: string,
@@ -93,6 +93,28 @@ const MaterialDetailsPage = () => {
       setIsError(false);
 
       try {
+        try {
+          const materialPayload = await fetchJson<LibraryMaterialDetailsResponse>(
+            resolveApiUrl(`/api/materials/${encodeURIComponent(materialId)}`),
+            { signal: abortController.signal },
+          );
+
+          const mappedMaterial = mapLibraryMaterialToMaterial(materialPayload);
+
+          setMaterialDetails({
+            ...mappedMaterial,
+            authorImage: materialPayload.author_image || null,
+            files: materialPayload.files.map(mapLibraryMaterialFileToSubmissionFile),
+            submittedAt: materialPayload.submitted_at || undefined,
+            publishedAt: materialPayload.published_at || undefined,
+          });
+          return;
+        } catch (error) {
+          if (!(error instanceof ApiRequestError) || error.status !== 404) {
+            throw error;
+          }
+        }
+
         const articlePath = `/api/articles/${encodeURIComponent(materialId)}`;
         const [articlePayload, attachmentsPayload] = await Promise.all([
           fetchJson<RealWorldArticleResponse>(resolveApiUrl(articlePath), {
@@ -188,10 +210,7 @@ const MaterialDetailsPage = () => {
     : "Не указана";
   const files = materialDetails?.files || [];
   const authorAvatarSrc = materialDetails
-    ? materialDetails.authorImage ||
-      (UUID_PATTERN.test(materialDetails.authorId)
-        ? `/avatars/${encodeURIComponent(materialDetails.authorId)}.png`
-        : null)
+    ? materialDetails.authorImage || null
     : null;
 
   if (isLoading) {

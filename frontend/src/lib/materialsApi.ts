@@ -1,6 +1,6 @@
 import { COURSES, DIFFICULTIES, MATERIAL_TYPES, SUBJECTS } from "@/constants";
 import { resolveApiUrl } from "@/lib/api";
-import { Material, MaterialSubmissionFile, User } from "@/models";
+import { Material, MaterialSubmission, MaterialSubmissionFile, User } from "@/models";
 
 type RealWorldProfile = {
   username: string;
@@ -33,6 +33,120 @@ export type RealWorldArticleResponse = {
 
 export type RealWorldProfileResponse = {
   profile: RealWorldProfile;
+};
+
+export type LibraryUserPublicProfile = {
+  id: string;
+  name: string;
+  bio: string;
+  image?: string | null;
+  is_email_verified: boolean;
+  materials_count: number;
+};
+
+export type LibraryUsersResponse = {
+  items: LibraryUserPublicProfile[];
+  page: number;
+  limit: number;
+  total: number;
+};
+
+export type LibraryCurrentUserResponse = {
+  id: string;
+  name: string;
+  email: string;
+  bio: string;
+  image?: string | null;
+  is_email_verified: boolean;
+  can_submit_materials: boolean;
+  roles: string[];
+};
+
+export type LibraryMaterial = {
+  id: string;
+  author_id: string;
+  author_name?: string | null;
+  title: string;
+  description: string;
+  courses: string[];
+  subjects: string[];
+  type: string;
+  difficulty: string;
+  pub_date?: string | null;
+};
+
+export type LibraryMaterialFile = {
+  id: string;
+  name: string;
+  size_bytes: number;
+  extension: string;
+  mime_type?: string | null;
+  url?: string | null;
+};
+
+export type LibraryPaginatedMaterialsResponse = {
+  items: LibraryMaterial[];
+  page: number;
+  limit: number;
+  total: number;
+};
+
+export type LibraryMaterialDetailsResponse = {
+  id: string;
+  author_id: string;
+  author_name?: string | null;
+  author_image?: string | null;
+  title: string;
+  description: string;
+  courses: string[];
+  subjects: string[];
+  type: string;
+  difficulty: string;
+  pub_date?: string | null;
+  files: LibraryMaterialFile[];
+  published_at?: string | null;
+  submitted_at?: string | null;
+};
+
+export type LibraryUserWithMaterialsResponse = {
+  user: LibraryUserPublicProfile;
+  materials: LibraryPaginatedMaterialsResponse;
+};
+
+export type LibrarySubmission = {
+  id: string;
+  material: LibraryMaterial;
+  files: LibraryMaterialFile[];
+  status: string;
+  moderator_comment: string;
+  created_at: string;
+  updated_at: string;
+  submitted_at?: string | null;
+  reviewed_at?: string | null;
+  published_at?: string | null;
+};
+
+export type LibraryPaginatedSubmissionsResponse = {
+  items: LibrarySubmission[];
+  page: number;
+  limit: number;
+  total: number;
+};
+
+export type LibraryModerationCounters = {
+  all: number;
+  draft: number;
+  pending_review: number;
+  rejected: number;
+  approved: number;
+};
+
+export type LibraryModerationResponse = {
+  items: LibrarySubmission[];
+  page: number;
+  limit: number;
+  total: number;
+  counters: LibraryModerationCounters;
 };
 
 export type RealWorldAttachment = {
@@ -217,6 +331,34 @@ const getFileExtension = (fileName: string) => {
     : "";
 };
 
+const normalizeCourse = (
+  value: string,
+): (typeof COURSES)[number] | null =>
+  COURSES.includes(value as (typeof COURSES)[number])
+    ? (value as (typeof COURSES)[number])
+    : null;
+
+const normalizeSubject = (
+  value: string,
+): (typeof SUBJECTS)[number] | null =>
+  SUBJECTS.includes(value as (typeof SUBJECTS)[number])
+    ? (value as (typeof SUBJECTS)[number])
+    : null;
+
+const normalizeMaterialType = (
+  value: string,
+): (typeof MATERIAL_TYPES)[number] =>
+  MATERIAL_TYPES.includes(value as (typeof MATERIAL_TYPES)[number])
+    ? (value as (typeof MATERIAL_TYPES)[number])
+    : "other";
+
+const normalizeDifficulty = (
+  value: string,
+): (typeof DIFFICULTIES)[number] =>
+  DIFFICULTIES.includes(value as (typeof DIFFICULTIES)[number])
+    ? (value as (typeof DIFFICULTIES)[number])
+    : DEFAULT_DIFFICULTY;
+
 export const mapArticleToMaterial = (article: RealWorldArticle): Material => {
   const course = deriveCourse(article.tagList);
   const subjects = deriveSubjects(article.tagList);
@@ -235,6 +377,91 @@ export const mapArticleToMaterial = (article: RealWorldArticle): Material => {
       article.favoritesCount,
     ),
     pubDate: formatDisplayDate(article.updatedAt || article.createdAt),
+  };
+};
+
+export const mapLibraryUserToUser = (user: LibraryUserPublicProfile): User => ({
+  id: user.id,
+  name: user.name,
+  bio: user.bio || "",
+  image: user.image || null,
+  verified: user.is_email_verified,
+  isEmailVerified: user.is_email_verified,
+  materialsCount: user.materials_count,
+});
+
+export const mapLibraryMaterialToMaterial = (
+  material: LibraryMaterial,
+): Material => {
+  const courses = material.courses
+    .map((course) => normalizeCourse(course))
+    .filter((course): course is (typeof COURSES)[number] => Boolean(course));
+  const subjects = material.subjects
+    .map((subject) => normalizeSubject(subject))
+    .filter((subject): subject is (typeof SUBJECTS)[number] =>
+      Boolean(subject),
+    );
+
+  return {
+    id: material.id,
+    authorId: material.author_id,
+    authorName: material.author_name || undefined,
+    title: material.title,
+    description: material.description || "",
+    pubDate: formatDisplayDate(material.pub_date || ""),
+    courses: courses.length > 0 ? courses : [DEFAULT_COURSE],
+    subjects: subjects.length > 0 ? subjects : [DEFAULT_SUBJECT],
+    type: normalizeMaterialType(material.type),
+    difficulty: normalizeDifficulty(material.difficulty),
+  };
+};
+
+export const mapLibraryMaterialFileToSubmissionFile = (
+  file: LibraryMaterialFile,
+): MaterialSubmissionFile => ({
+  id: file.id,
+  name: file.name,
+  sizeBytes: file.size_bytes,
+  extension: file.extension,
+  url: file.url || undefined,
+});
+
+const normalizeSubmissionStatus = (status: string): MaterialSubmission["status"] => {
+  if (status === "draft") return "draft";
+  if (status === "pending_review") return "pending_review";
+  if (status === "rejected") return "rejected";
+  return "approved";
+};
+
+export const mapLibrarySubmissionToMaterialSubmission = (
+  submission: LibrarySubmission,
+): MaterialSubmission => {
+  const mappedMaterial = mapLibraryMaterialToMaterial(submission.material);
+  const submittedAt = submission.submitted_at || undefined;
+  const createdAt = submission.created_at;
+  const updatedAt = submission.updated_at;
+  const publishedAt = submission.published_at || undefined;
+
+  const displayDateSource =
+    submittedAt || createdAt || updatedAt || publishedAt || "";
+
+  return {
+    id: submission.id,
+    material: {
+      ...mappedMaterial,
+      pubDate: formatDisplayDate(displayDateSource),
+    },
+    files: submission.files.map(mapLibraryMaterialFileToSubmissionFile),
+    file: submission.files[0]
+      ? mapLibraryMaterialFileToSubmissionFile(submission.files[0])
+      : null,
+    status: normalizeSubmissionStatus(submission.status),
+    moderatorComment: submission.moderator_comment || "",
+    createdAt,
+    updatedAt,
+    submittedAt,
+    reviewedAt: submission.reviewed_at || undefined,
+    publishedAt,
   };
 };
 

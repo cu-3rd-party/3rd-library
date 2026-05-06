@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 
 import { MaterialsSection } from "@/common/organisms";
-import { fetchJson, resolveApiUrl } from "@/lib/api";
+import { ApiRequestError, fetchJson, resolveApiUrl } from "@/lib/api";
 import {
+  LibraryPaginatedMaterialsResponse,
   mapArticleToMaterial,
+  mapLibraryMaterialToMaterial,
   RealWorldArticlesResponse,
 } from "@/lib/materialsApi";
 import { MOCK_SUBMISSIONS } from "@/mocks/mockData";
@@ -27,6 +29,21 @@ const MaterialsPage = () => {
       setIsError(false);
 
       try {
+        try {
+          const payload = await fetchJson<LibraryPaginatedMaterialsResponse>(
+            resolveApiUrl("/api/materials?limit=100"),
+            {
+              signal: abortController.signal,
+            },
+          );
+          setMaterials(payload.items.map(mapLibraryMaterialToMaterial));
+          return;
+        } catch (error) {
+          if (!(error instanceof ApiRequestError) || error.status !== 404) {
+            throw error;
+          }
+        }
+
         const payload = await fetchJson<RealWorldArticlesResponse>(
           resolveApiUrl("/api/articles"),
           {
