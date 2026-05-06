@@ -67,6 +67,7 @@ create table if not exists submission (
     status text not null default 'draft',
     moderator_id uuid references web_user(user_id),
     moderator_comment text default '',
+    published_at timestamptz default null,
     created_at timestamptz default now(),
     updated_at timestamptz default now(),
     submitted_at timestamptz,
