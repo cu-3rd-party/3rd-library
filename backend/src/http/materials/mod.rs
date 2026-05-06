@@ -1,11 +1,12 @@
 mod create;
 mod get;
 mod get_single;
+mod helpers;
 mod list;
 pub mod models;
 mod update;
-mod helpers;
 
+use axum::extract::DefaultBodyLimit;
 pub use models::*;
 
 use crate::http::ApiContext;
@@ -29,4 +30,5 @@ pub fn router() -> Router<ApiContext> {
             "/materials/submissions/{submissionId}",
             get(get_submission_by_id).patch(update_submission),
         )
+        .layer(DefaultBodyLimit::max(30 * 1024 * 1024))
 }

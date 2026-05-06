@@ -1,3 +1,4 @@
+use crate::constants::ALLOWED_EXTENSIONS;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -20,7 +21,7 @@ pub struct Material {
 pub struct MaterialFile {
     pub id: Uuid,
     pub name: String,
-    pub size_bytes: i64,
+    pub size_bytes: u64,
     pub extension: String,
     pub mime_type: Option<String>,
     pub url: Option<String>,
@@ -65,11 +66,10 @@ pub struct ListSubmissionsQuery {
 
 #[derive(Serialize)]
 pub struct Submission {
-    pub id: uuid::Uuid,
-    pub material: Material,
+    pub id: Uuid,
     pub files: Vec<MaterialFile>,
     pub status: String,
-    pub moderator_comment: String,
+    pub moderator_comment: Option<String>,
     pub created_at: String,
     pub updated_at: String,
     pub submitted_at: Option<String>,
@@ -106,4 +106,27 @@ pub struct UpdateSubmissionRequest {
     pub difficulty: Option<String>,
     pub files: Option<Vec<Vec<u8>>>,
     pub keep_file_ids: Option<Vec<Uuid>>,
+}
+
+pub struct FileName {
+    pub name: String,
+    pub extension: String,
+}
+
+impl FileName {
+    pub fn new(name: String) -> Option<Self> {
+        let extension = name.split('.').last()?.to_string();
+        Some(FileName { name, extension })
+    }
+    pub fn new_valid(name: String) -> Option<Self> {
+        let obj = FileName::new(name)?;
+        if !obj.is_valid() {
+            return None;
+        }
+        Some(obj)
+    }
+
+    fn is_valid(&self) -> bool {
+        ALLOWED_EXTENSIONS.contains(&self.extension.as_str())
+    }
 }

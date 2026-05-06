@@ -9,3 +9,5 @@ pub const BUSINESS_REFRESH_INTERVAL: Duration = Duration::from_secs(30);
 
 // Articles
 pub const UPLOAD_DIR: &str = "/var/app/upload";
+
+pub const ALLOWED_EXTENSIONS: &[&str] = &["pdf", "doc", "docx", "ppt", "pptx", "ipynb", "py"];

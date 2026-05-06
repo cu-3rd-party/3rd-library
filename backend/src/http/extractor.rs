@@ -161,7 +161,10 @@ impl FromRequestParts<ApiContext> for AuthUser {
 impl FromRequestParts<ApiContext> for VerifiedUser {
     type Rejection = Error;
 
-    async fn from_request_parts(parts: &mut Parts, state: &ApiContext) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &ApiContext,
+    ) -> Result<Self, Self::Rejection> {
         let auth_header = parts
             .headers
             .get(AUTHORIZATION)
@@ -174,7 +177,6 @@ impl FromRequestParts<ApiContext> for VerifiedUser {
             user_id: auth_user.user_id,
             session_id: auth_user.session_id,
         })
-
     }
 }
 

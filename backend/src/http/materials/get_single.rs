@@ -2,12 +2,12 @@ use crate::http::{ApiContext, Result};
 use axum::Json;
 use axum::extract::{Path, State};
 
+use super::models::*;
 use crate::http::error::Error;
 use crate::http::extractor::AuthUser;
+use crate::http::materials::helpers;
 use chrono::{DateTime, Utc};
 use sqlx::Row;
-use crate::http::materials::helpers;
-use super::models::*;
 
 pub async fn get_submission_by_id(
     Path(submission_id): Path<uuid::Uuid>,
