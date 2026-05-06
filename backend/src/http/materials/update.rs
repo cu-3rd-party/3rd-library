@@ -2,11 +2,12 @@ use crate::http;
 use crate::http::extractor::VerifiedUser;
 use crate::http::materials::{FileName, MaterialFile, Submission, helpers};
 use crate::http::{ApiContext, Error};
+use crate::metrics;
 use anyhow::anyhow;
 use axum::Json;
 use axum::extract::{Multipart, Path, State};
 use chrono::{DateTime, Utc};
-use sqlx::Row;
+use sqlx::{Row, Postgres};
 use uuid::Uuid;
 
 pub async fn update_submission(
@@ -15,6 +16,7 @@ pub async fn update_submission(
     State(ctx): State<ApiContext>,
     mut multipart: Multipart,
 ) -> http::Result<Json<Submission>> {
+    metrics::observe_db_query();
     let row = sqlx::query("select user_id, status from submission where submission_id = $1")
         .bind(submission_id)
         .fetch_optional(&ctx.db)
@@ -63,6 +65,7 @@ pub async fn update_submission(
             }
             "description" => {
                 let value = field.text().await.map_err(|_| Error::BadRequest)?;
+                metrics::observe_db_query();
                 sqlx::query("update submission set description = $1, updated_at = $2 where submission_id = $3")
                     .bind(&value)
                     .bind(now)
@@ -76,6 +79,7 @@ pub async fn update_submission(
                 let courses: Vec<String> =
                     serde_json::from_str(&value).map_err(|_| Error::BadRequest)?;
                 if !courses.is_empty() {
+                    metrics::observe_db_query();
                     sqlx::query("update submission set courses = $1, updated_at = $2 where submission_id = $3")
                         .bind(&courses)
                         .bind(now)
@@ -90,6 +94,7 @@ pub async fn update_submission(
                 let subjects: Vec<String> =
                     serde_json::from_str(&value).map_err(|_| Error::BadRequest)?;
                 if !subjects.is_empty() {
+                    metrics::observe_db_query();
                     sqlx::query("update submission set subjects = $1, updated_at = $2 where submission_id = $3")
                         .bind(&subjects)
                         .bind(now)
@@ -102,6 +107,7 @@ pub async fn update_submission(
             "type" => {
                 let value = field.text().await.map_err(|_| Error::BadRequest)?;
                 if !value.is_empty() {
+                    metrics::observe_db_query();
                     sqlx::query(
                         "update submission set type = $1, updated_at = $2 where submission_id = $3",
                     )
@@ -116,6 +122,7 @@ pub async fn update_submission(
             "difficulty" => {
                 let value = field.text().await.map_err(|_| Error::BadRequest)?;
                 if !value.is_empty() {
+                    metrics::observe_db_query();
                     sqlx::query("update submission set difficulty = $1, updated_at = $2 where submission_id = $3")
                         .bind(&value)
                         .bind(now)
@@ -150,6 +157,7 @@ pub async fn update_submission(
                     url: None,
                 };
 
+                metrics::observe_db_query();
                 sqlx::query(
                     r#"insert into material_file (file_id, user_id, name, size_bytes, extension, mime_type, storage_key) 
                     values ($1, $2, $3, $4, $5, $6, $7)"#,
@@ -164,6 +172,7 @@ pub async fn update_submission(
                 .execute(&mut *tx)
                 .await?;
 
+                metrics::observe_db_query();
                 sqlx::query(
                     r#"insert into submission_file_rel (submission_id, file_id) values ($1, $2)"#,
                 )
@@ -180,6 +189,7 @@ pub async fn update_submission(
     }
 
     if let Some(ids) = keep_file_ids {
+        metrics::observe_db_query();
         sqlx::query(
             r#"delete from submission_file_rel where submission_id = $1 and file_id not in (select unnest($2))"#,
         )
@@ -190,6 +200,7 @@ pub async fn update_submission(
     }
 
     if has_updates {
+        metrics::observe_db_query();
         sqlx::query(
             "update submission set status = 'pending_review', submitted_at = coalesce(submitted_at, $1), updated_at = $1 where submission_id = $2",
         )
@@ -201,6 +212,7 @@ pub async fn update_submission(
 
     tx.commit().await?;
 
+    metrics::observe_db_query();
     let updated_row = sqlx::query(
         r#"
             select
@@ -229,6 +241,7 @@ pub async fn update_submission(
     .fetch_one(&ctx.db)
     .await?;
 
+    metrics::observe_db_query();
     let files_rows = sqlx::query(
         r#"
             select mf.file_id, mf.name, mf.size_bytes, mf.extension, mf.mime_type

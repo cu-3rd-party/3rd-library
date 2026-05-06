@@ -54,37 +54,27 @@ static USERS_TOTAL: Lazy<IntGauge> = Lazy::new(|| {
     metric
 });
 
-static ARTICLES_TOTAL: Lazy<IntGauge> = Lazy::new(|| {
-    let metric = IntGauge::new("articles_total", "Total articles").expect("articles_total");
+static SUBMISSIONS_TOTAL: Lazy<IntGauge> = Lazy::new(|| {
+    let metric = IntGauge::new("submissions_total", "Total submissions").expect("submissions_total");
     REGISTRY
         .register(Box::new(metric.clone()))
-        .expect("register articles_total");
+        .expect("register submissions_total");
     metric
 });
 
-static COMMENTS_TOTAL: Lazy<IntGauge> = Lazy::new(|| {
-    let metric = IntGauge::new("comments_total", "Total comments").expect("comments_total");
+static MATERIAL_FILES_TOTAL: Lazy<IntGauge> = Lazy::new(|| {
+    let metric = IntGauge::new("materials_files_total", "Total materials_files").expect("materials_files_total");
     REGISTRY
         .register(Box::new(metric.clone()))
-        .expect("register comments_total");
+        .expect("register materials_files_total");
     metric
 });
 
-static ATTACHMENTS_TOTAL: Lazy<IntGauge> = Lazy::new(|| {
-    let metric =
-        IntGauge::new("attachments_total", "Total attachments").expect("attachments_total");
+static MATERIALS_TOTAL: Lazy<IntGauge> = Lazy::new(|| {
+    let metric = IntGauge::new("materials_total", "Total materials").expect("materials_total");
     REGISTRY
         .register(Box::new(metric.clone()))
-        .expect("register attachments_total");
-    metric
-});
-
-static ATTACHMENTS_TOTAL_BYTES: Lazy<IntGauge> = Lazy::new(|| {
-    let metric = IntGauge::new("attachments_total_bytes", "Total attachment size in bytes")
-        .expect("attachments_total_bytes");
-    REGISTRY
-        .register(Box::new(metric.clone()))
-        .expect("register attachments_total_bytes");
+        .expect("register materials_total");
     metric
 });
 
@@ -97,33 +87,6 @@ static USERS_CREATED_TOTAL: Lazy<IntCounter> = Lazy::new(|| {
     metric
 });
 
-static ARTICLES_CREATED_TOTAL: Lazy<IntCounter> = Lazy::new(|| {
-    let metric = IntCounter::new("articles_created_total", "Articles created")
-        .expect("articles_created_total");
-    REGISTRY
-        .register(Box::new(metric.clone()))
-        .expect("register articles_created_total");
-    metric
-});
-
-static COMMENTS_CREATED_TOTAL: Lazy<IntCounter> = Lazy::new(|| {
-    let metric = IntCounter::new("comments_created_total", "Comments created")
-        .expect("comments_created_total");
-    REGISTRY
-        .register(Box::new(metric.clone()))
-        .expect("register comments_created_total");
-    metric
-});
-
-static ATTACHMENTS_CREATED_TOTAL: Lazy<IntCounter> = Lazy::new(|| {
-    let metric = IntCounter::new("attachments_created_total", "Attachments created")
-        .expect("attachments_created_total");
-    REGISTRY
-        .register(Box::new(metric.clone()))
-        .expect("register attachments_created_total");
-    metric
-});
-
 pub fn observe_db_query() {
     DB_QUERIES_TOTAL.inc();
 }
@@ -132,14 +95,6 @@ pub fn record_user_created() {
     USERS_CREATED_TOTAL.inc();
 }
 
-pub fn record_article_created() {
-    ARTICLES_CREATED_TOTAL.inc();
-}
-
-pub fn record_comment_created() {
-    COMMENTS_CREATED_TOTAL.inc();
-}
-
-pub fn record_attachment_created() {
-    ATTACHMENTS_CREATED_TOTAL.inc();
+pub fn record_material_file_created() {
+    MATERIAL_FILES_TOTAL.inc();
 }
