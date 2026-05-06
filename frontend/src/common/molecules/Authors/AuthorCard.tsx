@@ -1,5 +1,5 @@
 import { User as UserIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Card } from "@/components/ui/card";
 import { User } from "@/models/user";
@@ -10,7 +10,18 @@ type AuthorCardProps = {
 };
 
 export const AuthorCard = ({ author, onClick }: AuthorCardProps) => {
-  const [imageError, setImageError] = useState(false);
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(
+    author.image || null,
+  );
+
+  useEffect(() => {
+    setAvatarSrc(author.image || null);
+  }, [author.image]);
+
+  const handleImageError = () => {
+    setAvatarSrc(null);
+  };
+
   return (
     <Card
       onClick={() => onClick(author.id)}
@@ -19,15 +30,15 @@ export const AuthorCard = ({ author, onClick }: AuthorCardProps) => {
     >
       <div className="w-full flex-1 flex items-start justify-start mb-2 lg:mb-4 min-h-0">
         <div className="h-full aspect-square rounded-xl flex items-center justify-center overflow-hidden">
-          {!imageError ? (
+          {avatarSrc ? (
             <img
-              src={`/avatars/${author.id}.png`}
+              src={avatarSrc}
               alt={author.name}
               className="w-full h-full object-cover"
-              onError={() => setImageError(true)}
+              onError={handleImageError}
             />
           ) : (
-            <UserIcon className="h-3/4 w-3/4 " />
+            <UserIcon className="h-3/4 w-3/4 text-muted-foreground/70" />
           )}
         </div>
       </div>

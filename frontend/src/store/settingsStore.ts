@@ -8,7 +8,7 @@ type SettingsStore = {
   displayMaterialTags: boolean;
   setTheme: (theme: Theme) => void;
   setDisplayMateialTags: (displayMateialTags: boolean) => void;
-}
+};
 
 export const useSettingsStore = create<SettingsStore>()(
   persist(
@@ -17,7 +17,8 @@ export const useSettingsStore = create<SettingsStore>()(
       displayMaterialTags: true,
 
       setTheme: (theme) => set({ theme }),
-      setDisplayMateialTags: (displayMaterialTags) => set({ displayMaterialTags })
+      setDisplayMateialTags: (displayMaterialTags) =>
+        set({ displayMaterialTags }),
     }),
     {
       name: "settings-store",

@@ -4,16 +4,17 @@ import { useNavigate } from "react-router-dom";
 
 import { AuthorsGrid } from "@/common/organisms";
 import { Input } from "@/components/ui/input";
-import { fetchJson, resolveApiUrl } from "@/lib/api";
+import { ApiRequestError, fetchJson, resolveApiUrl } from "@/lib/api";
+import {
+  LibraryUserWithMaterialsResponse,
+  LibraryUsersResponse,
+  mapLibraryUserToUser,
+  mapProfileToUser,
+  RealWorldArticlesResponse,
+  RealWorldProfileResponse,
+} from "@/lib/materialsApi";
 import { MOCK_AUTHORS } from "@/mocks/mockData";
 import { User } from "@/models/user";
-
-type UsersResponse = {
-  items: User[];
-  page: number;
-  limit: number;
-  total: number;
-};
 
 const AuthorsPage = () => {
   const navigate = useNavigate();
@@ -30,13 +31,131 @@ const AuthorsPage = () => {
       setIsError(false);
 
       try {
-        const payload = await fetchJson<UsersResponse>(
-          resolveApiUrl("/users"),
+        try {
+          const usersPayload = await fetchJson<LibraryUsersResponse>(
+            resolveApiUrl("/api/users?limit=100"),
+            {
+              signal: abortController.signal,
+            },
+          );
+
+          if (abortController.signal.aborted) return;
+
+          const mappedAuthors = usersPayload.items.map((user) =>
+            mapLibraryUserToUser(user),
+          );
+          const authorsWithoutImage = mappedAuthors.filter(
+            (author) => !author.image,
+          );
+
+          if (authorsWithoutImage.length === 0) {
+            setAuthors(
+              mappedAuthors.sort((first, second) =>
+                first.name.localeCompare(second.name),
+              ),
+            );
+            return;
+          }
+
+          const detailedProfiles = await Promise.allSettled(
+            authorsWithoutImage.map((author) =>
+              fetchJson<LibraryUserWithMaterialsResponse>(
+                resolveApiUrl(
+                  `/api/users/${encodeURIComponent(author.id)}?limit=1`,
+                ),
+                {
+                  signal: abortController.signal,
+                },
+              ),
+            ),
+          );
+
+          if (abortController.signal.aborted) return;
+
+          const imageByAuthorId = new Map<string, string | null>();
+          authorsWithoutImage.forEach((author, index) => {
+            const profileResult = detailedProfiles[index];
+            if (profileResult?.status !== "fulfilled") return;
+
+            imageByAuthorId.set(author.id, profileResult.value.user.image || null);
+          });
+
+          const enrichedAuthors = mappedAuthors.map((author) => ({
+            ...author,
+            image: imageByAuthorId.get(author.id) ?? author.image ?? null,
+          }));
+
+          setAuthors(
+            enrichedAuthors
+              .sort((first, second) => first.name.localeCompare(second.name)),
+          );
+          return;
+        } catch (error) {
+          if (
+            !(error instanceof ApiRequestError) ||
+            error.status !== 404
+          ) {
+            throw error;
+          }
+        }
+
+        const payload = await fetchJson<RealWorldArticlesResponse>(
+          resolveApiUrl("/api/articles?limit=100"),
           {
             signal: abortController.signal,
           },
         );
-        setAuthors(payload.items);
+
+        const usersById = new Map<string, User>();
+        payload.articles.forEach((article) => {
+          const userId = article.author.username;
+          const existingUser = usersById.get(userId);
+
+          if (existingUser) {
+            usersById.set(userId, {
+              ...existingUser,
+              materialsCount: (existingUser.materialsCount || 0) + 1,
+            });
+            return;
+          }
+
+          usersById.set(userId, {
+            ...mapProfileToUser(article.author),
+            materialsCount: 1,
+          });
+        });
+
+        const authorEntries = Array.from(usersById.entries());
+        const profileResponses = await Promise.allSettled(
+          authorEntries.map(([userId]) =>
+            fetchJson<RealWorldProfileResponse>(
+              resolveApiUrl(`/api/profiles/${encodeURIComponent(userId)}`),
+              {
+                signal: abortController.signal,
+              },
+            ),
+          ),
+        );
+
+        if (abortController.signal.aborted) return;
+
+        const nextAuthors = authorEntries.map(([, fallbackUser], index) => {
+          const result = profileResponses[index];
+          if (result?.status !== "fulfilled") {
+            return fallbackUser;
+          }
+
+          return {
+            ...mapProfileToUser(result.value.profile),
+            materialsCount: fallbackUser.materialsCount,
+          } satisfies User;
+        });
+
+        setAuthors(
+          nextAuthors.sort((first, second) =>
+            first.name.localeCompare(second.name),
+          ),
+        );
       } catch (error) {
         if (abortController.signal.aborted) return;
 
@@ -70,7 +189,7 @@ const AuthorsPage = () => {
   );
 
   const handleAuthorClick = (id: string) => {
-    navigate(`/authors/${id}`);
+    navigate(`/authors/${encodeURIComponent(id)}`);
   };
 
   return (

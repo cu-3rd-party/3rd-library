@@ -1,9 +1,15 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NAV_ITEMS_DESKTOP, NAV_ITEMS_MOBILE } from "@/constants";
+import {
+  getCurrentAuthUser,
+  isModerator,
+  resolveCurrentProfilePath,
+  subscribeToCurrentAuthUser,
+} from "@/lib/currentUser";
 
 import { DesktopHeader } from "./DesktopHeader";
 import { MobileHeader } from "./MobileHeader";
@@ -15,6 +21,33 @@ interface NavbarProps {
 export const Navbar = ({ children }: NavbarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [currentAuthUser, setCurrentAuthUser] = useState(() =>
+    getCurrentAuthUser(),
+  );
+  const profilePath = resolveCurrentProfilePath();
+  const hasModeratorAccess = isModerator(currentAuthUser);
+
+  useEffect(() => subscribeToCurrentAuthUser(setCurrentAuthUser), []);
+
+  const desktopNavItems = useMemo(
+    () =>
+      NAV_ITEMS_DESKTOP.filter(
+        (item) =>
+          item.requiredRole !== "moderator" || hasModeratorAccess,
+      ),
+    [hasModeratorAccess],
+  );
+
+  const mobileNavItems = useMemo(
+    () =>
+      NAV_ITEMS_MOBILE.map((item) =>
+        item.label === "Профиль" ? { ...item, path: profilePath } : item,
+      ).filter(
+        (item) =>
+          item.requiredRole !== "moderator" || hasModeratorAccess,
+      ),
+    [hasModeratorAccess, profilePath],
+  );
 
   const isActive = (path: string) => {
     if (path === "/" && location.pathname !== "/") return false;
@@ -26,7 +59,7 @@ export const Navbar = ({ children }: NavbarProps) => {
       <header className="sticky top-0 z-50 border-b border-border/40 bg-background">
         <div className="container px-4 lg:px-0 lg:w-5/6 m-auto flex h-12 lg:h-16 max-w-screen-2xl items-center justify-between">
           <nav className="hidden md:flex items-center gap-4 font-medium">
-            {NAV_ITEMS_DESKTOP.map((item) => (
+            {desktopNavItems.map((item) => (
               <Button
                 key={item.path}
                 onClick={() => navigate(item.path)}
@@ -45,15 +78,16 @@ export const Navbar = ({ children }: NavbarProps) => {
       <nav className="md:hidden sticky bottom-0 z-50 border-t border-border/40 bg-background">
         <Tabs
           value={
-            NAV_ITEMS_MOBILE.find((item) => isActive(item.path))?.label ||
-            NAV_ITEMS_MOBILE[0].label
+            mobileNavItems.find((item) => isActive(item.path))?.label ||
+            mobileNavItems[0]?.label ||
+            ""
           }
           className="flex w-full justify-center items-center h-12"
         >
           <TabsList className="w-full h-full">
-            {NAV_ITEMS_MOBILE.map((item) => (
+            {mobileNavItems.map((item) => (
               <TabsTrigger
-                key={item.path}
+                key={`${item.label}-${item.path}`}
                 value={item.label}
                 onClick={() => {
                   navigate(item.path);

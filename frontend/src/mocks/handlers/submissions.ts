@@ -86,28 +86,11 @@ const parseStringList = (formData: FormData, key: string) =>
     .map((value) => value.trim())
     .filter(Boolean);
 
-const parseExistingFiles = (formData: FormData): MaterialSubmissionFile[] => {
-  const raw = formData.get("existingFiles");
-  if (!raw || typeof raw !== "string") return [];
-
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed
-      .filter((item) => item && typeof item === "object")
-      .map((item) => ({
-        name: String(item.name || "unknown"),
-        sizeBytes: Number(item.sizeBytes || 0),
-        extension: String(item.extension || "").toLowerCase(),
-        mimeType: item.mimeType ? String(item.mimeType) : undefined,
-        url: item.url ? String(item.url) : undefined,
-      }))
-      .filter((item) => item.sizeBytes > 0 && item.name.length > 0);
-  } catch {
-    return [];
-  }
-};
+const parseKeepFileIds = (formData: FormData) =>
+  formData
+    .getAll("keepFileIds")
+    .map((value) => String(value).trim())
+    .filter(Boolean);
 
 const bytesToBase64 = (bytes: Uint8Array) => {
   let binary = "";
@@ -123,8 +106,12 @@ const bytesToBase64 = (bytes: Uint8Array) => {
 
 const toSubmissionFiles = async (
   formData: FormData,
+  currentFiles: MaterialSubmissionFile[] = [],
 ): Promise<MaterialSubmissionFile[]> => {
-  const existingFiles = parseExistingFiles(formData);
+  const keepFileIds = new Set(parseKeepFileIds(formData));
+  const existingFiles = currentFiles.filter(
+    (file) => file.id && keepFileIds.has(file.id),
+  );
   const uploadedFilesRaw = formData
     .getAll("files")
     .filter((item): item is File => item instanceof File);
@@ -143,6 +130,7 @@ const toSubmissionFiles = async (
       }
 
       return {
+        id: crypto.randomUUID(),
         name: file.name,
         sizeBytes: file.size,
         extension: file.name.split(".").pop()?.toLowerCase() || "",
@@ -317,7 +305,7 @@ export const submissionsHandlers = [
       }
 
       const formData = await request.formData();
-      const nextFiles = await toSubmissionFiles(formData);
+      const nextFiles = await toSubmissionFiles(formData, current.files);
       const now = new Date();
       const nowIso = now.toISOString();
 

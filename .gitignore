@@ -1,4 +1,10 @@
 *.env
 !*.env.example
+
 target/
+
+AGENTS.md
+
+*.gitignore
+*.DS_Store
 uploads/

@@ -36,6 +36,7 @@ type UploadMaterialFormProps = {
   onSelectType: (value: MaterialType) => void;
   onSelectDifficulty: (value: Difficulty) => void;
   onSubmit: () => void;
+  submitLabel?: string;
   submitDisabled?: boolean;
 };
 
@@ -50,6 +51,7 @@ export const UploadMaterialForm = ({
   onSelectType,
   onSelectDifficulty,
   onSubmit,
+  submitLabel = "Отправить материал",
   submitDisabled = false,
 }: UploadMaterialFormProps) => {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -109,7 +111,7 @@ export const UploadMaterialForm = ({
           className="font-semibold px-4 flex items-center justify-center"
           disabled={submitDisabled}
         >
-          Отправить материал
+          {submitLabel}
           <SendHorizonal className="h-5 w-5" />
         </Button>
       </div>

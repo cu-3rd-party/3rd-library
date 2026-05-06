@@ -18,19 +18,40 @@ enableMocking().then(() => {
   );
 });
 
-if ("serviceWorker" in navigator && import.meta.env.PROD) {
-  window.addEventListener("load", () => {
+const isLocalhostHost =
+  globalThis.location.hostname === "localhost" ||
+  globalThis.location.hostname === "127.0.0.1" ||
+  globalThis.location.hostname === "::1";
+
+const shouldRegisterServiceWorker = import.meta.env.PROD && !isLocalhostHost;
+
+if ("serviceWorker" in navigator) {
+  if (shouldRegisterServiceWorker) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("/sw.js", { scope: "/" })
+        .then((reg) => {
+          console.log("Service Worker registered");
+          setInterval(
+            () => {
+              reg.update().then(() => console.log("Updated"));
+            },
+            6 * 60 * 60 * 1000,
+          );
+        })
+        .catch((error) => console.error("SW registration failed:", error));
+    });
+  } else {
     navigator.serviceWorker
-      .register("/sw.js", { scope: "/" })
-      .then((reg) => {
-        console.log("Service Worker registered");
-        setInterval(
-          () => {
-            reg.update().then(() => console.log("Updated"));
-          },
-          6 * 60 * 60 * 1000,
-        );
+      .getRegistrations()
+      .then((registrations) =>
+        Promise.all(registrations.map((registration) => registration.unregister())),
+      )
+      .then(() => {
+        if (isLocalhostHost) {
+          console.log("Service Worker disabled on localhost");
+        }
       })
-      .catch((error) => console.error("SW registration failed:", error));
-  });
+      .catch((error) => console.warn("Failed to cleanup service workers", error));
+  }
 }

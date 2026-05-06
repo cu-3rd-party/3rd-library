@@ -6,8 +6,17 @@ import {
   SubmissionReviewDialog,
 } from "@/common/organisms/Moderation";
 import { ModerationTabValue } from "@/constants";
-import { fetchJson, resolveApiUrl } from "@/lib/api";
-import { MOCK_SUBMISSIONS } from "@/mocks/mockData";
+import { ApiRequestError, fetchJson, resolveApiUrl } from "@/lib/api";
+import {
+  LibraryModerationResponse,
+  LibrarySubmission,
+  mapLibrarySubmissionToMaterialSubmission,
+} from "@/lib/materialsApi";
+import {
+  getCurrentAuthUser,
+  isModerator,
+  subscribeToCurrentAuthUser,
+} from "@/lib/currentUser";
 import { MaterialSubmission, MaterialSubmissionFile } from "@/models";
 import { getSubmissionFiles } from "@/store";
 import { openMaterialFile } from "@/utils";
@@ -20,73 +29,80 @@ const initialSubmissionCounts: Record<ModerationTabValue, number> = {
   approved: 0,
 };
 
-type ModerationResponse = {
-  items: MaterialSubmission[];
-  page: number;
-  limit: number;
-  total: number;
-  counters: Record<ModerationTabValue, number>;
-};
-
-const getFallbackModerationResponse = (
-  statusFilter: ModerationTabValue,
-): ModerationResponse => {
-  const items = MOCK_SUBMISSIONS.filter((submission) =>
-    statusFilter === "all" ? true : submission.status === statusFilter,
-  );
-  const counters = MOCK_SUBMISSIONS.reduce<Record<ModerationTabValue, number>>(
-    (acc, submission) => {
-      acc.all += 1;
-      acc[submission.status] += 1;
-      return acc;
-    },
-    { ...initialSubmissionCounts },
-  );
-
-  return {
-    items,
-    page: 1,
-    limit: 20,
-    total: items.length,
-    counters,
-  };
-};
+const moderationStatusToQueryValue = (status: ModerationTabValue) =>
+  status === "all" ? null : status;
 
 const ModerationPage = () => {
-  const [statusFilter, setStatusFilter] =
-    useState<ModerationTabValue>("pending_review");
+  const [currentAuthUser, setCurrentAuthUser] = useState(() =>
+    getCurrentAuthUser(),
+  );
+  const [statusFilter, setStatusFilter] = useState<ModerationTabValue>("all");
   const [submissions, setSubmissions] = useState<MaterialSubmission[]>([]);
   const [submissionCounts, setSubmissionCounts] = useState<
     Record<ModerationTabValue, number>
   >({ ...initialSubmissionCounts });
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<
     string | null
   >(null);
   const [rejectComment, setRejectComment] = useState("");
+  const [isSubmissionDetailsLoading, setIsSubmissionDetailsLoading] =
+    useState(false);
+  const hasModeratorAccess = isModerator(currentAuthUser);
+
+  useEffect(() => subscribeToCurrentAuthUser(setCurrentAuthUser), []);
 
   const loadSubmissions = useCallback(async () => {
+    if (!hasModeratorAccess) {
+      setSubmissions([]);
+      setSubmissionCounts({ ...initialSubmissionCounts });
+      setIsLoading(false);
+      setIsError(false);
+      return;
+    }
+
     setIsLoading(true);
     setIsError(false);
+    setErrorMessage("");
 
     try {
-      const payload = await fetchJson<ModerationResponse>(
-        resolveApiUrl(`/moderation/submissions?status=${statusFilter}`),
+      const queryStatus = moderationStatusToQueryValue(statusFilter);
+      const searchParams = new URLSearchParams({
+        limit: "100",
+      });
+      if (queryStatus) {
+        searchParams.set("status", queryStatus);
+      }
+
+      const payload = await fetchJson<LibraryModerationResponse>(
+        resolveApiUrl(`/api/moderation/submissions?${searchParams.toString()}`),
       );
-      setSubmissions(payload.items);
-      setSubmissionCounts(payload.counters);
+
+      const items = payload.items.map(mapLibrarySubmissionToMaterialSubmission);
+      setSubmissions(items);
+      setSubmissionCounts({
+        all: payload.counters.all,
+        draft: payload.counters.draft,
+        pending_review: payload.counters.pending_review,
+        rejected: payload.counters.rejected,
+        approved: payload.counters.approved,
+      });
     } catch (error) {
-      if (import.meta.env.VITE_API === "mock") {
-        console.warn(
-          "[Moderation] Falling back to local mock moderation list.",
-        );
-        const fallback = getFallbackModerationResponse(statusFilter);
-        setSubmissions(fallback.items);
-        setSubmissionCounts(fallback.counters);
-        setIsError(false);
-        return;
+      if (error instanceof ApiRequestError) {
+        if (error.status === 403) {
+          setErrorMessage("Недостаточно прав для доступа к модерации.");
+        } else if (error.status === 500) {
+          setErrorMessage(
+            "Ошибка на сервере модерации. Проверьте схему БД и логи backend.",
+          );
+        } else {
+          setErrorMessage(`Не удалось загрузить модерацию (HTTP ${error.status}).`);
+        }
+      } else {
+        setErrorMessage("Не удалось загрузить модерацию.");
       }
 
       console.error(error);
@@ -94,7 +110,7 @@ const ModerationPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [statusFilter]);
+  }, [hasModeratorAccess, statusFilter]);
 
   useEffect(() => {
     loadSubmissions();
@@ -108,33 +124,68 @@ const ModerationPage = () => {
     [selectedSubmissionId, submissions],
   );
 
-  const openSubmission = (submission: MaterialSubmission) => {
+  const openSubmission = async (submission: MaterialSubmission) => {
+    if (!hasModeratorAccess) return;
     setSelectedSubmissionId(submission.id);
     setRejectComment(submission.moderatorComment);
+
+    setIsSubmissionDetailsLoading(true);
+
+    try {
+      const payload = await fetchJson<LibrarySubmission>(
+        resolveApiUrl(
+          `/api/materials/submissions/${encodeURIComponent(submission.id)}`,
+        ),
+      );
+      const detailedSubmission = mapLibrarySubmissionToMaterialSubmission(payload);
+      setSubmissions((current) =>
+        current.map((item) =>
+          item.id === detailedSubmission.id ? detailedSubmission : item,
+        ),
+      );
+    } catch (error) {
+      console.warn(
+        `[Moderation] Failed to load submission details for ${submission.id}.`,
+        error,
+      );
+    } finally {
+      setIsSubmissionDetailsLoading(false);
+    }
   };
 
   const closeDialog = () => {
     setSelectedSubmissionId(null);
     setRejectComment("");
+    setIsSubmissionDetailsLoading(false);
   };
 
   const handleApprove = async () => {
+    if (!hasModeratorAccess) return;
     if (!selectedSubmission) return;
 
     setIsActionLoading(true);
 
     try {
-      await fetchJson<MaterialSubmission>(
+      const response = await fetchJson<LibrarySubmission>(
         resolveApiUrl(
-          `/moderation/submissions/${selectedSubmission.id}/decision`,
+          `/api/moderation/submissions/${encodeURIComponent(selectedSubmission.id)}/decision`,
         ),
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ action: "approve" }),
+          body: JSON.stringify({
+            action: "approve",
+          }),
         },
+      );
+
+      const nextSubmission = mapLibrarySubmissionToMaterialSubmission(response);
+      setSubmissions((current) =>
+        current.map((submission) =>
+          submission.id === nextSubmission.id ? nextSubmission : submission,
+        ),
       );
       await loadSubmissions();
       closeDialog();
@@ -147,14 +198,15 @@ const ModerationPage = () => {
   };
 
   const handleReject = async () => {
+    if (!hasModeratorAccess) return;
     if (!selectedSubmission || !rejectComment.trim()) return;
 
     setIsActionLoading(true);
 
     try {
-      await fetchJson<MaterialSubmission>(
+      const response = await fetchJson<LibrarySubmission>(
         resolveApiUrl(
-          `/moderation/submissions/${selectedSubmission.id}/decision`,
+          `/api/moderation/submissions/${encodeURIComponent(selectedSubmission.id)}/decision`,
         ),
         {
           method: "POST",
@@ -163,9 +215,16 @@ const ModerationPage = () => {
           },
           body: JSON.stringify({
             action: "reject",
-            moderatorComment: rejectComment.trim(),
+            moderator_comment: rejectComment.trim(),
           }),
         },
+      );
+
+      const nextSubmission = mapLibrarySubmissionToMaterialSubmission(response);
+      setSubmissions((current) =>
+        current.map((submission) =>
+          submission.id === nextSubmission.id ? nextSubmission : submission,
+        ),
       );
       await loadSubmissions();
       closeDialog();
@@ -188,44 +247,52 @@ const ModerationPage = () => {
           Модерация материалов
         </h1>
         <p className="max-w-3xl text-sm text-muted-foreground lg:text-base">
-          Здесь модераторы просматривают заявки авторов, открывают подробности,
-          проверяют файл и решают, публиковать материал или возвращать его на
-          доработку.
+          Просматривайте заявки и принимайте решение по публикации материалов.
         </p>
       </div>
 
-      <ModerationTabs
-        value={statusFilter}
-        counts={submissionCounts}
-        onValueChange={setStatusFilter}
-      />
-
-      {isLoading ? (
+      {!hasModeratorAccess ? (
         <div className="rounded-xl border border-border bg-card px-6 py-14 text-center text-muted-foreground">
-          Загружаем заявки...
+          У вас нет прав модератора для просмотра и обработки заявок.
         </div>
-      ) : isError ? (
-        <div className="rounded-xl border border-border bg-card px-6 py-14 text-center text-destructive">
-          Не удалось загрузить список заявок
-        </div>
-      ) : (
-        <ModerationSubmissionGrid
-          submissions={submissions}
-          onSubmissionClick={openSubmission}
-        />
-      )}
+      ) : null}
 
-      <SubmissionReviewDialog
-        submission={selectedSubmission}
-        rejectComment={rejectComment}
-        onRejectCommentChange={setRejectComment}
-        onClose={closeDialog}
-        onApprove={handleApprove}
-        onReject={handleReject}
-        onOpenFile={handleOpenFile}
-        files={selectedSubmission ? getSubmissionFiles(selectedSubmission) : []}
-        isActionLoading={isActionLoading}
-      />
+      {hasModeratorAccess ? (
+        <>
+          <ModerationTabs
+            value={statusFilter}
+            counts={submissionCounts}
+            onValueChange={setStatusFilter}
+          />
+
+          {isLoading ? (
+            <div className="rounded-xl border border-border bg-card px-6 py-14 text-center text-muted-foreground">
+              Загружаем заявки...
+            </div>
+          ) : isError ? (
+            <div className="rounded-xl border border-border bg-card px-6 py-14 text-center text-destructive">
+              {errorMessage || "Не удалось загрузить список заявок"}
+            </div>
+          ) : (
+            <ModerationSubmissionGrid
+              submissions={submissions}
+              onSubmissionClick={openSubmission}
+            />
+          )}
+
+          <SubmissionReviewDialog
+            submission={selectedSubmission}
+            rejectComment={rejectComment}
+            onRejectCommentChange={setRejectComment}
+            onClose={closeDialog}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onOpenFile={handleOpenFile}
+            files={selectedSubmission ? getSubmissionFiles(selectedSubmission) : []}
+            isActionLoading={isActionLoading || isSubmissionDetailsLoading}
+          />
+        </>
+      ) : null}
     </div>
   );
 };
