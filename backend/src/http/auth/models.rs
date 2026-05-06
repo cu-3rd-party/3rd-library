@@ -53,7 +53,7 @@ pub struct WebUser {
 pub struct TokenPair {
     pub access_token: String,
     pub refresh_token: String,
-    pub expires_in: i64,
+    pub expires_in: u64,
 }
 
 #[derive(Serialize)]

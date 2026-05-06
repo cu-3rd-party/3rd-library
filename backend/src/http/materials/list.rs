@@ -209,4 +209,3 @@ pub async fn list_submissions(
         total,
     }))
 }
-

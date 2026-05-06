@@ -1,31 +1,17 @@
-use axum::extract::State;
+use crate::http;
+use crate::http::extractor::{AuthUser, VerifiedUser};
+use crate::http::materials::{CreateSubmissionRequest, Material, Submission};
+use crate::http::{ApiContext, Error};
 use axum::Json;
+use axum::extract::State;
 use chrono::Utc;
 use sqlx::Row;
-use crate::http;
-use crate::http::{ApiContext, Error};
-use crate::http::extractor::AuthUser;
-use crate::http::materials::{CreateSubmissionRequest, Material, Submission};
 
 pub async fn create_submission(
-    auth_user: AuthUser,
+    user: VerifiedUser,
     State(ctx): State<ApiContext>,
     Json(req): Json<CreateSubmissionRequest>,
 ) -> http::Result<Json<Submission>> {
-    // TODO: вынести в AuthUser и давать жвт содержащий инфу об стутсе верификации емэйла
-    let user_row = sqlx::query("select is_email_verified from web_user where user_id = $1")
-        .bind(auth_user.user_id)
-        .fetch_one(&ctx.db)
-        .await?;
-
-    if !user_row.get::<bool, _>("is_email_verified") {
-        return Err(Error::forbidden(
-            "email_not_verified",
-            "Email is not verified",
-        ));
-    }
-    //
-
     let submission_id = uuid::Uuid::new_v4();
     let now = Utc::now();
 
@@ -34,7 +20,7 @@ pub async fn create_submission(
            values ($1, $2, $3, $4, $5, $6, $7, $8, 'pending_review', $9)"#
     )
     .bind(submission_id)
-    .bind(auth_user.user_id)
+    .bind(user.user_id)
     .bind(&req.title)
     .bind(&req.description)
     .bind(&req.courses)
@@ -45,22 +31,11 @@ pub async fn create_submission(
     .execute(&ctx.db)
     .await?;
 
-    for attachment in req.files {
-        sqlx::query(r#"insert into material_file (user_id, name, size_bytes, extension, mime_type, storage_key)
-        values ($1, $2, $3, $4, $5, $6)"#)
-            .bind(auth_user.user_id)
-            .bind()
-        // sqlx::query(
-        //     r#"insert into submission_file_rel (submission_id, file_id)
-        //     values ($1, $2)"#
-        // ).bind(submission_id)
-    }
-
     Ok(Json(Submission {
         id: submission_id,
         material: Material {
             id: uuid::Uuid::nil(),
-            author_id: auth_user.user_id,
+            author_id: user.user_id,
             author_name: None,
             title: req.title,
             description: req.description.unwrap_or_default(),

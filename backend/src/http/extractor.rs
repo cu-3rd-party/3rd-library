@@ -1,4 +1,5 @@
 use crate::http::error::Error;
+use anyhow::anyhow;
 use axum::extract::FromRequestParts;
 
 use crate::http::ApiContext;
@@ -14,7 +15,15 @@ use uuid::Uuid;
 
 use crate::constants::{DEFAULT_SESSION_LENGTH, SCHEME_PREFIX};
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct AuthUser {
+    pub user_id: Uuid,
+    pub session_id: Uuid,
+    pub verified: bool,
+}
+
+/// Вспомогательная структура, чтоб обозначать пользователя, который уже подтвердил свой емэйл
+pub struct VerifiedUser {
     pub user_id: Uuid,
     pub session_id: Uuid,
 }
@@ -26,6 +35,7 @@ pub struct MaybeAuthUser(pub Option<AuthUser>);
 struct AuthUserClaims {
     user_id: Uuid,
     sid: Uuid,
+    verified: bool,
     exp: i64,
 }
 
@@ -40,7 +50,11 @@ impl AuthUser {
         let key = format!("session:{}", self.session_id);
         let ttl_seconds = DEFAULT_SESSION_LENGTH.num_seconds().max(1) as u64;
         let _: () = redis
-            .set_ex(key, self.user_id.to_string(), ttl_seconds)
+            .set_ex(
+                key,
+                serde_json::to_string(&self).map_err(|err| anyhow!(err))?,
+                ttl_seconds,
+            )
             .await
             .map_err(|e| {
                 log::error!("failed to set redis session: {}", e);
@@ -50,6 +64,7 @@ impl AuthUser {
         AuthUserClaims {
             user_id: self.user_id,
             sid: self.session_id,
+            verified: self.verified,
             exp,
         }
         .sign_with_key(&hmac)
@@ -116,6 +131,7 @@ impl AuthUser {
         Ok(Self {
             user_id: claims.user_id,
             session_id: claims.sid,
+            verified: claims.verified,
         })
     }
 }
@@ -139,6 +155,26 @@ impl FromRequestParts<ApiContext> for AuthUser {
             .ok_or(Error::Unauthorized)?;
 
         Self::from_authorization(state, auth_header).await
+    }
+}
+
+impl FromRequestParts<ApiContext> for VerifiedUser {
+    type Rejection = Error;
+
+    async fn from_request_parts(parts: &mut Parts, state: &ApiContext) -> Result<Self, Self::Rejection> {
+        let auth_header = parts
+            .headers
+            .get(AUTHORIZATION)
+            .ok_or(Error::Unauthorized)?;
+        let auth_user = AuthUser::from_authorization(state, auth_header).await?;
+        if !auth_user.verified {
+            return Err(Error::Unauthorized);
+        }
+        Ok(VerifiedUser {
+            user_id: auth_user.user_id,
+            session_id: auth_user.session_id,
+        })
+
     }
 }
 

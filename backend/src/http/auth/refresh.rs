@@ -1,13 +1,14 @@
 use crate::http::{ApiContext, Result};
+use anyhow::anyhow;
 use axum::Json;
 use axum::extract::State;
 
+use super::models::*;
+use crate::constants::DEFAULT_SESSION_LENGTH;
 use crate::http::error::Error;
 use crate::http::extractor::AuthUser;
 use redis::AsyncCommands;
 use uuid::Uuid;
-
-use super::models::*;
 
 pub async fn refresh_token(
     State(ctx): State<ApiContext>,
@@ -18,34 +19,26 @@ pub async fn refresh_token(
 
     let mut redis = ctx.redis.clone();
     let key = format!("session:{}", session_id);
-    let user_id_str: Option<String> = redis
+    let cached_user_str: Option<String> = redis
         .get(&key)
         .await
         .map_err(|_| Error::unauthorized("invalid_token", "Invalid refresh token"))?;
 
-    let user_id_str =
-        user_id_str.ok_or_else(|| Error::unauthorized("invalid_token", "Invalid refresh token"))?;
+    let cached_user_str = cached_user_str
+        .ok_or_else(|| Error::unauthorized("invalid_token", "Invalid refresh token"))?;
 
-    let user_id = Uuid::parse_str(&user_id_str)
-        .map_err(|_| Error::unauthorized("invalid_token", "Invalid refresh token"))?;
+    let mut auth_user: AuthUser =
+        serde_json::from_str(&cached_user_str).map_err(|err| anyhow!(err))?;
 
     let new_session_id = Uuid::new_v4();
+    auth_user.session_id = new_session_id;
 
-    let ttl_seconds = 1209600u64;
-    let _: () = redis
-        .set_ex(&key, new_session_id.to_string(), ttl_seconds)
-        .await
-        .map_err(|_| Error::unauthorized("invalid_token", "Invalid refresh token"))?;
-
-    let auth_user = AuthUser {
-        user_id,
-        session_id: new_session_id,
-    };
+    let _: () = redis.unlink(&key).await.map_err(|err| anyhow!(err))?;
 
     let tokens = TokenPair {
         access_token: auth_user.to_jwt(&ctx).await?,
         refresh_token: new_session_id.to_string(),
-        expires_in: 1209600,
+        expires_in: DEFAULT_SESSION_LENGTH.num_seconds().max(1) as u64,
     };
 
     Ok(Json(tokens))

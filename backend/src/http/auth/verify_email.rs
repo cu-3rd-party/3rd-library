@@ -51,7 +51,7 @@ pub async fn verify_email(
     }
 
     metrics::observe_db_query();
-    let user_id = row.get::<uuid::Uuid, _>("user_id");
+    let user_id = row.get::<Uuid, _>("user_id");
     sqlx::query(
         "update web_user set is_email_verified = true, verification_code = null, verification_code_expires_at = null where user_id = $1"
     )
@@ -62,6 +62,7 @@ pub async fn verify_email(
     let auth_user = AuthUser {
         user_id,
         session_id: Uuid::new_v4(),
+        verified: true, // сюда мы доходим только если query выше удался, так что хардкодить можно
     };
 
     let roles: Vec<String> = row
@@ -73,7 +74,7 @@ pub async fn verify_email(
         name: row.get::<String, _>("name"),
         email: row.get::<String, _>("email"),
         bio: row.get::<Option<String>, _>("bio").unwrap_or_default(),
-        is_email_verified: true,
+        is_email_verified: true, // Сейм
         can_submit_materials: true,
         roles,
     };

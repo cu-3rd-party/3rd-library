@@ -1,15 +1,14 @@
+use super::models::*;
+use crate::constants::DEFAULT_SESSION_LENGTH;
+use crate::http::error::Error;
+use crate::http::extractor::AuthUser;
+use crate::http::users::verify_password;
 use crate::http::{ApiContext, Result};
 use crate::metrics;
 use axum::Json;
 use axum::extract::State;
-
-use crate::http::error::Error;
-use crate::http::extractor::AuthUser;
-use sqlx::{Executor, Row};
+use sqlx::Row;
 use uuid::Uuid;
-
-use super::models::*;
-use crate::http::users::verify_password;
 
 pub async fn login_user(
     State(ctx): State<ApiContext>,
@@ -39,10 +38,13 @@ pub async fn login_user(
         ));
     }
 
-    let user_id = row.get::<uuid::Uuid, _>("user_id");
+    let user_id = row.get::<Uuid, _>("user_id");
+    let verified = row.get::<bool, _>("is_email_verified");
+    let new_session_id = Uuid::new_v4();
     let auth_user = AuthUser {
         user_id,
-        session_id: Uuid::new_v4(),
+        session_id: new_session_id,
+        verified,
     };
 
     let roles: Vec<String> = row
@@ -62,7 +64,7 @@ pub async fn login_user(
     let tokens = TokenPair {
         access_token: auth_user.to_jwt(&ctx).await?,
         refresh_token: auth_user.session_id.to_string(),
-        expires_in: 1209600,
+        expires_in: DEFAULT_SESSION_LENGTH.num_seconds().max(1) as u64,
     };
 
     Ok(Json(AuthResponse {

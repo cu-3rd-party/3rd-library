@@ -1,9 +1,10 @@
+mod create;
 mod get;
 mod get_single;
 mod list;
 pub mod models;
 mod update;
-mod create;
+mod helpers;
 
 pub use models::*;
 
@@ -12,8 +13,9 @@ use axum::Router;
 use axum::routing::get;
 use create::create_submission;
 use get::get_material;
-use get_single::{get_submission_by_id, update_submission};
+use get_single::get_submission_by_id;
 use list::{list_materials, list_submissions};
+use update::update_submission;
 
 pub fn router() -> Router<ApiContext> {
     Router::new()
