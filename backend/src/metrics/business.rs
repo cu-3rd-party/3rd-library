@@ -1,9 +1,11 @@
 use sqlx::PgPool;
 use tokio::time::sleep;
 
-use crate::constants::{BUSINESS_REFRESH_INTERVAL};
+use crate::constants::BUSINESS_REFRESH_INTERVAL;
 
-use super::{USERS_TOTAL, observe_db_query, SUBMISSIONS_TOTAL, MATERIALS_TOTAL, MATERIAL_FILES_TOTAL};
+use super::{
+    MATERIAL_FILES_TOTAL, MATERIALS_TOTAL, SUBMISSIONS_TOTAL, USERS_TOTAL, observe_db_query,
+};
 
 pub fn start_business_metrics_updater(db: PgPool) {
     tokio::spawn(async move {

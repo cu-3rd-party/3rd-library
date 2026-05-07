@@ -2,6 +2,7 @@
   <dictionary name="project">
     <words>
       <w>Timestamptz</w>
+      <w>gridpos</w>
       <w>smtp</w>
       <w>srry</w>
     </words>

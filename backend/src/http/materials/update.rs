@@ -7,7 +7,7 @@ use anyhow::anyhow;
 use axum::Json;
 use axum::extract::{Multipart, Path, State};
 use chrono::{DateTime, Utc};
-use sqlx::{Row, Postgres};
+use sqlx::Row;
 use uuid::Uuid;
 
 pub async fn update_submission(

@@ -118,14 +118,20 @@ impl AuthUser {
 
         let mut redis = ctx.redis.clone();
         let key = format!("session:{}", claims.sid);
-        let session_user_id: Option<String> = redis.get(key).await.map_err(|e| {
+        let session_user_id: String = redis.get(key).await.map_err(|e| {
             log::debug!("failed to read redis session: {}", e);
             Error::Unauthorized
         })?;
+        let session_user: AuthUser =
+            serde_json::from_str(&session_user_id).map_err(|e| Error::Anyhow(anyhow!(e)))?;
 
         let expected_user_id = claims.user_id.to_string();
-        if session_user_id.as_deref() != Some(expected_user_id.as_str()) {
-            log::debug!("session not found or mismatched");
+        if session_user.user_id.to_string() != expected_user_id {
+            log::debug!(
+                "session not found or mismatched: {:?} != {:?}",
+                session_user.user_id,
+                expected_user_id,
+            );
             return Err(Error::Unauthorized);
         }
 

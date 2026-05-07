@@ -5,7 +5,6 @@ RUN mkdir -p src
 RUN printf "fn main() {}\n" > src/main.rs
 RUN cargo build --release
 COPY src src
-COPY .sqlx .sqlx
 COPY migrations migrations
 RUN cargo build --release
 

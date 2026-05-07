@@ -30,5 +30,5 @@ pub fn router() -> Router<ApiContext> {
             "/materials/submissions/{submissionId}",
             get(get_submission_by_id).patch(update_submission),
         )
-        .layer(DefaultBodyLimit::max(30 * 1024 * 1024))
+        .layer(DefaultBodyLimit::max(30 * 1024 * 1024 * 1024))
 }

@@ -55,7 +55,8 @@ static USERS_TOTAL: Lazy<IntGauge> = Lazy::new(|| {
 });
 
 static SUBMISSIONS_TOTAL: Lazy<IntGauge> = Lazy::new(|| {
-    let metric = IntGauge::new("submissions_total", "Total submissions").expect("submissions_total");
+    let metric =
+        IntGauge::new("submissions_total", "Total submissions").expect("submissions_total");
     REGISTRY
         .register(Box::new(metric.clone()))
         .expect("register submissions_total");
@@ -63,7 +64,8 @@ static SUBMISSIONS_TOTAL: Lazy<IntGauge> = Lazy::new(|| {
 });
 
 static MATERIAL_FILES_TOTAL: Lazy<IntGauge> = Lazy::new(|| {
-    let metric = IntGauge::new("materials_files_total", "Total materials_files").expect("materials_files_total");
+    let metric = IntGauge::new("materials_files_total", "Total materials_files")
+        .expect("materials_files_total");
     REGISTRY
         .register(Box::new(metric.clone()))
         .expect("register materials_files_total");

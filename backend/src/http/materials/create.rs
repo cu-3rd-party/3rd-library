@@ -72,8 +72,8 @@ pub async fn create_submission(
                     .bind(&file.id)
                     .bind(&user.user_id)
                     .bind(&file.name)
-                    .bind(&file.extension)
                     .bind(file.size_bytes as i64) //srry bigint no more than i64
+                    .bind(&file.extension)
                     .bind(&file.mime_type)
                     .bind(&file.url)
                     .execute(&ctx.db)

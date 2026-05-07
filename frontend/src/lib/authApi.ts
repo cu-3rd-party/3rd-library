@@ -153,6 +153,7 @@ const requestAuth = async <T>(
   const request = options?.withAuth ? fetchWithAuth : fetch;
   const response = await request(resolveApiUrl(path), {
     method,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
@@ -253,7 +254,14 @@ export const verifyEmailCode = async (payload: {
     code: payload.code,
   });
 
-  return mapNewAuthResponse(response);
+  return {
+    user: mapNewAuthResponse(response).user,
+    tokens: {
+      accessToken: response.tokens.access_token,
+      refreshToken: response.tokens.refresh_token,
+      expiresIn: response.tokens.expires_in,
+    },
+  };
 };
 
 type UpdateCurrentUserPayload = {
