@@ -79,7 +79,7 @@ pub async fn create_submission(
                     extension: file_name.extension,
                     size_bytes: content.as_bytes().len() as i64,
                     mime_type: Some(mime_type),
-                    url: Some(format!("{}{}", &ctx.config.s3config.endpoint, key)),
+                    url: Some(key),
                 };
                 sqlx::query(
                     r#"insert into material_file (file_id, user_id, name, size_bytes, extension, mime_type, storage_key) 
