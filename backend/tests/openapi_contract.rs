@@ -3,6 +3,8 @@ use log::info;
 use redis::aio::ConnectionManager;
 use redis::{Client, TypedCommands};
 use reqwest;
+use s3::creds::Credentials;
+use s3::{Bucket, Region};
 use serde::Deserialize;
 use sqlx::Connection;
 use sqlx::postgres::PgPoolOptions;
@@ -641,12 +643,29 @@ async fn setup_api() -> anyhow::Result<()> {
         .context("could not connect to Redis")?;
     info!("Successfully connected to redis");
 
+    let credentials = Credentials {
+        access_key: Some(config.s3config.access_key.clone()),
+        secret_key: Some(config.s3config.secret_key.clone()),
+        security_token: None,
+        session_token: None,
+        expiration: None,
+    };
+
+    let region = Region::Custom {
+        region: config.s3config.region.clone(),
+        endpoint: config.s3config.endpoint.clone(),
+    };
+
+    let bucket = Bucket::new(&config.s3config.bucket_name, region, credentials)?.with_path_style();
+
     tokio::spawn(async move {
         if let Err(err) = sqlx::migrate!().run(&db).await {
             log::warn!("skipping migrations: {err}");
         }
 
-        backend::http::serve(config, db, redis).await.unwrap();
+        backend::http::serve(config, db, redis, bucket)
+            .await
+            .unwrap();
     });
 
     loop {

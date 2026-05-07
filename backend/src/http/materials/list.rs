@@ -140,7 +140,8 @@ pub async fn list_submissions(
                 s.created_at,
                 s.updated_at,
                 s.submitted_at,
-                s.reviewed_at
+                s.reviewed_at,
+                s.published_at
             from submission s
             where s.user_id = $1
             order by s.created_at desc

@@ -24,6 +24,9 @@ pub struct Config {
     #[cfg(feature = "smtp")]
     #[command(flatten)]
     pub smtp: SmtpConfig,
+
+    #[command(flatten)]
+    pub s3config: S3Config,
 }
 
 impl Config {
@@ -110,4 +113,19 @@ pub struct SmtpConfig {
     pub user: String,
     #[arg(env = "SMTP_PASSWORD", default_value = "admin")]
     pub password: String,
+}
+
+#[derive(Parser, Debug, Clone)]
+#[group(id = "s3")]
+pub struct S3Config {
+    #[arg(env = "S3_ACCESS_KEY")]
+    pub access_key: String,
+    #[arg(env = "S3_SECRET_KEY")]
+    pub secret_key: String,
+    #[arg(env = "S3_ENDPOINT")]
+    pub endpoint: String,
+    #[arg(env = "S3_REGION", default_value = "us-east-1")]
+    pub region: String,
+    #[arg(env = "S3_BUCKET_NAME", default_value = "3rd-library")]
+    pub bucket_name: String,
 }

@@ -7,6 +7,7 @@ use anyhow::anyhow;
 use axum::Json;
 use axum::extract::{Multipart, Path, State};
 use chrono::{DateTime, Utc};
+use log::debug;
 use sqlx::Row;
 use uuid::Uuid;
 
@@ -144,17 +145,31 @@ pub async fn update_submission(
                         .to_string(),
                 )
                 .ok_or_else(|| Error::BadRequest)?;
-                let mime_type = field.content_type().map(|s| s.to_string());
+                let mime_type = field
+                    .content_type()
+                    .map(|s| s.to_string())
+                    .ok_or_else(|| Error::BadRequest)?;
                 let content = field.text().await.map_err(|_| Error::BadRequest)?;
+                let key = format!("/materials/{}", file_name.name);
 
-                let file_id = Uuid::new_v4();
+                let result = ctx
+                    .s3bucket
+                    .put_object_with_content_type(&key, content.as_bytes(), &mime_type)
+                    .await
+                    .map_err(|err| Error::Anyhow(anyhow!(err)))?;
+                debug!(
+                    "Uploaded file to {} with status code {}",
+                    &key,
+                    result.status_code()
+                );
+
                 let file = MaterialFile {
-                    id: file_id,
-                    name: file_name.name.clone(),
+                    id: Uuid::new_v4(),
+                    name: file_name.name,
                     extension: file_name.extension,
                     size_bytes: content.as_bytes().len() as i64,
-                    mime_type,
-                    url: None,
+                    mime_type: Some(mime_type),
+                    url: Some(format!("{}{}", &ctx.config.s3config.endpoint, key)),
                 };
 
                 metrics::observe_db_query();
@@ -162,10 +177,10 @@ pub async fn update_submission(
                     r#"insert into material_file (file_id, user_id, name, size_bytes, extension, mime_type, storage_key) 
                     values ($1, $2, $3, $4, $5, $6, $7)"#,
                 )
-                .bind(&file_id)
+                .bind(&file.id)
                 .bind(&user.user_id)
                 .bind(&file.name)
-                .bind(file.size_bytes as i64)
+                .bind(file.size_bytes)
                 .bind(&file.extension)
                 .bind(&file.mime_type)
                 .bind(&file.url)
@@ -177,7 +192,7 @@ pub async fn update_submission(
                     r#"insert into submission_file_rel (submission_id, file_id) values ($1, $2)"#,
                 )
                 .bind(submission_id)
-                .bind(&file_id)
+                .bind(&file.id)
                 .execute(&mut *tx)
                 .await?;
 
