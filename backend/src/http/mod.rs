@@ -24,8 +24,8 @@ use crate::metrics;
 use axum::http::HeaderValue;
 use axum::response::IntoResponse;
 use axum::routing::get;
-use itertools::Itertools;
 use log::info;
+use s3::Bucket;
 use serde::Serialize;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
@@ -34,10 +34,16 @@ pub struct ApiContext {
     pub config: Arc<Config>,
     pub db: PgPool,
     pub redis: ConnectionManager,
+    pub s3bucket: Box<Bucket>,
     pub rate_limit_ttl_seconds: u64,
 }
 
-pub async fn serve(config: Config, db: PgPool, redis: ConnectionManager) -> anyhow::Result<()> {
+pub async fn serve(
+    config: Config,
+    db: PgPool,
+    redis: ConnectionManager,
+    s3bucket: Box<Bucket>,
+) -> anyhow::Result<()> {
     metrics::start_business_metrics_updater(db.clone());
 
     let cors = match config.cors.allowed_origin.as_str() {
@@ -62,6 +68,7 @@ pub async fn serve(config: Config, db: PgPool, redis: ConnectionManager) -> anyh
         config: Arc::new(config),
         db,
         redis,
+        s3bucket,
         rate_limit_ttl_seconds,
     };
 

@@ -1,3 +1,4 @@
+#![allow(dead_code)] // тут полезный код, но пока не используемый
 use chrono::{DateTime, Utc};
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};

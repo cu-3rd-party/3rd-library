@@ -54,3 +54,5 @@ mail-send = { version = "0.6.0", features = ["logging"] }
 rust-embed = "8.11.0"
 ammonia = "4.1.2"
 regex = "1.12.3"
+serde_json = "1.0"
+rust-s3 = { version = "0.37.2", features = ["tokio-rustls-tls", "fail-on-err"] }

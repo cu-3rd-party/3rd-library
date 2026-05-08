@@ -4,7 +4,7 @@ use axum::extract::State;
 use serde::Deserialize;
 
 use crate::http::extractor::AuthUser;
-use sqlx::{Executor, Row};
+use sqlx::Row;
 
 use super::models::*;
 

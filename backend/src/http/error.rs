@@ -105,6 +105,7 @@ impl Error {
         Self::UnprocessableEntity { errors: error_map }
     }
 
+    #[allow(dead_code)]
     fn status_code(&self) -> StatusCode {
         match self {
             Self::Unauthorized => StatusCode::UNAUTHORIZED,

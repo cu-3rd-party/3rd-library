@@ -68,17 +68,15 @@ const RegisterPage = () => {
     return `${mm}:${ss}`;
   };
 
-  const completeAuth = (
+const completeAuth = (
     token: string,
-    user: {
-      email: string;
-      username: string;
-      bio: string;
-      image: string | null;
-      roles?: string[];
-    },
+    user: { email: string; username: string; bio: string; image: string | null; roles?: string[] },
+    refreshToken?: string,
   ) => {
-    setAccessToken(`Token ${token}`);
+    globalThis.localStorage?.setItem("accessToken", `Token ${token}`);
+    if (refreshToken) {
+      globalThis.localStorage?.setItem("refreshToken", refreshToken);
+    }
     persistCurrentAuthUser({
       email: user.email,
       username: user.username,
@@ -112,7 +110,7 @@ const RegisterPage = () => {
           code: nextCode,
         });
 
-        completeAuth(response.user.token, response.user);
+        completeAuth(response.tokens.accessToken, response.user, response.tokens.refreshToken);
       } catch (error) {
         console.error(error);
         setErrorMessage(

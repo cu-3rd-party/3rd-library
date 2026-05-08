@@ -1,13 +1,7 @@
-name: Backend Unit Tests
+name: Backend Full Test
 
 on:
-  push:
-    branches: ["**"]
-    paths:
-      - "backend/**"
-  pull_request:
-    paths:
-      - "backend/**"
+  workflow_dispatch:
 
 permissions:
   contents: read

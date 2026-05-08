@@ -202,13 +202,14 @@ const createSubmissionUpdateFormData = (values: UploadMaterialFormValues) => {
   formData.append("type", values.type);
   formData.append("difficulty", values.difficulty);
 
-  values.courses.forEach((course) => {
-    formData.append("courses", course);
-  });
-  values.subjects.forEach((subject) => {
-    formData.append("subjects", subject);
-  });
+  if (values.courses.length > 0) {
+    formData.append("courses", JSON.stringify(values.courses));
+  }
+  if (values.subjects.length > 0) {
+    formData.append("subjects", JSON.stringify(values.subjects));
+  }
 
+  const keepFileIds: string[] = [];
   values.files.forEach((file) => {
     if (isBrowserFile(file)) {
       formData.append("files", file);
@@ -216,9 +217,13 @@ const createSubmissionUpdateFormData = (values: UploadMaterialFormValues) => {
     }
 
     if (isStoredSubmissionFile(file) && file.id) {
-      formData.append("keepFileIds", file.id);
+      keepFileIds.push(file.id);
     }
   });
+
+  if (keepFileIds.length > 0) {
+    formData.append("keepFileIds", JSON.stringify(keepFileIds));
+  }
 
   return formData;
 };
@@ -492,28 +497,29 @@ const UploadMaterialPage = () => {
 
       const browserFiles = values.files.filter(isBrowserFile);
       try {
-        const binaryFiles = await Promise.all(
-          browserFiles.map(async (file) =>
-            Array.from(new Uint8Array(await file.arrayBuffer())),
-          ),
+        const formData = new FormData();
+
+        formData.append(
+          "data",
+          JSON.stringify({
+            title: values.title.trim(),
+            description: values.description.trim() || values.title.trim(),
+            courses: values.courses,
+            subjects: values.subjects,
+            type: values.type,
+            difficulty: values.difficulty,
+          }),
         );
+
+        browserFiles.forEach((file) => {
+          formData.append("files", file);
+        });
 
         const submissionPayload = await fetchJson<LibrarySubmission>(
           resolveApiUrl("/api/materials/submissions"),
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              title: values.title.trim(),
-              description: values.description.trim() || values.title.trim(),
-              courses: values.courses,
-              subjects: values.subjects,
-              type: values.type,
-              difficulty: values.difficulty,
-              files: binaryFiles,
-            }),
+            body: formData,
           },
         );
 

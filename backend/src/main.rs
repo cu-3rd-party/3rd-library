@@ -2,6 +2,9 @@ use anyhow::Context;
 use log::info;
 use redis::Client;
 use redis::aio::ConnectionManager;
+use s3::creds::Credentials;
+use s3::error::S3Error;
+use s3::{Bucket, BucketConfiguration, Region};
 use sqlx::Connection;
 use sqlx::postgres::PgPoolOptions;
 
@@ -46,7 +49,41 @@ async fn main() -> anyhow::Result<()> {
         log::warn!("skipping migrations: {err}");
     }
 
-    http::serve(config, db, redis).await?;
+    let credentials = Credentials {
+        access_key: Some(config.s3config.access_key.clone()),
+        secret_key: Some(config.s3config.secret_key.clone()),
+        security_token: None,
+        session_token: None,
+        expiration: None,
+    };
+
+    let region = Region::Custom {
+        region: config.s3config.region.clone(),
+        endpoint: config.s3config.endpoint.clone(),
+    };
+
+    let bucket = Bucket::new(
+        &config.s3config.bucket_name,
+        region.clone(),
+        credentials.clone(),
+    )?
+    .with_path_style();
+    match bucket.head_object("").await {
+        Ok(_) => Ok::<(), anyhow::Error>(()),
+        Err(S3Error::HttpFailWithBody(404, _)) => {
+            Bucket::create_with_path_style(
+                &config.s3config.bucket_name,
+                region.clone(),
+                credentials.clone(),
+                BucketConfiguration::default(),
+            )
+            .await?;
+            Ok(())
+        }
+        Err(e) => Err(e.into()),
+    }?;
+
+    http::serve(config, db, redis, bucket).await?;
 
     Ok(())
 }

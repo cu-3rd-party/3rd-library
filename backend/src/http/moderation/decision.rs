@@ -1,18 +1,14 @@
 use crate::http::{ApiContext, Result};
 use axum::Json;
 use axum::extract::{Path, State};
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use sqlx::Row;
 
 use crate::http::error::Error;
 use crate::http::extractor::AuthUser;
-use crate::http::materials::models::{Material, Submission};
+use crate::http::materials::models::Submission;
 
 use super::models::ModerationDecisionRequest;
-
-fn to_rfc3339(dt: DateTime<Utc>) -> String {
-    dt.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string()
-}
 
 pub async fn moderation_decision(
     Path(submission_id): Path<uuid::Uuid>,
@@ -132,47 +128,7 @@ pub async fn moderation_decision(
         .fetch_one(&ctx.db)
         .await?;
 
-        let now_rfc3339 = now.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string();
-
-        Ok(Json(Submission {
-            id: updated_row.get::<uuid::Uuid, _>("submission_id"),
-            material: Material {
-                id: material_id,
-                author_id: updated_row.get::<uuid::Uuid, _>("user_id"),
-                author_name: updated_row.get::<Option<String>, _>("author_name"),
-                title: updated_row.get::<String, _>("title"),
-                description: updated_row
-                    .get::<Option<String>, _>("description")
-                    .unwrap_or_default(),
-                courses: updated_row
-                    .get::<Option<Vec<String>>, _>("courses")
-                    .unwrap_or_default(),
-                subjects: updated_row
-                    .get::<Option<Vec<String>>, _>("subjects")
-                    .unwrap_or_default(),
-                r#type: updated_row.get::<String, _>("type"),
-                difficulty: updated_row
-                    .get::<Option<String>, _>("difficulty")
-                    .unwrap_or_else(|| "none".to_string()),
-                pub_date: Some(now_rfc3339.clone()),
-            },
-            files: vec![],
-            status: updated_row.get::<String, _>("status"),
-            moderator_comment: updated_row
-                .get::<Option<String>, _>("moderator_comment")
-                .unwrap_or_default(),
-            created_at: to_rfc3339(updated_row.get::<DateTime<Utc>, _>("created_at")),
-            updated_at: to_rfc3339(updated_row.get::<DateTime<Utc>, _>("updated_at")),
-            submitted_at: updated_row
-                .get::<Option<DateTime<Utc>>, _>("submitted_at")
-                .map(to_rfc3339),
-            reviewed_at: updated_row
-                .get::<Option<DateTime<Utc>>, _>("reviewed_at")
-                .map(to_rfc3339),
-            published_at: updated_row
-                .get::<Option<DateTime<Utc>>, _>("published_at")
-                .map(to_rfc3339),
-        }))
+        Ok(Json(updated_row.into()))
     } else if req.action == "reject" {
         let comment = req.moderator_comment.ok_or_else(|| {
             Error::bad_request(
@@ -227,45 +183,7 @@ pub async fn moderation_decision(
         .fetch_one(&ctx.db)
         .await?;
 
-        Ok(Json(Submission {
-            id: updated_row.get::<uuid::Uuid, _>("submission_id"),
-            material: Material {
-                id: uuid::Uuid::nil(),
-                author_id: updated_row.get::<uuid::Uuid, _>("user_id"),
-                author_name: updated_row.get::<Option<String>, _>("author_name"),
-                title: updated_row.get::<String, _>("title"),
-                description: updated_row
-                    .get::<Option<String>, _>("description")
-                    .unwrap_or_default(),
-                courses: updated_row
-                    .get::<Option<Vec<String>>, _>("courses")
-                    .unwrap_or_default(),
-                subjects: updated_row
-                    .get::<Option<Vec<String>>, _>("subjects")
-                    .unwrap_or_default(),
-                r#type: updated_row.get::<String, _>("type"),
-                difficulty: updated_row
-                    .get::<Option<String>, _>("difficulty")
-                    .unwrap_or_else(|| "none".to_string()),
-                pub_date: None,
-            },
-            files: vec![],
-            status: updated_row.get::<String, _>("status"),
-            moderator_comment: updated_row
-                .get::<Option<String>, _>("moderator_comment")
-                .unwrap_or_default(),
-            created_at: to_rfc3339(updated_row.get::<DateTime<Utc>, _>("created_at")),
-            updated_at: to_rfc3339(updated_row.get::<DateTime<Utc>, _>("updated_at")),
-            submitted_at: updated_row
-                .get::<Option<DateTime<Utc>>, _>("submitted_at")
-                .map(to_rfc3339),
-            reviewed_at: updated_row
-                .get::<Option<DateTime<Utc>>, _>("reviewed_at")
-                .map(to_rfc3339),
-            published_at: updated_row
-                .get::<Option<DateTime<Utc>>, _>("published_at")
-                .map(to_rfc3339),
-        }))
+        Ok(Json(updated_row.into()))
     } else {
         Err(Error::bad_request(
             "invalid_action",

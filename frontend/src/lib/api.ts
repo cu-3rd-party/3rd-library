@@ -94,6 +94,7 @@ export const extractApiErrorMessage = (payload: unknown) => {
 export const fetchWithAuth = (url: string, init?: RequestInit) =>
   fetch(url, {
     ...init,
+    credentials: "include",
     headers: withAuthHeaders(init?.headers),
   });
 

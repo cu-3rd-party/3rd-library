@@ -7,6 +7,7 @@ services:
       - ./env/backend.env
       - ./env/db.env
       - ./env/redis.env
+      - ./env/storage.env
     restart: unless-stopped
     volumes:
       - ./uploads:/var/app/upload
@@ -14,8 +15,12 @@ services:
       - "8080:8080"
       - "9091:9091"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
 
   frontend:
     build:
@@ -33,9 +38,14 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./backend/migrations:/docker-entrypoint-initdb.d
       - backend-postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   redis:
     image: redis:7
@@ -44,11 +54,36 @@ services:
     volumes:
       - backend-redis-data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  minio:
+    image: minio/minio:latest
+    env_file:
+      - ./env/storage.env
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - backend-minio-data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mc alias set local http://localhost:9000 $${MINIO_ROOT_USER:-minioadmin} $${MINIO_ROOT_PASSWORD:-minioadmin} && mc ready local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   prometheus:
     image: prom/prometheus:latest
     ports:
       - "9090:9090"
+    user: "0"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     restart: unless-stopped
@@ -69,3 +104,4 @@ services:
 volumes:
   backend-postgres-data:
   backend-redis-data:
+  backend-minio-data:

@@ -4,7 +4,7 @@ use axum::extract::{Path, State};
 
 use crate::http::error::Error;
 use chrono::{DateTime, Utc};
-use sqlx::{Executor, Row};
+use sqlx::Row;
 
 use super::models::*;
 
