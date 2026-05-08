@@ -1,3 +1,5 @@
+import { getAccessToken } from "@/lib/authToken";
+
 export const resolveApiUrl = (path: string) => {
   const apiBaseUrl =
     import.meta.env.VITE_API === "mock"
@@ -28,7 +30,7 @@ export class ApiRequestError extends Error {
 
 const withAuthHeaders = (headersInit?: HeadersInit) => {
   const headers = new Headers(headersInit);
-  const accessToken = globalThis.localStorage?.getItem("accessToken")?.trim();
+  const accessToken = getAccessToken();
 
   if (accessToken && !headers.has("Authorization")) {
     const hasScheme =

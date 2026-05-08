@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AUTHORS_PREFIX } from "@/constants";
 import { ApiRequestError, fetchJson, resolveApiUrl } from "@/lib/api";
 import { updateCurrentUser } from "@/lib/authApi";
+import { setAccessToken } from "@/lib/authToken";
 import {
   getCurrentAuthUser,
   persistCurrentAuthUser,
@@ -188,7 +189,8 @@ const ProfilePage = () => {
               resolveApiUrl("/api/users/me"),
               { signal: abortController.signal },
             );
-            resolvedCurrentUserEmail = mePayload.email || resolvedCurrentUserEmail;
+            resolvedCurrentUserEmail =
+              mePayload.email || resolvedCurrentUserEmail;
 
             try {
               const payload = await fetchJson<LibraryUserWithMaterialsResponse>(
@@ -270,7 +272,8 @@ const ProfilePage = () => {
           ]);
 
           const user = mapProfileToUser(profilePayload.profile);
-          const userMaterials = articlesPayload.articles.map(mapArticleToMaterial);
+          const userMaterials =
+            articlesPayload.articles.map(mapArticleToMaterial);
 
           nextProfile = {
             user,
@@ -317,7 +320,10 @@ const ProfilePage = () => {
             return;
           }
 
-          if (currentAuthUser?.username && currentAuthUser.username === userId) {
+          if (
+            currentAuthUser?.username &&
+            currentAuthUser.username === userId
+          ) {
             setProfile({
               user: {
                 id: currentAuthUser.username,
@@ -408,7 +414,9 @@ const ProfilePage = () => {
       })
       .catch((error) => {
         console.error(error);
-        setEditError("Не удалось прочитать изображение. Попробуйте другой файл.");
+        setEditError(
+          "Не удалось прочитать изображение. Попробуйте другой файл.",
+        );
       });
   };
 
@@ -452,10 +460,7 @@ const ProfilePage = () => {
         roles: response.user.roles || currentAuthUser.roles || ["user"],
       };
 
-      globalThis.localStorage?.setItem(
-        "accessToken",
-        `Token ${response.user.token}`,
-      );
+      setAccessToken(`Token ${response.user.token}`);
 
       persistCurrentAuthUser(nextAuthUser);
       setCurrentAuthUser(nextAuthUser);
@@ -475,9 +480,12 @@ const ProfilePage = () => {
       );
       setImageError(false);
       setIsEditOpen(false);
-      navigate(`${AUTHORS_PREFIX}/${encodeURIComponent(nextAuthUser.username)}`, {
-        replace: true,
-      });
+      navigate(
+        `${AUTHORS_PREFIX}/${encodeURIComponent(nextAuthUser.username)}`,
+        {
+          replace: true,
+        },
+      );
     } catch (error) {
       console.error(error);
       setEditError(

@@ -1,9 +1,13 @@
 # !IMPORTANT
 FROM node:22-alpine AS build
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm@latest && \
-pnpm install --frozen-lockfile
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN corepack enable && corepack prepare pnpm@10.18.0 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
 ARG VITE_API_URL=http://localhost:5173
 ENV VITE_API_URL=${VITE_API_URL}
