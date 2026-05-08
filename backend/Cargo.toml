@@ -56,3 +56,6 @@ ammonia = "4.1.2"
 regex = "1.12.3"
 serde_json = "1.0"
 rust-s3 = { version = "0.37.2", features = ["tokio-rustls-tls", "fail-on-err"] }
+utoipa = { version = "5.5.0", features = ["uuid", "yaml", "chrono", "config", "preserve_order"] }
+utoipa-axum = "0.2.0"
+utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
