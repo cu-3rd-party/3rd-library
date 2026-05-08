@@ -169,7 +169,7 @@ pub async fn update_submission(
                     extension: file_name.extension,
                     size_bytes: content.as_bytes().len() as i64,
                     mime_type: Some(mime_type),
-                    url: Some(key),
+                    url: Some(format!("{}{}", &ctx.config.s3config.endpoint, key)),
                 };
 
                 metrics::observe_db_query();
