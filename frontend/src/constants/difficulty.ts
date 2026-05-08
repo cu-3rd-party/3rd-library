@@ -22,6 +22,6 @@ export const DIFFICULTY_CONFIG: Record<
   black: {
     label: "Черный",
     label_add: "⚫️ Черный",
-    className: "bg-background text-foreground",
+    className: "bg-black-badge text-black-badge-foreground",
   },
 };

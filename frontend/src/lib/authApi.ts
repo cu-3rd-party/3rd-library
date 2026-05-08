@@ -158,7 +158,6 @@ const requestAuth = async <T>(
     },
     body: JSON.stringify(payload),
   });
-
   const contentType = response.headers.get("content-type") || "";
   const isJson = contentType.includes("application/json");
   const body = isJson ? ((await response.json()) as unknown) : null;

@@ -13,7 +13,9 @@ import { materialsRoutes } from "./materials";
 
 const PageLoader = () => <div className="p-10 text-center">Загрузка...</div>;
 
+// ! TODO: remove token local save, change to cookies
 const hasCredentials = () =>
+  import.meta.env.VITE_NO_AUTH === "true" ||
   Boolean(globalThis.localStorage?.getItem("accessToken")?.trim());
 
 const RequireAuth = () => {

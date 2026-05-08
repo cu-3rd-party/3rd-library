@@ -20,7 +20,7 @@ export const FilterSortSheet = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[80vh]" showCloseButton={false}>
+      <SheetContent side="bottom" className="h-[60dvh]" showCloseButton={false}>
         <div className="h-full py-6 px-6 flex flex-col gap-3">
           <MobileFilters />
           <MobileSort />

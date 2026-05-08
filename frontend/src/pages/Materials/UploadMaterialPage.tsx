@@ -617,7 +617,7 @@ const UploadMaterialPage = () => {
     <div className="w-full px-4 py-6 xl:w-11/12 mx-auto max-w-screen-2xl space-y-6 lg:space-y-8">
       <div className="space-y-2">
         <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-          Отправка материала
+          Загрузка материала
         </h1>
         <p className="text-sm lg:text-base text-muted-foreground max-w-3xl">
           Заявка попадет к модераторам. Если ее вернут на доработку, форма

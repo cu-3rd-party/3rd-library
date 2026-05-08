@@ -10,9 +10,11 @@ import {
   resolveCurrentProfilePath,
   subscribeToCurrentAuthUser,
 } from "@/lib/currentUser";
+import { isPathActive } from "@/utils";
 
 import { DesktopHeader } from "./DesktopHeader";
 import { MobileHeader } from "./MobileHeader";
+
 
 interface NavbarProps {
   children: ReactNode;
@@ -33,7 +35,7 @@ export const Navbar = ({ children }: NavbarProps) => {
     () =>
       NAV_ITEMS_DESKTOP.filter(
         (item) =>
-          item.requiredRole !== "moderator" || hasModeratorAccess,
+          (item.requiredRole !== "moderator" || hasModeratorAccess) && !(item.type === "special"),
       ),
     [hasModeratorAccess],
   );
@@ -49,11 +51,6 @@ export const Navbar = ({ children }: NavbarProps) => {
     [hasModeratorAccess, profilePath],
   );
 
-  const isActive = (path: string) => {
-    if (path === "/" && location.pathname !== "/") return false;
-    return location.pathname === path;
-  };
-
   return (
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-50 border-b border-border/40 bg-background">
@@ -63,7 +60,7 @@ export const Navbar = ({ children }: NavbarProps) => {
               <Button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                variant={isActive(item.path) ? "navActive" : "navInactive"}
+                variant={isPathActive(item.path) ? "navActive" : "navInactive"}
                 className="h-9 px-4 py-2 transition-colors text-base lg:text-lg"
               >
                 {item.label}
@@ -78,7 +75,7 @@ export const Navbar = ({ children }: NavbarProps) => {
       <nav className="md:hidden sticky bottom-0 z-50 border-t border-border/40 bg-background">
         <Tabs
           value={
-            mobileNavItems.find((item) => isActive(item.path))?.label ||
+            mobileNavItems.find((item) => isPathActive(item.path))?.label ||
             mobileNavItems[0]?.label ||
             ""
           }

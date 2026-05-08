@@ -22,6 +22,7 @@ import {
   StoredAuthUser,
   subscribeToCurrentAuthUser,
 } from "@/lib/currentUser";
+import { getAboutProjectItem, isPathActive } from "@/utils";
 
 type CurrentUserResponse = {
   user: {
@@ -132,14 +133,17 @@ export const DesktopHeader = () => {
     };
   }, []);
 
+  const aboutProjectItem = useMemo(() => getAboutProjectItem(), []);
+  
   return (
     <div className="hidden md:flex flex-1 items-center justify-end gap-4">
       <Button
-        className="px-4 text-base"
-        onClick={() => navigate("/materials/upload-material")}
+        key={aboutProjectItem.path}
+        onClick={() => navigate(aboutProjectItem.path)}
+        variant={isPathActive(aboutProjectItem.path) ? "navActive" : "navInactive"}
+        className="h-9 px-4 py-2 transition-colors text-base lg:text-lg"
       >
-        <UploadCloud className="size-5 mr-2" />
-        <span>Опубликовать материал</span>
+        {aboutProjectItem.label}
       </Button>
       <Button
         variant="ghost"

@@ -1,7 +1,9 @@
 import { useState } from "react";
 
+import { MaterialBadge } from "@/common/atoms";
 import { MultiSelect } from "@/common/molecules";
 import { Badge } from "@/components/ui/badge";
+import { DIFFICULTY_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils";
 import {
   Course,
@@ -30,7 +32,7 @@ export const MaterialFilter = <
   className,
 }: MaterialFilterProps<T>) => {
   const [open, setOpen] = useState(false);
-  const { placeholder, emptyText, searchPlaceholder, allItems, getLabel } =
+  const { placeholder, emptyText, searchPlaceholder, allItems, getLabel, getAdditionalLabel } =
     getFilterAttributes(filterType);
 
   return (
@@ -43,14 +45,19 @@ export const MaterialFilter = <
         items={allItems as readonly T[]}
         placeholder={placeholder}
         emptyText={emptyText}
-        renderBadge={(val: T) => (
-          <Badge variant="secondary" className="text-xs">
-            {getLabel(val)}
-          </Badge>
-        )}
+        renderBadge={(val: T) => {
+            return filterType !== "difficulty"  ? ( <Badge variant="secondary" className="text-xs">
+                {getLabel(val)}
+              </Badge> ) : ( <MaterialBadge
+                  label={getLabel(val)}
+                  className={DIFFICULTY_CONFIG[val as Difficulty].className}
+                />
+            )
+          }
+        }
         searchPlaceholder={searchPlaceholder}
         onReset={onReset}
-        renderItem={(val) => getLabel(val)}
+        renderItem={(val) => getAdditionalLabel?.(val) ?? getLabel(val)}
         getItemKey={(val) => val}
         getItemValue={(val) => val}
         isSelected={(val) => items.includes(val)}
