@@ -8,15 +8,15 @@ import {
 import { ModerationTabValue } from "@/constants";
 import { ApiRequestError, fetchJson, resolveApiUrl } from "@/lib/api";
 import {
-  LibraryModerationResponse,
-  LibrarySubmission,
-  mapLibrarySubmissionToMaterialSubmission,
-} from "@/lib/materialsApi";
-import {
   getCurrentAuthUser,
   isModerator,
   subscribeToCurrentAuthUser,
 } from "@/lib/currentUser";
+import {
+  LibraryModerationResponse,
+  LibrarySubmission,
+  mapLibrarySubmissionToMaterialSubmission,
+} from "@/lib/materialsApi";
 import { MaterialSubmission, MaterialSubmissionFile } from "@/models";
 import { getSubmissionFiles } from "@/store";
 import { openMaterialFile } from "@/utils";
