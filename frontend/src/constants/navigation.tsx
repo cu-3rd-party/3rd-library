@@ -18,12 +18,17 @@ import {
 export const NAV_ITEMS_DESKTOP: NavItemDesktop[] = [
   { label: "Материалы", path: `${MATERIALS_PREFIX}` },
   { label: "Авторы", path: `${AUTHORS_PREFIX}` },
+  { label: "Загрузить", path: `${MATERIALS_PREFIX}/upload-material` },
   {
     label: "Модерация",
     path: `${MATERIALS_PREFIX}/moderation`,
     requiredRole: "moderator",
   },
-  { label: "О проекте", path: `${ABOUT_PREFIX}` },
+  { 
+    label: "О проекте",
+    path: `${ABOUT_PREFIX}`,
+    type: "special"
+  },
 ];
 
 export const NAV_ITEMS_MOBILE: NavItemMobile[] = [

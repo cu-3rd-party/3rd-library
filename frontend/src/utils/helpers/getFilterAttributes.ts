@@ -15,6 +15,7 @@ type FilterAttributes = {
   searchPlaceholder?: string;
   allItems: readonly string[] | readonly number[];
   getLabel: (val: string) => string;
+  getAdditionalLabel?: (val: string) => string;
 };
 
 export const getFilterAttributes = (
@@ -35,6 +36,8 @@ export const getFilterAttributes = (
         emptyText: "Уровень не найден",
         allItems: DIFFICULTIES,
         getLabel: (val: string) =>
+          DIFFICULTY_CONFIG[val as Difficulty].label,
+        getAdditionalLabel: (val: string) =>
           DIFFICULTY_CONFIG[val as Difficulty].label_add,
       };
     }

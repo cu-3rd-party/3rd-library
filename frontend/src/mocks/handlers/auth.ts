@@ -130,6 +130,8 @@ export const authHandlers = [
       const email = payload.user?.email?.trim() || "";
       const password = payload.user?.password || "";
 
+      console.log("SOMETHING")
+
       if (!email) return unprocessableEntity("email", "can't be blank");
       if (!password) return unprocessableEntity("password", "can't be blank");
 

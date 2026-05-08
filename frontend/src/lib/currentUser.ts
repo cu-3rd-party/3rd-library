@@ -1,4 +1,5 @@
 import { AUTHORS_PREFIX } from "@/constants/routePrefixes";
+import { clearAccessToken } from "@/lib/authToken";
 
 type RawStoredAuthUser = {
   email?: unknown;
@@ -17,7 +18,6 @@ export type StoredAuthUser = {
 };
 
 const AUTH_USER_STORAGE_KEY = "authUser";
-const ACCESS_TOKEN_STORAGE_KEY = "accessToken";
 const AUTH_USER_UPDATED_EVENT = "auth-user-updated";
 const DEFAULT_USER_ROLE = "user";
 const MODERATOR_ROLE = "moderator";
@@ -85,7 +85,7 @@ export const clearCurrentAuthUser = () => {
 };
 
 export const clearCurrentSession = () => {
-  globalThis.localStorage?.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+  clearAccessToken();
   clearCurrentAuthUser();
 };
 
