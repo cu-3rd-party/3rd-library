@@ -2,34 +2,40 @@ import { ExternalLink, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  AUTHORS_PREFIX,
-  DIFFICULTY_CONFIG,
-  MATERIALS_PREFIX,
-  TYPE_CONFIG,
-} from "@/constants";
-import { ApiRequestError, fetchJson, resolveApiUrl } from "@/lib/api";
+import { MOCK_SUBMISSIONS } from "@/app/mocks/data/submission";
 import {
   LibraryMaterialDetailsResponse,
-  mapArticleToMaterialDetails,
-  mapAttachmentToMaterialFile,
-  mapLibraryMaterialFileToSubmissionFile,
-  mapLibraryMaterialToMaterial,
   RealWorldArticleResponse,
   RealWorldAttachmentsResponse,
-  RealWorldProfileResponse,
-} from "@/lib/materialsApi";
-import { cn } from "@/lib/utils";
-import { MOCK_SUBMISSIONS } from "@/mocks/mockData";
-import { Material, MaterialSubmissionFile } from "@/models";
+} from "@/entities/material/api";
 import {
+  DIFFICULTY_CONFIG,
   getCourseName,
+  mapArticleToMaterialDetails,
+  mapAttachmentToMaterialFile,
+  mapLibraryMaterialToMaterial,
+  TYPE_CONFIG,
+} from "@/entities/material/lib";
+import { Material } from "@/entities/material/model";
+import { fetchJsonWithAuth } from "@/entities/session/api";
+import {
+  mapLibraryMaterialFileToSubmissionFile,
+  openMaterialFile,
+} from "@/entities/submission/lib";
+import { MaterialSubmissionFile } from "@/entities/submission/model";
+import { RealWorldProfileResponse } from "@/entities/user/api";
+import { ApiRequestError, resolveApiUrl } from "@/shared/api";
+import { AUTHORS_PREFIX, MATERIALS_PREFIX } from "@/shared/constants";
+import { cn } from "@/shared/lib";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   getFileIcon,
   getFileIconStyles,
-  openMaterialFile,
-} from "@/utils";
+} from "@/shared/ui";
 
 const formatUploadDate = (submittedAt?: string, fallback?: string) => {
   if (!submittedAt) return fallback || "Не указана";
@@ -94,17 +100,20 @@ const MaterialDetailsPage = () => {
 
       try {
         try {
-          const materialPayload = await fetchJson<LibraryMaterialDetailsResponse>(
-            resolveApiUrl(`/api/materials/${encodeURIComponent(materialId)}`),
-            { signal: abortController.signal },
-          );
+          const materialPayload =
+            await fetchJsonWithAuth<LibraryMaterialDetailsResponse>(
+              resolveApiUrl(`/api/materials/${encodeURIComponent(materialId)}`),
+              { signal: abortController.signal },
+            );
 
           const mappedMaterial = mapLibraryMaterialToMaterial(materialPayload);
 
           setMaterialDetails({
             ...mappedMaterial,
             authorImage: materialPayload.author_image || null,
-            files: materialPayload.files.map(mapLibraryMaterialFileToSubmissionFile),
+            files: materialPayload.files.map(
+              mapLibraryMaterialFileToSubmissionFile,
+            ),
             submittedAt: materialPayload.submitted_at || undefined,
             publishedAt: materialPayload.published_at || undefined,
           });
@@ -117,10 +126,13 @@ const MaterialDetailsPage = () => {
 
         const articlePath = `/api/articles/${encodeURIComponent(materialId)}`;
         const [articlePayload, attachmentsPayload] = await Promise.all([
-          fetchJson<RealWorldArticleResponse>(resolveApiUrl(articlePath), {
-            signal: abortController.signal,
-          }),
-          fetchJson<RealWorldAttachmentsResponse>(
+          fetchJsonWithAuth<RealWorldArticleResponse>(
+            resolveApiUrl(articlePath),
+            {
+              signal: abortController.signal,
+            },
+          ),
+          fetchJsonWithAuth<RealWorldAttachmentsResponse>(
             resolveApiUrl(`${articlePath}/attachments`),
             { signal: abortController.signal },
           ).catch((error: unknown) => {
@@ -138,17 +150,21 @@ const MaterialDetailsPage = () => {
           articlePayload.article,
         );
         const encodedAuthorId = encodeURIComponent(mappedMaterial.authorId);
-        const authorProfilePayload = await fetchJson<RealWorldProfileResponse>(
-          resolveApiUrl(`/api/profiles/${encodedAuthorId}`),
-          {
-            signal: abortController.signal,
-          },
-        ).catch((error: unknown) => {
-          if (!abortController.signal.aborted) {
-            console.warn("[MaterialDetails] Failed to load author profile.", error);
-          }
-          return null;
-        });
+        const authorProfilePayload =
+          await fetchJsonWithAuth<RealWorldProfileResponse>(
+            resolveApiUrl(`/api/profiles/${encodedAuthorId}`),
+            {
+              signal: abortController.signal,
+            },
+          ).catch((error: unknown) => {
+            if (!abortController.signal.aborted) {
+              console.warn(
+                "[MaterialDetails] Failed to load author profile.",
+                error,
+              );
+            }
+            return null;
+          });
 
         const files = attachmentsPayload.attachments.map((attachment) =>
           mapAttachmentToMaterialFile(materialId, attachment),
@@ -156,7 +172,8 @@ const MaterialDetailsPage = () => {
         setMaterialDetails({
           ...mappedMaterial,
           authorImage:
-            authorProfilePayload?.profile.image ?? articlePayload.article.author.image,
+            authorProfilePayload?.profile.image ??
+            articlePayload.article.author.image,
           files,
         });
       } catch (error) {

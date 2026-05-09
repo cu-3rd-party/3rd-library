@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 
-import { MaterialsSection } from "@/common/organisms";
-import { ApiRequestError, fetchJson, resolveApiUrl } from "@/lib/api";
+import { MOCK_SUBMISSIONS } from "@/app/mocks/data/submission";
 import {
   LibraryPaginatedMaterialsResponse,
+  RealWorldArticlesResponse,
+} from "@/entities/material/api";
+import {
   mapArticleToMaterial,
   mapLibraryMaterialToMaterial,
-  RealWorldArticlesResponse,
-} from "@/lib/materialsApi";
-import { MOCK_SUBMISSIONS } from "@/mocks/mockData";
-import { Material } from "@/models/material";
+} from "@/entities/material/lib";
+import { Material } from "@/entities/material/model";
+import { fetchJsonWithAuth } from "@/entities/session/api";
+import { ApiRequestError, resolveApiUrl } from "@/shared/api";
+import { MaterialsSection } from "@/widgets/materials-section/ui";
 
 const getFallbackPublishedMaterials = () =>
   MOCK_SUBMISSIONS.filter((submission) => submission.status === "approved").map(
@@ -30,12 +33,13 @@ const MaterialsPage = () => {
 
       try {
         try {
-          const payload = await fetchJson<LibraryPaginatedMaterialsResponse>(
-            resolveApiUrl("/api/materials?limit=100"),
-            {
-              signal: abortController.signal,
-            },
-          );
+          const payload =
+            await fetchJsonWithAuth<LibraryPaginatedMaterialsResponse>(
+              resolveApiUrl("/api/materials?limit=100"),
+              {
+                signal: abortController.signal,
+              },
+            );
           setMaterials(payload.items.map(mapLibraryMaterialToMaterial));
           return;
         } catch (error) {
@@ -44,7 +48,7 @@ const MaterialsPage = () => {
           }
         }
 
-        const payload = await fetchJson<RealWorldArticlesResponse>(
+        const payload = await fetchJsonWithAuth<RealWorldArticlesResponse>(
           resolveApiUrl("/api/articles"),
           {
             signal: abortController.signal,

@@ -2,41 +2,46 @@ import { LoaderCircle, Pencil, Upload, User } from "lucide-react";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { MaterialsSection } from "@/common/organisms";
-import { Button } from "@/components/ui/button";
+import { MOCK_USER } from "@/app/mocks/data/auth";
+import { MOCK_SUBMISSIONS } from "@/app/mocks/data/submission";
+import { MOCK_AUTHORS } from "@/app/mocks/data/user";
+import { RealWorldArticlesResponse } from "@/entities/material/api";
 import {
+  mapArticleToMaterial,
+  mapLibraryMaterialToMaterial,
+} from "@/entities/material/lib";
+import { Material } from "@/entities/material/model";
+import { fetchJsonWithAuth } from "@/entities/session/api";
+import {
+  getCurrentAuthUser,
+  persistCurrentAuthUser,
+  setAccessToken,
+} from "@/entities/session/lib";
+import { StoredAuthUser } from "@/entities/session/model";
+import {
+  LibraryCurrentUserResponse,
+  LibraryUsersResponse,
+  LibraryUserWithMaterialsResponse,
+  RealWorldProfileResponse,
+} from "@/entities/user/api";
+import { mapLibraryUserToUser, mapProfileToUser } from "@/entities/user/lib";
+import { User as UserModel } from "@/entities/user/model";
+import { updateCurrentUser } from "@/features/edit-profile/api";
+import { ApiRequestError, resolveApiUrl } from "@/shared/api";
+import { AUTHORS_PREFIX } from "@/shared/constants";
+import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { AUTHORS_PREFIX } from "@/constants";
-import { ApiRequestError, fetchJson, resolveApiUrl } from "@/lib/api";
-import { updateCurrentUser } from "@/lib/authApi";
-import { setAccessToken } from "@/lib/authToken";
-import {
-  getCurrentAuthUser,
-  persistCurrentAuthUser,
-  StoredAuthUser,
-} from "@/lib/currentUser";
-import {
-  LibraryCurrentUserResponse,
-  LibraryUsersResponse,
-  LibraryUserWithMaterialsResponse,
-  mapArticleToMaterial,
-  mapLibraryMaterialToMaterial,
-  mapLibraryUserToUser,
-  mapProfileToUser,
-  RealWorldArticlesResponse,
-  RealWorldProfileResponse,
-} from "@/lib/materialsApi";
-import { MOCK_AUTHORS, MOCK_SUBMISSIONS, MOCK_USER } from "@/mocks/mockData";
-import { Material, User as UserModel } from "@/models";
+  Input,
+  Label,
+  Textarea,
+} from "@/shared/ui";
+import { MaterialsSection } from "@/widgets/materials-section/ui";
 
 type UserProfileResponse = {
   user: UserModel;
@@ -171,10 +176,11 @@ const ProfilePage = () => {
 
         if (UUID_PATTERN.test(userId)) {
           try {
-            const payload = await fetchJson<LibraryUserWithMaterialsResponse>(
-              resolveApiUrl(`/api/users/${encodedUserId}?limit=100`),
-              { signal: abortController.signal },
-            );
+            const payload =
+              await fetchJsonWithAuth<LibraryUserWithMaterialsResponse>(
+                resolveApiUrl(`/api/users/${encodedUserId}?limit=100`),
+                { signal: abortController.signal },
+              );
             nextProfile = mapNewProfilePayload(payload);
           } catch (error) {
             if (!isNotFoundError(error)) {
@@ -185,20 +191,22 @@ const ProfilePage = () => {
 
         if (!nextProfile && isOwnProfileByName) {
           try {
-            const mePayload = await fetchJson<LibraryCurrentUserResponse>(
-              resolveApiUrl("/api/users/me"),
-              { signal: abortController.signal },
-            );
+            const mePayload =
+              await fetchJsonWithAuth<LibraryCurrentUserResponse>(
+                resolveApiUrl("/api/users/me"),
+                { signal: abortController.signal },
+              );
             resolvedCurrentUserEmail =
               mePayload.email || resolvedCurrentUserEmail;
 
             try {
-              const payload = await fetchJson<LibraryUserWithMaterialsResponse>(
-                resolveApiUrl(
-                  `/api/users/${encodeURIComponent(mePayload.id)}?limit=100`,
-                ),
-                { signal: abortController.signal },
-              );
+              const payload =
+                await fetchJsonWithAuth<LibraryUserWithMaterialsResponse>(
+                  resolveApiUrl(
+                    `/api/users/${encodeURIComponent(mePayload.id)}?limit=100`,
+                  ),
+                  { signal: abortController.signal },
+                );
               nextProfile = mapNewProfilePayload(payload);
             } catch (error) {
               if (!isNotFoundError(error)) {
@@ -232,7 +240,7 @@ const ProfilePage = () => {
 
         if (!nextProfile && !UUID_PATTERN.test(userId)) {
           try {
-            const usersPayload = await fetchJson<LibraryUsersResponse>(
+            const usersPayload = await fetchJsonWithAuth<LibraryUsersResponse>(
               resolveApiUrl(`/api/users?search=${encodedUserId}&limit=100`),
               {
                 signal: abortController.signal,
@@ -244,12 +252,13 @@ const ProfilePage = () => {
             );
 
             if (matchedUser) {
-              const payload = await fetchJson<LibraryUserWithMaterialsResponse>(
-                resolveApiUrl(
-                  `/api/users/${encodeURIComponent(matchedUser.id)}?limit=100`,
-                ),
-                { signal: abortController.signal },
-              );
+              const payload =
+                await fetchJsonWithAuth<LibraryUserWithMaterialsResponse>(
+                  resolveApiUrl(
+                    `/api/users/${encodeURIComponent(matchedUser.id)}?limit=100`,
+                  ),
+                  { signal: abortController.signal },
+                );
               nextProfile = mapNewProfilePayload(payload);
             }
           } catch (error) {
@@ -261,11 +270,11 @@ const ProfilePage = () => {
 
         if (!nextProfile) {
           const [profilePayload, articlesPayload] = await Promise.all([
-            fetchJson<RealWorldProfileResponse>(
+            fetchJsonWithAuth<RealWorldProfileResponse>(
               resolveApiUrl(`/api/profiles/${encodedUserId}`),
               { signal: abortController.signal },
             ),
-            fetchJson<RealWorldArticlesResponse>(
+            fetchJsonWithAuth<RealWorldArticlesResponse>(
               resolveApiUrl(`/api/articles?author=${encodedUserId}&limit=100`),
               { signal: abortController.signal },
             ),

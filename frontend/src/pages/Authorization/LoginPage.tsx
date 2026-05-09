@@ -1,12 +1,17 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { AuthPageShell, LoginAuthForm } from "@/common/organisms";
-import { AUTHORIZATION_PREFIX, MATERIALS_PREFIX } from "@/constants";
-import { loginUser } from "@/lib/authApi";
-import { getAccessToken, setAccessToken } from "@/lib/authToken";
-import { loginSchema } from "@/lib/authValidation";
-import { persistCurrentAuthUser } from "@/lib/currentUser";
+import {
+  getAccessToken,
+  persistCurrentAuthUser,
+  setAccessToken,
+} from "@/entities/session/lib";
+import { loginUser } from "@/features/auth/api/loginUser";
+import { loginSchema } from "@/features/auth/model";
+import { LoginAuthForm } from "@/features/auth/ui/LoginAuthForm";
+import { AUTHORIZATION_PREFIX, MATERIALS_PREFIX } from "@/shared/constants";
+
+import { AuthLayout } from "./AuthLayout";
 
 type LoginFieldErrors = {
   email?: string;
@@ -72,7 +77,7 @@ const LoginPage = () => {
   };
 
   return (
-    <AuthPageShell
+    <AuthLayout
       title="Вход"
       description="Войдите в аккаунт, чтобы работать с материалами и профилем."
     >
@@ -87,7 +92,7 @@ const LoginPage = () => {
         onPasswordChange={setPassword}
         onSubmit={handleSubmit}
       />
-    </AuthPageShell>
+    </AuthLayout>
   );
 };
 

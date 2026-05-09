@@ -2,22 +2,27 @@ import { CircleHelp } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { AuthPageShell, RegisterAuthForm } from "@/common/organisms";
+import {
+  getAccessToken,
+  persistCurrentAuthUser,
+  setAccessToken,
+} from "@/entities/session/lib";
+import {
+  registerUser,
+  verifyEmailCode,
+  resendVerificationCode,
+} from "@/features/auth/api";
+import { registerSchema } from "@/features/auth/model";
+import { RegisterAuthForm } from "@/features/auth/ui";
+import { AUTHORIZATION_PREFIX, MATERIALS_PREFIX } from "@/shared/constants";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { AUTHORIZATION_PREFIX, MATERIALS_PREFIX } from "@/constants";
-import {
-  registerUser,
-  resendVerificationCode,
-  verifyEmailCode,
-} from "@/lib/authApi";
-import { getAccessToken, setAccessToken } from "@/lib/authToken";
-import { registerSchema } from "@/lib/authValidation";
-import { persistCurrentAuthUser } from "@/lib/currentUser";
+} from "@/shared/ui";
+
+import { AuthLayout } from "./AuthLayout";
 
 type RegisterFieldErrors = {
   name?: string;
@@ -237,7 +242,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <AuthPageShell
+    <AuthLayout
       title="Регистрация"
       description="Создайте аккаунт, чтобы публиковать материалы и работать с профилем."
       headerRight={
@@ -291,7 +296,7 @@ const RegisterPage = () => {
         onSubmit={handleSubmit}
         formatCooldown={formatCooldown}
       />
-    </AuthPageShell>
+    </AuthLayout>
   );
 };
 

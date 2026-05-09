@@ -12,11 +12,11 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "ui": "@/shared/ui/kit",
+    "components": "@/shared/ui",
+    "utils": "@/shared/lib/cn",
+    "lib": "@/shared/lib",
+    "hooks": "@/shared/lib"
   },
   "registries": {}
 }

@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "dev:host": "vite --host",
     "dev:mock": "cross-env VITE_API=mock vite",
+    "dev:noauth": "cross-env VITE_NO_AUTH=true vite",
     "dev:mock:noauth": "cross-env VITE_API=mock VITE_NO_AUTH=true vite",
     "msw:cleanup": "rm public/mockServiceWorker.js",
     "msw:gen": "pnpm exec msw init public --save",

@@ -1,49 +1,52 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { MOCK_USER } from "@/app/mocks/data/auth";
+import { MOCK_SUBMISSIONS } from "@/app/mocks/data/submission";
 import {
-  UploadMaterialForm,
-  type UploadMaterialFormValues,
-} from "@/common/organisms/Materials/UploadMaterialForm";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SUBMISSION_STATUS_UI } from "@/constants";
-import {
-  ApiRequestError,
-  fetchJson,
-  fetchWithAuth,
-  resolveApiUrl,
-} from "@/lib/api";
-import {
-  mapArticleToMaterial,
-  mapAttachmentToMaterialFile,
-  mapLibrarySubmissionToMaterialSubmission,
-  LibraryCurrentUserResponse,
-  LibraryPaginatedSubmissionsResponse,
-  LibrarySubmission,
   RealWorldArticle,
   RealWorldArticleResponse,
   RealWorldArticlesResponse,
   RealWorldAttachment,
   RealWorldAttachmentsResponse,
-} from "@/lib/materialsApi";
-import { MOCK_SUBMISSIONS, MOCK_USER } from "@/mocks/mockData";
+} from "@/entities/material/api";
 import {
-  Course,
-  MaterialSubmission,
-  MaterialSubmissionFile,
-  Subject,
-} from "@/models";
+  mapArticleToMaterial,
+  mapAttachmentToMaterialFile,
+} from "@/entities/material/lib";
+import { Course, Subject } from "@/entities/material/model";
+import { fetchJsonWithAuth, fetchWithAuth } from "@/entities/session/api";
+import {
+  LibraryPaginatedSubmissionsResponse,
+  LibrarySubmission,
+} from "@/entities/submission/api";
 import {
   getAuthorEditableSubmission,
   getSubmissionFiles,
-} from "@/store";
+  mapLibrarySubmissionToMaterialSubmission,
+  SUBMISSION_STATUS_UI,
+} from "@/entities/submission/lib";
+import {
+  MaterialSubmission,
+  MaterialSubmissionFile,
+} from "@/entities/submission/model";
+import { LibraryCurrentUserResponse } from "@/entities/user/api";
+import {
+  UploadMaterialForm,
+  UploadMaterialFormValues,
+} from "@/features/submit-material/ui";
+import { ApiRequestError, resolveApiUrl } from "@/shared/api";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/shared/ui";
 
 const emptyFormValues: UploadMaterialFormValues = {
   title: "",
@@ -128,7 +131,7 @@ const uploadAttachment = (articleSlug: string, file: File) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  return fetchJson<AttachmentResponse>(
+  return fetchJsonWithAuth<AttachmentResponse>(
     resolveApiUrl(
       `/api/articles/${encodeURIComponent(articleSlug)}/attachments`,
     ),
@@ -286,16 +289,17 @@ const UploadMaterialPage = () => {
 
       try {
         try {
-          const currentUserPayload = await fetchJson<LibraryCurrentUserResponse>(
-            resolveApiUrl("/api/users/me"),
-            { signal: abortController.signal },
-          );
+          const currentUserPayload =
+            await fetchJsonWithAuth<LibraryCurrentUserResponse>(
+              resolveApiUrl("/api/users/me"),
+              { signal: abortController.signal },
+            );
           const nextCurrentUserId = currentUserPayload.id;
           setCurrentUserId(nextCurrentUserId);
 
           try {
             const submissionsPayload =
-              await fetchJson<LibraryPaginatedSubmissionsResponse>(
+              await fetchJsonWithAuth<LibraryPaginatedSubmissionsResponse>(
                 resolveApiUrl("/api/materials/submissions?limit=100"),
                 { signal: abortController.signal },
               );
@@ -328,19 +332,20 @@ const UploadMaterialPage = () => {
           }
         }
 
-        const currentUserPayload = await fetchJson<CurrentUserResponse>(
+        const currentUserPayload = await fetchJsonWithAuth<CurrentUserResponse>(
           resolveApiUrl("/api/user"),
           { signal: abortController.signal },
         );
         const nextCurrentUserId = currentUserPayload.user.username;
         setCurrentUserId(nextCurrentUserId);
 
-        const articlesPayload = await fetchJson<RealWorldArticlesResponse>(
-          resolveApiUrl(
-            `/api/articles?author=${encodeURIComponent(nextCurrentUserId)}&limit=100`,
-          ),
-          { signal: abortController.signal },
-        );
+        const articlesPayload =
+          await fetchJsonWithAuth<RealWorldArticlesResponse>(
+            resolveApiUrl(
+              `/api/articles?author=${encodeURIComponent(nextCurrentUserId)}&limit=100`,
+            ),
+            { signal: abortController.signal },
+          );
 
         setSubmissions(
           articlesPayload.articles
@@ -464,7 +469,7 @@ const UploadMaterialPage = () => {
     try {
       if (editingSubmissionId) {
         const payload = createSubmissionUpdateFormData(values);
-        const updatedPayload = await fetchJson<LibrarySubmission>(
+        const updatedPayload = await fetchJsonWithAuth<LibrarySubmission>(
           resolveApiUrl(
             `/api/materials/submissions/${encodeURIComponent(editingSubmissionId)}`,
           ),
@@ -498,7 +503,7 @@ const UploadMaterialPage = () => {
           ),
         );
 
-        const submissionPayload = await fetchJson<LibrarySubmission>(
+        const submissionPayload = await fetchJsonWithAuth<LibrarySubmission>(
           resolveApiUrl("/api/materials/submissions"),
           {
             method: "POST",
@@ -517,9 +522,8 @@ const UploadMaterialPage = () => {
           },
         );
 
-        const submitted = mapLibrarySubmissionToMaterialSubmission(
-          submissionPayload,
-        );
+        const submitted =
+          mapLibrarySubmissionToMaterialSubmission(submissionPayload);
         setSubmissions((current) => {
           const nextSubmissions = current.filter(
             (item) => item.id !== submitted.id,
@@ -536,7 +540,7 @@ const UploadMaterialPage = () => {
         }
       }
 
-      const articlePayload = await fetchJson<RealWorldArticleResponse>(
+      const articlePayload = await fetchJsonWithAuth<RealWorldArticleResponse>(
         resolveApiUrl("/api/articles"),
         {
           method: "POST",
@@ -561,11 +565,12 @@ const UploadMaterialPage = () => {
         ),
       );
 
-      const attachmentsPayload = await fetchJson<RealWorldAttachmentsResponse>(
-        resolveApiUrl(
-          `/api/articles/${encodeURIComponent(articlePayload.article.slug)}/attachments`,
-        ),
-      );
+      const attachmentsPayload =
+        await fetchJsonWithAuth<RealWorldAttachmentsResponse>(
+          resolveApiUrl(
+            `/api/articles/${encodeURIComponent(articlePayload.article.slug)}/attachments`,
+          ),
+        );
 
       const submitted = createApiSubmission(
         articlePayload.article,
@@ -646,8 +651,8 @@ const UploadMaterialPage = () => {
                       История заявок ({authorSubmissions.length})
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Здесь отображаются все отправленные материалы и их
-                      текущий статус.
+                      Здесь отображаются все отправленные материалы и их текущий
+                      статус.
                     </p>
                   </div>
                 </AccordionTrigger>
@@ -698,9 +703,13 @@ const UploadMaterialPage = () => {
                             </div>
                             <Button
                               type="button"
-                              variant={isEditingCurrent ? "secondary" : "outline"}
+                              variant={
+                                isEditingCurrent ? "secondary" : "outline"
+                              }
                               size="sm"
-                              onClick={() => handleStartSubmissionEdit(submission)}
+                              onClick={() =>
+                                handleStartSubmissionEdit(submission)
+                              }
                               disabled={isSubmitting}
                             >
                               {isEditingCurrent

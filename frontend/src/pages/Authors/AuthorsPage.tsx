@@ -1,20 +1,21 @@
+// TODO: resolve import
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { AuthorsGrid } from "@/common/organisms";
-import { Input } from "@/components/ui/input";
-import { ApiRequestError, fetchJson, resolveApiUrl } from "@/lib/api";
+import { MOCK_AUTHORS } from "@/app/mocks/data/user";
+import { RealWorldArticlesResponse } from "@/entities/material/api";
+import { fetchJsonWithAuth } from "@/entities/session/api";
 import {
-  LibraryUserWithMaterialsResponse,
   LibraryUsersResponse,
-  mapLibraryUserToUser,
-  mapProfileToUser,
-  RealWorldArticlesResponse,
+  LibraryUserWithMaterialsResponse,
   RealWorldProfileResponse,
-} from "@/lib/materialsApi";
-import { MOCK_AUTHORS } from "@/mocks/mockData";
-import { User } from "@/models/user";
+} from "@/entities/user/api";
+import { mapLibraryUserToUser, mapProfileToUser } from "@/entities/user/lib";
+import { User } from "@/entities/user/model";
+import { ApiRequestError, resolveApiUrl } from "@/shared/api";
+import { Input } from "@/shared/ui";
+import { AuthorsGrid } from "@/widgets/authors-grid/ui";
 
 const AuthorsPage = () => {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ const AuthorsPage = () => {
 
       try {
         try {
-          const usersPayload = await fetchJson<LibraryUsersResponse>(
+          const usersPayload = await fetchJsonWithAuth<LibraryUsersResponse>(
             resolveApiUrl("/api/users?limit=100"),
             {
               signal: abortController.signal,
@@ -59,7 +60,7 @@ const AuthorsPage = () => {
 
           const detailedProfiles = await Promise.allSettled(
             authorsWithoutImage.map((author) =>
-              fetchJson<LibraryUserWithMaterialsResponse>(
+              fetchJsonWithAuth<LibraryUserWithMaterialsResponse>(
                 resolveApiUrl(
                   `/api/users/${encodeURIComponent(author.id)}?limit=1`,
                 ),
@@ -77,7 +78,10 @@ const AuthorsPage = () => {
             const profileResult = detailedProfiles[index];
             if (profileResult?.status !== "fulfilled") return;
 
-            imageByAuthorId.set(author.id, profileResult.value.user.image || null);
+            imageByAuthorId.set(
+              author.id,
+              profileResult.value.user.image || null,
+            );
           });
 
           const enrichedAuthors = mappedAuthors.map((author) => ({
@@ -86,20 +90,18 @@ const AuthorsPage = () => {
           }));
 
           setAuthors(
-            enrichedAuthors
-              .sort((first, second) => first.name.localeCompare(second.name)),
+            enrichedAuthors.sort((first, second) =>
+              first.name.localeCompare(second.name),
+            ),
           );
           return;
         } catch (error) {
-          if (
-            !(error instanceof ApiRequestError) ||
-            error.status !== 404
-          ) {
+          if (!(error instanceof ApiRequestError) || error.status !== 404) {
             throw error;
           }
         }
 
-        const payload = await fetchJson<RealWorldArticlesResponse>(
+        const payload = await fetchJsonWithAuth<RealWorldArticlesResponse>(
           resolveApiUrl("/api/articles?limit=100"),
           {
             signal: abortController.signal,
@@ -128,7 +130,7 @@ const AuthorsPage = () => {
         const authorEntries = Array.from(usersById.entries());
         const profileResponses = await Promise.allSettled(
           authorEntries.map(([userId]) =>
-            fetchJson<RealWorldProfileResponse>(
+            fetchJsonWithAuth<RealWorldProfileResponse>(
               resolveApiUrl(`/api/profiles/${encodeURIComponent(userId)}`),
               {
                 signal: abortController.signal,

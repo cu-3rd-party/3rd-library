@@ -78,5 +78,6 @@ export default defineConfig({
     "manifest.ts",
     "vite.config.js",
     "workbox.config.ts",
+    "public/**",
   ],
 });

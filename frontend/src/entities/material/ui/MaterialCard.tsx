@@ -1,0 +1,117 @@
+import { useSettingsStore } from "@/entities/settings/model";
+import { cn } from "@/shared/lib";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shared/ui";
+
+import { getCourseName, DIFFICULTY_CONFIG, TYPE_CONFIG } from "../lib";
+import { Material } from "../model";
+
+import { MaterialBadge } from "./MaterialBadge";
+
+type MaterialCardProps = {
+  material: Material;
+  onClick?: (id: string) => void;
+  showAuthor?: boolean;
+  className?: string;
+};
+
+export const MaterialCard = ({
+  material,
+  onClick,
+  showAuthor,
+  className,
+}: MaterialCardProps) => {
+  const difficultyData = DIFFICULTY_CONFIG[material.difficulty];
+  const typeData = TYPE_CONFIG[material.type];
+  const isClickable = Boolean(onClick);
+  const { displayMaterialTags } = useSettingsStore();
+
+  return (
+    <Card
+      onClick={onClick ? () => onClick(material.id) : undefined}
+      className={cn(
+        "flex flex-col h-full border-border bg-card transition-colors",
+        isClickable && "cursor-pointer group hover:border-ring",
+        className,
+      )}
+    >
+      <CardHeader className="pb-2">
+        {displayMaterialTags && (
+          <div className="flex flex-wrap lg:flex-nowrap gap-2 lg:mb-1">
+            <div className="flex grow flex-wrap gap-2">
+              <div className="flex justify-between gap-2 w-full md:w-auto">
+                <MaterialBadge
+                  label={getCourseName(material.courses)}
+                  className="bg-orange-badge text-orange-badge-foreground"
+                />
+                <MaterialBadge label={typeData.label} className="md:hidden" />
+              </div>
+
+              <div className="flex gap-2">
+                <MaterialBadge
+                  label={material.subjects[0]}
+                  className={difficultyData.className}
+                />
+                {material.subjects.length > 1 && (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <MaterialBadge
+                          label={`+${material.subjects.length - 1}`}
+                          className={difficultyData.className}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="flex flex-col gap-1">
+                          {material.subjects.slice(1).map((subject, idx) => (
+                            <span key={idx} className="text-xs">
+                              {subject}
+                            </span>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            </div>
+
+            <MaterialBadge
+              label={typeData.label}
+              className="hidden md:block md:ml-auto lg:self-start"
+            />
+          </div>
+        )}
+        <CardTitle className="text-xs sm:text-sm md:text-base lg:text-xl min-h-7.5 sm:min-h-8.75 md:min-h-11.25 lg:min-h-12.5 font-bold leading-tight line-clamp-2 ">
+          {material.title}
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="grow pt-0">
+        <p className="text-xs md:text-sm text-muted-foreground line-clamp-3 leading-normal">
+          {material.description}
+        </p>
+      </CardContent>
+
+      <CardFooter className="flex flex-col md:flex-row items-start md:items-center md:justify-between pt-1 lg:pt-4 gap-1 md:gap-0">
+        {showAuthor && (
+          <span className="text-xs md:text-sm font-medium text-foreground shrink-0">
+            {material.authorName}
+          </span>
+        )}
+        <p className="text-xs md:text-sm text-muted-foreground md:ml-auto">
+          {material.pubDate}
+        </p>
+      </CardFooter>
+    </Card>
+  );
+};
