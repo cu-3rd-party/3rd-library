@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { Routes, Route, Outlet, Navigate } from "react-router-dom";
 
-import { useTheme } from "@/entities/settings/model";
 import { MATERIALS_PREFIX } from "@/shared/constants";
 
 import { MainLayout } from "../layouts";
@@ -18,8 +17,6 @@ import { AppRoute } from "./types";
 const PageLoader = () => <div className="p-10 text-center">Загрузка...</div>;
 
 export const AppRouter = () => {
-  useTheme();
-
   const withHarnessRoutes: AppRoute[] = [
     ...aboutRoutes,
     ...authorsRoutes,

@@ -9,11 +9,13 @@ lerna-debug.log*
 
 node_modules
 AGENTS.md
+.claude
 .DS_Store
 dist
 dist-ssr
 coverage
 *.local
+zametki.md
 
 # Editor directories and files
 .vscode/*
