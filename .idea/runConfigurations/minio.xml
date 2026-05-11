@@ -1,0 +1,33 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="minio" type="docker-deploy" factoryName="docker-image" server-name="local">
+    <deployment type="docker-image">
+      <settings>
+        <option name="imageTag" value="minio/minio:latest" />
+        <option name="attachToContainerNeeded" value="true" />
+        <option name="containerName" value="3rd-library-minio" />
+        <option name="envVars">
+          <list>
+            <DockerEnvVarImpl>
+              <option name="name" value="MINIO_ROOT_PASSWORD" />
+              <option name="value" value="qwerty123" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="MINIO_ROOT_USER" />
+              <option name="value" value="admin" />
+            </DockerEnvVarImpl>
+          </list>
+        </option>
+        <option name="portBindings">
+          <list>
+            <DockerPortBindingImpl>
+              <option name="containerPort" value="9000" />
+              <option name="hostPort" value="9000" />
+            </DockerPortBindingImpl>
+          </list>
+        </option>
+        <option name="showCommandPreview" value="true" />
+      </settings>
+    </deployment>
+    <method v="2" />
+  </configuration>
+</component>
