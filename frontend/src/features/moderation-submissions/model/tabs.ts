@@ -1,6 +1,4 @@
-import { SubmissionStatus } from "@/entities/submission/model";
-
-export type ModerationTabValue = SubmissionStatus | "all";
+import { ModerationTabValue } from "@/entities/submission/model";
 
 export const MODERATION_TABS: Array<{
   value: ModerationTabValue;

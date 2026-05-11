@@ -1,10 +1,11 @@
+import { ModerationSubmissionCounts, ModerationTabValue } from "@/entities/submission/model";
 import { Badge, Tabs, TabsList, TabsTrigger } from "@/shared/ui";
 
-import { MODERATION_TABS, ModerationTabValue } from "../model";
+import { MODERATION_TABS } from "../model";
 
 type ModerationTabsProps = {
   value: ModerationTabValue;
-  counts: Record<ModerationTabValue, number>;
+  counts: ModerationSubmissionCounts;
   onValueChange: (value: ModerationTabValue) => void;
 };
 
@@ -15,9 +16,7 @@ export const ModerationTabs = ({
 }: ModerationTabsProps) => (
   <Tabs
     value={value}
-    onValueChange={(nextValue) =>
-      onValueChange(nextValue as ModerationTabValue)
-    }
+    onValueChange={(nextValue) => onValueChange(nextValue as ModerationTabValue)}
     className="flex-col gap-4"
   >
     <TabsList className="h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0">
