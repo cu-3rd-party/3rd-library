@@ -2,10 +2,12 @@ name: Deploy
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: [Backend Unit Tests]
-    types: [completed]
-    branches: [master]
+  push:
+    branches: [ master ]
+#  workflow_run:
+#    workflows: [Backend Unit Tests]
+#    types: [completed]
+#    branches: [master]
 
 jobs:
   deploy:
@@ -36,12 +38,30 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          rsync -avz --delete --progress docker-compose.yml backend frontend nginx $SSH_USER@$SSH_HOST:${{ secrets.DEPLOY_PATH }}
+          rsync -avz --delete --progress docker-compose.prod.yml backend frontend monitoring $SSH_USER@$SSH_HOST:${{ secrets.DEPLOY_PATH }}
+
+      - name: Write env files from secrets
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
+          DB_ENV: ${{ secrets.DB_ENV }}
+          STORAGE_ENV: ${{ secrets.STORAGE_ENV }}
+          GRAFANA_ENV: ${{ secrets.GRAFANA_ENV }}
+          REDIS_ENV: ${{ secrets.REDIS_ENV }}
+        run: |
+          ssh $SSH_USER@$SSH_HOST "install -d $DEPLOY_PATH/env"
+          ssh $SSH_USER@$SSH_HOST "printf '%s' \"$BACKEND_ENV\" > $DEPLOY_PATH/env/backend.env"
+          ssh $SSH_USER@$SSH_HOST "printf '%s' \"$DB_ENV\" > $DEPLOY_PATH/env/db.env"
+          ssh $SSH_USER@$SSH_HOST "printf '%s' \"$STORAGE_ENV\" > $DEPLOY_PATH/env/storage.env"
+          ssh $SSH_USER@$SSH_HOST "printf '%s' \"$GRAFANA_ENV\" > $DEPLOY_PATH/env/grafana.env"
+          ssh $SSH_USER@$SSH_HOST "printf '%s' \"$REDIS_ENV\" > $DEPLOY_PATH/env/redis.env"
 
       - name: Deploy to server
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          ssh $SSH_USER@$SSH_HOST "cd ${{ secrets.DEPLOY_PATH }} && docker compose down || true"
-          ssh $SSH_USER@$SSH_HOST "cd ${{ secrets.DEPLOY_PATH }} && docker compose up -d --build"
+          ssh $SSH_USER@$SSH_HOST "cd ${{ secrets.DEPLOY_PATH }} && docker compose -f docker-compose.prod.yml down || true"
+          ssh $SSH_USER@$SSH_HOST "cd ${{ secrets.DEPLOY_PATH }} && docker compose -f docker-compose.prod.yml up -d --build"
