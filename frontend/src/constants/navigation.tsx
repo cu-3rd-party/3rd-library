@@ -24,10 +24,10 @@ export const NAV_ITEMS_DESKTOP: NavItemDesktop[] = [
     path: `${MATERIALS_PREFIX}/moderation`,
     requiredRole: "moderator",
   },
-  { 
+  {
     label: "О проекте",
     path: `${ABOUT_PREFIX}`,
-    type: "special"
+    type: "special",
   },
 ];
 

@@ -15,7 +15,6 @@ import { isPathActive } from "@/utils";
 import { DesktopHeader } from "./DesktopHeader";
 import { MobileHeader } from "./MobileHeader";
 
-
 interface NavbarProps {
   children: ReactNode;
 }
@@ -35,7 +34,8 @@ export const Navbar = ({ children }: NavbarProps) => {
     () =>
       NAV_ITEMS_DESKTOP.filter(
         (item) =>
-          (item.requiredRole !== "moderator" || hasModeratorAccess) && !(item.type === "special"),
+          (item.requiredRole !== "moderator" || hasModeratorAccess) &&
+          !(item.type === "special"),
       ),
     [hasModeratorAccess],
   );
@@ -45,8 +45,7 @@ export const Navbar = ({ children }: NavbarProps) => {
       NAV_ITEMS_MOBILE.map((item) =>
         item.label === "Профиль" ? { ...item, path: profilePath } : item,
       ).filter(
-        (item) =>
-          item.requiredRole !== "moderator" || hasModeratorAccess,
+        (item) => item.requiredRole !== "moderator" || hasModeratorAccess,
       ),
     [hasModeratorAccess, profilePath],
   );

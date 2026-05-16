@@ -21,10 +21,10 @@ pub use error::{Error, ResultExt};
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 use crate::metrics;
+use auth::ApiDoc;
 use axum::http::HeaderValue;
 use axum::response::IntoResponse;
 use axum::routing::get;
-use auth::ApiDoc;
 use log::info;
 use s3::Bucket;
 use serde::Serialize;
@@ -120,8 +120,9 @@ fn api_router() -> Router<ApiContext> {
         .merge(materials::router())
         .merge(moderation::router())
         .route("/api/health", get(health_check))
-        .merge(SwaggerUi::new("/api/docs/swagger-ui")
-            .url("/api/docs/openapi.json", ApiDoc::openapi()))
+        .merge(
+            SwaggerUi::new("/api/docs/swagger-ui").url("/api/docs/openapi.json", ApiDoc::openapi()),
+        )
 }
 
 #[utoipa::path(

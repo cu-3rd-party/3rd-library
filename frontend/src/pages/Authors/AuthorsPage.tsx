@@ -77,7 +77,10 @@ const AuthorsPage = () => {
             const profileResult = detailedProfiles[index];
             if (profileResult?.status !== "fulfilled") return;
 
-            imageByAuthorId.set(author.id, profileResult.value.user.image || null);
+            imageByAuthorId.set(
+              author.id,
+              profileResult.value.user.image || null,
+            );
           });
 
           const enrichedAuthors = mappedAuthors.map((author) => ({
@@ -86,15 +89,13 @@ const AuthorsPage = () => {
           }));
 
           setAuthors(
-            enrichedAuthors
-              .sort((first, second) => first.name.localeCompare(second.name)),
+            enrichedAuthors.sort((first, second) =>
+              first.name.localeCompare(second.name),
+            ),
           );
           return;
         } catch (error) {
-          if (
-            !(error instanceof ApiRequestError) ||
-            error.status !== 404
-          ) {
+          if (!(error instanceof ApiRequestError) || error.status !== 404) {
             throw error;
           }
         }

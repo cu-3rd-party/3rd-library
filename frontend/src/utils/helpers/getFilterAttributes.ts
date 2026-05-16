@@ -35,8 +35,7 @@ export const getFilterAttributes = (
         placeholder: "Выберите уровень...",
         emptyText: "Уровень не найден",
         allItems: DIFFICULTIES,
-        getLabel: (val: string) =>
-          DIFFICULTY_CONFIG[val as Difficulty].label,
+        getLabel: (val: string) => DIFFICULTY_CONFIG[val as Difficulty].label,
         getAdditionalLabel: (val: string) =>
           DIFFICULTY_CONFIG[val as Difficulty].label_add,
       };

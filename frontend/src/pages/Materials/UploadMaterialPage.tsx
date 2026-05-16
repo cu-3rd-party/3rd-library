@@ -40,10 +40,7 @@ import {
   MaterialSubmissionFile,
   Subject,
 } from "@/models";
-import {
-  getAuthorEditableSubmission,
-  getSubmissionFiles,
-} from "@/store";
+import { getAuthorEditableSubmission, getSubmissionFiles } from "@/store";
 
 const emptyFormValues: UploadMaterialFormValues = {
   title: "",
@@ -291,10 +288,11 @@ const UploadMaterialPage = () => {
 
       try {
         try {
-          const currentUserPayload = await fetchJson<LibraryCurrentUserResponse>(
-            resolveApiUrl("/api/users/me"),
-            { signal: abortController.signal },
-          );
+          const currentUserPayload =
+            await fetchJson<LibraryCurrentUserResponse>(
+              resolveApiUrl("/api/users/me"),
+              { signal: abortController.signal },
+            );
           const nextCurrentUserId = currentUserPayload.id;
           setCurrentUserId(nextCurrentUserId);
 
@@ -523,9 +521,8 @@ const UploadMaterialPage = () => {
           },
         );
 
-        const submitted = mapLibrarySubmissionToMaterialSubmission(
-          submissionPayload,
-        );
+        const submitted =
+          mapLibrarySubmissionToMaterialSubmission(submissionPayload);
         setSubmissions((current) => {
           const nextSubmissions = current.filter(
             (item) => item.id !== submitted.id,
@@ -652,8 +649,8 @@ const UploadMaterialPage = () => {
                       История заявок ({authorSubmissions.length})
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Здесь отображаются все отправленные материалы и их
-                      текущий статус.
+                      Здесь отображаются все отправленные материалы и их текущий
+                      статус.
                     </p>
                   </div>
                 </AccordionTrigger>
@@ -704,9 +701,13 @@ const UploadMaterialPage = () => {
                             </div>
                             <Button
                               type="button"
-                              variant={isEditingCurrent ? "secondary" : "outline"}
+                              variant={
+                                isEditingCurrent ? "secondary" : "outline"
+                              }
                               size="sm"
-                              onClick={() => handleStartSubmissionEdit(submission)}
+                              onClick={() =>
+                                handleStartSubmissionEdit(submission)
+                              }
                               disabled={isSubmitting}
                             >
                               {isEditingCurrent

@@ -16,7 +16,9 @@ const extractExtensionFromName = (fileName: string) => {
 };
 
 const isPdfFile = (file: MaterialSubmissionFile) => {
-  const extension = (file.extension || extractExtensionFromName(file.name)).toLowerCase();
+  const extension = (
+    file.extension || extractExtensionFromName(file.name)
+  ).toLowerCase();
   return extension === "pdf";
 };
 
@@ -56,10 +58,9 @@ const tryDownloadBlob = (blob: Blob, fileName: string) => {
 
 const tryOpenPdfBlob = (blob: Blob) => {
   try {
-    const pdfBlob =
-      blob.type.toLowerCase().includes("pdf")
-        ? blob
-        : new Blob([blob], { type: "application/pdf" });
+    const pdfBlob = blob.type.toLowerCase().includes("pdf")
+      ? blob
+      : new Blob([blob], { type: "application/pdf" });
     const blobUrl = URL.createObjectURL(pdfBlob);
     const opened = tryOpenUrl(blobUrl);
     if (!opened) {
@@ -108,7 +109,9 @@ const fetchRemoteFileBlob = async (
 
   if (!response.ok) return null;
 
-  const contentType = (response.headers.get("content-type") || "").toLowerCase();
+  const contentType = (
+    response.headers.get("content-type") || ""
+  ).toLowerCase();
   if (
     contentType.includes("application/json") &&
     depth < MAX_DOWNLOAD_URL_DEPTH

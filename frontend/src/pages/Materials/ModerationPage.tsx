@@ -99,7 +99,9 @@ const ModerationPage = () => {
             "Ошибка на сервере модерации. Проверьте схему БД и логи backend.",
           );
         } else {
-          setErrorMessage(`Не удалось загрузить модерацию (HTTP ${error.status}).`);
+          setErrorMessage(
+            `Не удалось загрузить модерацию (HTTP ${error.status}).`,
+          );
         }
       } else {
         setErrorMessage("Не удалось загрузить модерацию.");
@@ -137,7 +139,8 @@ const ModerationPage = () => {
           `/api/materials/submissions/${encodeURIComponent(submission.id)}`,
         ),
       );
-      const detailedSubmission = mapLibrarySubmissionToMaterialSubmission(payload);
+      const detailedSubmission =
+        mapLibrarySubmissionToMaterialSubmission(payload);
       setSubmissions((current) =>
         current.map((item) =>
           item.id === detailedSubmission.id ? detailedSubmission : item,
@@ -288,7 +291,9 @@ const ModerationPage = () => {
             onApprove={handleApprove}
             onReject={handleReject}
             onOpenFile={handleOpenFile}
-            files={selectedSubmission ? getSubmissionFiles(selectedSubmission) : []}
+            files={
+              selectedSubmission ? getSubmissionFiles(selectedSubmission) : []
+            }
             isActionLoading={isActionLoading || isSubmissionDetailsLoading}
           />
         </>

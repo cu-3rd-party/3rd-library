@@ -8,8 +8,6 @@ mod verify_email;
 pub mod models;
 
 use crate::http::ApiContext;
-use axum::Router;
-use axum::routing::post;
 #[allow(unused_imports)]
 use crate::http::materials::create::__path_create_submission;
 #[allow(unused_imports)]
@@ -28,13 +26,15 @@ use crate::http::moderation::list::__path_list_moderation_submissions;
 use crate::http::users::get::{__path_get_current_user, __path_get_user_by_id, __path_get_users};
 #[allow(unused_imports)]
 use crate::http::users::update::__path_update_user_profile;
+use axum::Router;
+use axum::routing::post;
 use login::__path_login_user;
 use logout::__path_logout;
 use refresh::__path_refresh_token;
 use register::__path_register_user;
 use resend_verification::__path_resend_verification_code;
-use utoipa::{Modify, OpenApi};
 use utoipa::openapi::security::{Http, HttpAuthScheme, SecurityScheme};
+use utoipa::{Modify, OpenApi};
 use verify_email::__path_verify_email;
 
 pub use login::login_user;

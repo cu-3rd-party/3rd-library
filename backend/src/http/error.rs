@@ -3,10 +3,10 @@ use axum::http::header::WWW_AUTHENTICATE;
 use axum::http::{HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use serde::Serialize;
-use utoipa::ToSchema;
 use sqlx::error::DatabaseError;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use utoipa::ToSchema;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {

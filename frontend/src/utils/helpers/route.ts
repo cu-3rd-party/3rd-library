@@ -7,4 +7,4 @@ export const isPathActive = (path: string) => {
 
 export const getAboutProjectItem = () => {
   return NAV_ITEMS_DESKTOP[NAV_ITEMS_DESKTOP.length - 1];
-}
+};

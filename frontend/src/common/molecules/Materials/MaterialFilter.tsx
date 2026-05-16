@@ -32,8 +32,14 @@ export const MaterialFilter = <
   className,
 }: MaterialFilterProps<T>) => {
   const [open, setOpen] = useState(false);
-  const { placeholder, emptyText, searchPlaceholder, allItems, getLabel, getAdditionalLabel } =
-    getFilterAttributes(filterType);
+  const {
+    placeholder,
+    emptyText,
+    searchPlaceholder,
+    allItems,
+    getLabel,
+    getAdditionalLabel,
+  } = getFilterAttributes(filterType);
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -46,15 +52,17 @@ export const MaterialFilter = <
         placeholder={placeholder}
         emptyText={emptyText}
         renderBadge={(val: T) => {
-            return filterType !== "difficulty"  ? ( <Badge variant="secondary" className="text-xs">
-                {getLabel(val)}
-              </Badge> ) : ( <MaterialBadge
-                  label={getLabel(val)}
-                  className={DIFFICULTY_CONFIG[val as Difficulty].className}
-                />
-            )
-          }
-        }
+          return filterType !== "difficulty" ? (
+            <Badge variant="secondary" className="text-xs">
+              {getLabel(val)}
+            </Badge>
+          ) : (
+            <MaterialBadge
+              label={getLabel(val)}
+              className={DIFFICULTY_CONFIG[val as Difficulty].className}
+            />
+          );
+        }}
         searchPlaceholder={searchPlaceholder}
         onReset={onReset}
         renderItem={(val) => getAdditionalLabel?.(val) ?? getLabel(val)}

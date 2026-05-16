@@ -4,6 +4,7 @@
       <w>Timestamptz</w>
       <w>gridpos</w>
       <w>minio</w>
+      <w>rustfmt</w>
       <w>smtp</w>
       <w>srry</w>
     </words>

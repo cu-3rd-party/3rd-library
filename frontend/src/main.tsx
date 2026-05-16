@@ -45,13 +45,17 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker
       .getRegistrations()
       .then((registrations) =>
-        Promise.all(registrations.map((registration) => registration.unregister())),
+        Promise.all(
+          registrations.map((registration) => registration.unregister()),
+        ),
       )
       .then(() => {
         if (isLocalhostHost) {
           console.log("Service Worker disabled on localhost");
         }
       })
-      .catch((error) => console.warn("Failed to cleanup service workers", error));
+      .catch((error) =>
+        console.warn("Failed to cleanup service workers", error),
+      );
   }
 }

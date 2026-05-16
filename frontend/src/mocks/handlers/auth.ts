@@ -130,7 +130,7 @@ export const authHandlers = [
       const email = payload.user?.email?.trim() || "";
       const password = payload.user?.password || "";
 
-      console.log("SOMETHING")
+      console.log("SOMETHING");
 
       if (!email) return unprocessableEntity("email", "can't be blank");
       if (!password) return unprocessableEntity("password", "can't be blank");
@@ -153,19 +153,22 @@ export const authHandlers = [
     },
   ),
 
-  http.get(new URL("/api/user", resolveApiBaseUrl()).toString(), ({ request }) => {
-    const user = resolveUserFromRequest(request);
-    if (!user) {
-      return new HttpResponse(null, {
-        status: 401,
-        headers: {
-          "WWW-Authenticate": "Token",
-        },
-      });
-    }
+  http.get(
+    new URL("/api/user", resolveApiBaseUrl()).toString(),
+    ({ request }) => {
+      const user = resolveUserFromRequest(request);
+      if (!user) {
+        return new HttpResponse(null, {
+          status: 401,
+          headers: {
+            "WWW-Authenticate": "Token",
+          },
+        });
+      }
 
-    return HttpResponse.json(toUserResponse(user));
-  }),
+      return HttpResponse.json(toUserResponse(user));
+    },
+  ),
 
   http.put(
     new URL("/api/user", resolveApiBaseUrl()).toString(),
@@ -182,7 +185,8 @@ export const authHandlers = [
 
       const payload = (await request.json()) as UpdateCurrentUserRequest;
       const nextEmail = payload.user?.email?.trim() || currentUser.email;
-      const nextUsername = payload.user?.username?.trim() || currentUser.username;
+      const nextUsername =
+        payload.user?.username?.trim() || currentUser.username;
       const nextBio = (payload.user?.bio || "").trim();
       const nextImage =
         typeof payload.user?.image === "string"
@@ -192,7 +196,8 @@ export const authHandlers = [
             : currentUser.image;
 
       if (!nextEmail) return unprocessableEntity("email", "can't be blank");
-      if (!nextUsername) return unprocessableEntity("username", "can't be blank");
+      if (!nextUsername)
+        return unprocessableEntity("username", "can't be blank");
 
       const normalizedEmail = nextEmail.toLowerCase();
       const normalizedUsername = nextUsername.toLowerCase();

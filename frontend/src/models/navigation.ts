@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 export interface NavItemDesktop {
   label: string;
   path: string;
-  type?: string; 
+  type?: string;
   requiredRole?: "moderator";
 }
 

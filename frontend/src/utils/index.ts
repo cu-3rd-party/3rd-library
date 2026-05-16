@@ -5,5 +5,5 @@ export {
   openMaterialFile,
   getSortAttributes,
   isPathActive,
-  getAboutProjectItem
+  getAboutProjectItem,
 } from "./helpers";

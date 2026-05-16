@@ -1,0 +1,51 @@
+name: Format
+
+on:
+  push:
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt
+          override: 'true'
+
+      - name: Format backend
+        run: |
+          cargo fmt --all -- --check
+
+      - name: Install frontend dependencies
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
+          cd frontend
+          bun install
+
+      - name: Format frontend
+        run: |
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
+          cd frontend
+          bunx prettier --write .
+
+      - name: Commit formatting changes
+        run: |
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore(style): apply formatting"
+          git push

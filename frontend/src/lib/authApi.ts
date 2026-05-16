@@ -253,7 +253,7 @@ const requestAuth = async <T>(
 ): Promise<T> => {
   const method = options?.method || "POST";
   const request = options?.withAuth ? fetchWithAuth : fetch;
-let response: Response;
+  let response: Response;
 
   try {
     response = await request(resolveApiUrl(path), {

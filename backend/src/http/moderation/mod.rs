@@ -11,7 +11,10 @@ use list::list_moderation_submissions;
 
 pub fn router() -> Router<ApiContext> {
     Router::new()
-        .route("/api/moderation/submissions", get(list_moderation_submissions))
+        .route(
+            "/api/moderation/submissions",
+            get(list_moderation_submissions),
+        )
         .route(
             "/api/moderation/submissions/{submissionId}/decision",
             post(moderation_decision),

@@ -94,17 +94,20 @@ const MaterialDetailsPage = () => {
 
       try {
         try {
-          const materialPayload = await fetchJson<LibraryMaterialDetailsResponse>(
-            resolveApiUrl(`/api/materials/${encodeURIComponent(materialId)}`),
-            { signal: abortController.signal },
-          );
+          const materialPayload =
+            await fetchJson<LibraryMaterialDetailsResponse>(
+              resolveApiUrl(`/api/materials/${encodeURIComponent(materialId)}`),
+              { signal: abortController.signal },
+            );
 
           const mappedMaterial = mapLibraryMaterialToMaterial(materialPayload);
 
           setMaterialDetails({
             ...mappedMaterial,
             authorImage: materialPayload.author_image || null,
-            files: materialPayload.files.map(mapLibraryMaterialFileToSubmissionFile),
+            files: materialPayload.files.map(
+              mapLibraryMaterialFileToSubmissionFile,
+            ),
             submittedAt: materialPayload.submitted_at || undefined,
             publishedAt: materialPayload.published_at || undefined,
           });
@@ -145,7 +148,10 @@ const MaterialDetailsPage = () => {
           },
         ).catch((error: unknown) => {
           if (!abortController.signal.aborted) {
-            console.warn("[MaterialDetails] Failed to load author profile.", error);
+            console.warn(
+              "[MaterialDetails] Failed to load author profile.",
+              error,
+            );
           }
           return null;
         });
@@ -156,7 +162,8 @@ const MaterialDetailsPage = () => {
         setMaterialDetails({
           ...mappedMaterial,
           authorImage:
-            authorProfilePayload?.profile.image ?? articlePayload.article.author.image,
+            authorProfilePayload?.profile.image ??
+            articlePayload.article.author.image,
           files,
         });
       } catch (error) {

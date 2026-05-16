@@ -1,6 +1,11 @@
 import { COURSES, DIFFICULTIES, MATERIAL_TYPES, SUBJECTS } from "@/constants";
 import { resolveApiUrl } from "@/lib/api";
-import { Material, MaterialSubmission, MaterialSubmissionFile, User } from "@/models";
+import {
+  Material,
+  MaterialSubmission,
+  MaterialSubmissionFile,
+  User,
+} from "@/models";
 
 type RealWorldProfile = {
   username: string;
@@ -331,16 +336,12 @@ const getFileExtension = (fileName: string) => {
     : "";
 };
 
-const normalizeCourse = (
-  value: string,
-): (typeof COURSES)[number] | null =>
+const normalizeCourse = (value: string): (typeof COURSES)[number] | null =>
   COURSES.includes(value as (typeof COURSES)[number])
     ? (value as (typeof COURSES)[number])
     : null;
 
-const normalizeSubject = (
-  value: string,
-): (typeof SUBJECTS)[number] | null =>
+const normalizeSubject = (value: string): (typeof SUBJECTS)[number] | null =>
   SUBJECTS.includes(value as (typeof SUBJECTS)[number])
     ? (value as (typeof SUBJECTS)[number])
     : null;
@@ -352,9 +353,7 @@ const normalizeMaterialType = (
     ? (value as (typeof MATERIAL_TYPES)[number])
     : "other";
 
-const normalizeDifficulty = (
-  value: string,
-): (typeof DIFFICULTIES)[number] =>
+const normalizeDifficulty = (value: string): (typeof DIFFICULTIES)[number] =>
   DIFFICULTIES.includes(value as (typeof DIFFICULTIES)[number])
     ? (value as (typeof DIFFICULTIES)[number])
     : DEFAULT_DIFFICULTY;
@@ -426,7 +425,9 @@ export const mapLibraryMaterialFileToSubmissionFile = (
   url: file.url || undefined,
 });
 
-const normalizeSubmissionStatus = (status: string): MaterialSubmission["status"] => {
+const normalizeSubmissionStatus = (
+  status: string,
+): MaterialSubmission["status"] => {
   if (status === "draft") return "draft";
   if (status === "pending_review") return "pending_review";
   if (status === "rejected") return "rejected";

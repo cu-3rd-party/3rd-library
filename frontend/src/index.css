@@ -33,7 +33,7 @@
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.702 0.183 293.541);
 
-  --tyellow-100: oklch(0.9755 0.0717 103.38); 
+  --tyellow-100: oklch(0.9755 0.0717 103.38);
   --tyellow-200: oklch(0.9478 0.1263 101.68);
   --tyellow-300: oklch(0.8997 0.1763 97.07);
   --tyellow-400: oklch(0.8654 0.1746 91.32);
@@ -57,7 +57,7 @@
   --olime-200: oklch(0.9534 0.1596 119.53);
   --olime-300: oklch(0.9316 0.187 121.56);
   --olime-400: oklch(0.8951 0.2119 123.59);
-  
+
   --sblue-100: oklch(0.9483 0.0276 239.65);
   --sblue-200: oklch(0.8954 0.0604 234.09);
   --sblue-300: oklch(0.8187 0.1095 232.78);
@@ -95,7 +95,7 @@
 
   --lime-badge: oklch(0.9783 0.0718 116.93);
   --lime-badge-foreground: oklch(0.8951 0.2119 123.59);
-  
+
   --blue-badge: oklch(0.8846 0.0589 286.19 / 50%);
   --blue-badge-foreground: oklch(0.592 0.2327 284.82);
 
@@ -107,7 +107,6 @@
 
   --violet-badge: oklch(0.9464 0.0327 307.17);
   --violet-badge-foreground: oklch(0.7197 0.1762 304.68);
-
 }
 
 .dark {
@@ -153,10 +152,10 @@
 
   --green-badge: oklch(0.6346 0.17 151.18 / 20%);
   --green-badge-foreground: oklch(0.6346 0.17 151.18);
-  
+
   --lime-badge: oklch(0.8951 0.2119 123.59 / 20%);
   --lime-badge-foreground: oklch(0.8951 0.2119 123.59);
-  
+
   --blue-badge: oklch(0.592 0.2327 284.82 / 20%);
   --blue-badge-foreground: oklch(0.592 0.2327 284.82);
 
@@ -169,7 +168,6 @@
   --violet-badge: oklch(0.7197 0.1762 304.68 / 20%);
   --violet-badge-foreground: oklch(0.7197 0.1762 304.68);
 }
-
 
 @theme inline {
   --std-duration: 300ms;
@@ -208,10 +206,10 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --color-tyellow-100: var(--tyellow-100); 
-  --color-tyellow-200: var(--tyellow-200); 
-  --color-tyellow-300: var(--tyellow-300); 
-  --color-tyellow-400: var(--tyellow-400); 
+  --color-tyellow-100: var(--tyellow-100);
+  --color-tyellow-200: var(--tyellow-200);
+  --color-tyellow-300: var(--tyellow-300);
+  --color-tyellow-400: var(--tyellow-400);
 
   --color-eorange-100: var(--eorange-100);
   --color-eorange-200: var(--eorange-200);
@@ -259,7 +257,6 @@
   --color-violet-badge-foreground: var(--violet-badge-foreground);
 }
 
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -267,9 +264,13 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family:
+      "Inter",
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
-  
+
   /* scrollbar will be present each time without appearing/disappearing (however slider will still appear only in cases of overflow) */
   html {
     overflow-y: scroll;

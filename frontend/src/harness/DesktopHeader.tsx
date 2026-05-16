@@ -134,13 +134,15 @@ export const DesktopHeader = () => {
   }, []);
 
   const aboutProjectItem = useMemo(() => getAboutProjectItem(), []);
-  
+
   return (
     <div className="hidden md:flex flex-1 items-center justify-end gap-4">
       <Button
         key={aboutProjectItem.path}
         onClick={() => navigate(aboutProjectItem.path)}
-        variant={isPathActive(aboutProjectItem.path) ? "navActive" : "navInactive"}
+        variant={
+          isPathActive(aboutProjectItem.path) ? "navActive" : "navInactive"
+        }
         className="h-9 px-4 py-2 transition-colors text-base lg:text-lg"
       >
         {aboutProjectItem.label}
