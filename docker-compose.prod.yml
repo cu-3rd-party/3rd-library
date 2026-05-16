@@ -28,6 +28,8 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+      - VITE_API_URL=${VITE_API_URL:-https://lib.cu3rd.ru}
     ports:
       - "7800:5173"
     restart: unless-stopped
