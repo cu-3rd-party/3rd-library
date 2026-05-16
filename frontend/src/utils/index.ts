@@ -4,4 +4,6 @@ export {
   getFilterAttributes,
   openMaterialFile,
   getSortAttributes,
+  isPathActive,
+  getAboutProjectItem
 } from "./helpers";

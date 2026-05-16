@@ -3,6 +3,8 @@ import { Routes, Route, Outlet, Navigate } from "react-router-dom";
 
 import { AUTHORIZATION_PREFIX, MATERIALS_PREFIX } from "@/constants";
 import MainHarness from "@/harness";
+import { useTheme } from "@/hooks";
+import { getAccessToken } from "@/lib/authToken";
 import { AppRoute } from "@/models";
 
 import { aboutRoutes } from "./about";
@@ -14,7 +16,7 @@ import { materialsRoutes } from "./materials";
 const PageLoader = () => <div className="p-10 text-center">Загрузка...</div>;
 
 const hasCredentials = () =>
-  Boolean(globalThis.localStorage?.getItem("accessToken")?.trim());
+  import.meta.env.VITE_NO_AUTH === "true" || Boolean(getAccessToken()?.trim());
 
 const RequireAuth = () => {
   if (!hasCredentials()) {
@@ -25,6 +27,8 @@ const RequireAuth = () => {
 };
 
 export const AppRouter = () => {
+  useTheme();
+
   const withHarnessRoutes: AppRoute[] = [
     ...aboutRoutes,
     ...authorsRoutes,

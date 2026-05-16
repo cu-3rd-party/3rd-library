@@ -1,13 +1,13 @@
-# syntax=docker/dockerfile:1.7
+# !IMPORTANT
 FROM node:22-alpine AS build
-ARG PNPM_VERSION=11.1.2
 WORKDIR /app
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN corepack enable && corepack prepare pnpm@10.18.0 --activate
+
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-ENV CI=true
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
-RUN --mount=type=cache,target=/pnpm/store \
-    pnpm config set store-dir /pnpm/store && \
-    pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 COPY . .
 ARG VITE_API_URL=http://localhost:5173
 ENV VITE_API_URL=${VITE_API_URL}

@@ -7,18 +7,38 @@ export const useTheme = () => {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
-      root.classList.add(systemTheme);
-      return;
+    const applyTheme = () => {
+      root.classList.remove("light", "dark");
+
+      if (theme === "system") {
+        root.classList.add(mediaQuery.matches ? "dark" : "light");
+        return;
+      }
+
+      root.classList.add(theme);
+    };
+
+    applyTheme();
+
+    if (theme !== "system") return;
+
+    const handleSystemThemeChange = () => {
+      applyTheme();
+    };
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleSystemThemeChange);
+      return () => {
+        mediaQuery.removeEventListener("change", handleSystemThemeChange);
+      };
     }
 
-    root.classList.add(theme);
+    mediaQuery.addListener(handleSystemThemeChange);
+    return () => {
+      mediaQuery.removeListener(handleSystemThemeChange);
+    };
   }, [theme]);
 
   return { theme, setTheme };

@@ -76,7 +76,7 @@ const MaterialsPage = () => {
   }, []);
 
   return (
-    <div className="w-full px-4 py-0 md:py-6 xl:w-11/12 mx-auto max-w-screen-2xl">
+    <div className="w-full px-4 py-4 md:py-6 xl:w-11/12 mx-auto max-w-screen-2xl">
       {isLoading ? (
         <div className="col-span-full text-center py-20 text-muted-foreground bg-card rounded-xl border border-dashed border-border/50">
           Загружаем материалы...

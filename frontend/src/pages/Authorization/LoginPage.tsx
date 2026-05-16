@@ -1,13 +1,10 @@
-import { Eye, EyeOff, LoaderCircle, LogIn } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { AuthPageShell, LoginAuthForm } from "@/common/organisms";
 import { AUTHORIZATION_PREFIX, MATERIALS_PREFIX } from "@/constants";
 import { loginUser } from "@/lib/authApi";
+import { getAccessToken, setAccessToken } from "@/lib/authToken";
 import { loginSchema } from "@/lib/authValidation";
 import { persistCurrentAuthUser } from "@/lib/currentUser";
 
@@ -20,13 +17,12 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const token = globalThis.localStorage?.getItem("accessToken");
+    const token = getAccessToken();
     if (token) {
       navigate(MATERIALS_PREFIX, { replace: true });
     }
@@ -56,10 +52,7 @@ const LoginPage = () => {
         password: validationResult.data.password,
       });
 
-      globalThis.localStorage?.setItem(
-        "accessToken",
-        `Token ${response.user.token}`,
-      );
+      setAccessToken(`Token ${response.user.token}`);
       persistCurrentAuthUser({
         email: response.user.email,
         username: response.user.username,
@@ -79,114 +72,22 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background px-4 py-10">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-secondary/30 blur-3xl" />
-      </div>
-
-      <div className="relative mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center">
-        <Card className="w-full border-border bg-card/95 backdrop-blur">
-          <CardHeader className="space-y-2">
-            <CardTitle className="text-2xl font-bold tracking-tight">
-              Вход
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Войдите в аккаунт, чтобы работать с материалами и профилем.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <div className="space-y-2">
-                <Label htmlFor="login-email">Email</Label>
-                <Input
-                  id="login-email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  disabled={isSubmitting}
-                  aria-invalid={Boolean(fieldErrors.email)}
-                />
-                {fieldErrors.email ? (
-                  <p className="text-sm text-destructive">
-                    {fieldErrors.email}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Пароль</Label>
-                <div className="relative">
-                  <Input
-                    id="login-password"
-                    type={isPasswordVisible ? "text" : "password"}
-                    autoComplete="current-password"
-                    placeholder="Введите пароль"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    disabled={isSubmitting}
-                    aria-invalid={Boolean(fieldErrors.password)}
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 inline-flex items-center px-3 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={() => setIsPasswordVisible((current) => !current)}
-                    disabled={isSubmitting}
-                    aria-label={
-                      isPasswordVisible ? "Скрыть пароль" : "Показать пароль"
-                    }
-                  >
-                    {isPasswordVisible ? (
-                      <EyeOff className="size-4" aria-hidden="true" />
-                    ) : (
-                      <Eye className="size-4" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-                {fieldErrors.password ? (
-                  <p className="text-sm text-destructive">
-                    {fieldErrors.password}
-                  </p>
-                ) : null}
-              </div>
-
-              {errorMessage ? (
-                <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {errorMessage}
-                </p>
-              ) : null}
-
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <LoaderCircle className="size-4 animate-spin" />
-                    Входим...
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="size-4" />
-                    Войти
-                  </>
-                )}
-              </Button>
-            </form>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Нет аккаунта?{" "}
-              <Link
-                className="font-medium text-foreground underline-offset-4 hover:underline"
-                to={`${AUTHORIZATION_PREFIX}/register`}
-              >
-                Зарегистрироваться
-              </Link>
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <AuthPageShell
+      title="Вход"
+      description="Войдите в аккаунт, чтобы работать с материалами и профилем."
+    >
+      <LoginAuthForm
+        email={email}
+        password={password}
+        isSubmitting={isSubmitting}
+        errorMessage={errorMessage}
+        fieldErrors={fieldErrors}
+        registerPath={`${AUTHORIZATION_PREFIX}/register`}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onSubmit={handleSubmit}
+      />
+    </AuthPageShell>
   );
 };
 

@@ -49,6 +49,19 @@ pub async fn register_user(
     let code_expires_at = chrono::Utc::now() + chrono::Duration::hours(24);
 
     metrics::observe_db_query();
+    let is_email_verified: Option<bool> = sqlx::query_scalar(
+        r#"select is_email_verified from web_user where email == $1 limit 1 returning is_email_verified"#,
+    )
+        .bind(&req.email)
+        .fetch_one(&ctx.db)
+        .await.ok();
+    if let Some(is_email_verified) = is_email_verified {
+        if !is_email_verified {
+            return Err(Error::Conflict("email not verified".to_string()));
+        }
+    }
+
+    metrics::observe_db_query();
     let user_id: uuid::Uuid = sqlx::query_scalar(
         r#"insert into web_user (email, password_hash, name, verification_code, verification_code_issued_at, verification_code_expires_at)
            values ($1, $2, $3, $4, $5, $6)

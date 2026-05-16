@@ -85,7 +85,7 @@ export const FileUploadArea = ({
               Загрузить файлы
             </span>
             <span className="text-xs text-muted-foreground">
-              До {MAX_FILES_COUNT} файлов •{" "}
+              До {MAX_FILES_COUNT} файлов, разрешенные форматы: {" "}
               {ALLOWED_MATERIAL_EXTENSIONS.join(", ")}
             </span>
           </div>

@@ -3,6 +3,7 @@ import {
   fetchWithAuth,
   resolveApiUrl,
 } from "@/lib/api";
+import { getAccessToken } from "@/lib/authToken";
 
 type AuthUserPayload = {
   email: string;
@@ -10,7 +11,8 @@ type AuthUserPayload = {
 };
 
 type RegisterUserPayload = AuthUserPayload & {
-  username: string;
+  name: string;
+  surname: string;
 };
 
 type AuthUser = {
@@ -87,7 +89,18 @@ type AuthApiError = {
   errors?: Record<string, string[]>;
 };
 
-const DEFAULT_AUTH_ERROR_MESSAGE = "Не удалось выполнить запрос";
+const SERVER_UNAVAILABLE_MESSAGE = "Сервер недоступен. Попробуйте позже.";
+const INVALID_CREDENTIALS_MESSAGE = "Неверный email или пароль.";
+const EMAIL_ALREADY_REGISTERED_MESSAGE =
+  "Пользователь с таким email уже зарегистрирован.";
+const USERNAME_ALREADY_REGISTERED_MESSAGE =
+  "Пользователь с таким именем уже зарегистрирован.";
+const INVALID_VERIFICATION_CODE_MESSAGE = "Неверный код подтверждения.";
+const EXPIRED_VERIFICATION_CODE_MESSAGE =
+  "Срок действия кода истек. Запросите новый код.";
+const TOO_MANY_REQUESTS_MESSAGE =
+  "Слишком много попыток. Попробуйте чуть позже.";
+const FILL_REQUIRED_FIELDS_MESSAGE = "Заполните обязательные поля.";
 
 class AuthRequestError extends Error {
   readonly status: number;
@@ -141,6 +154,95 @@ const parseAuthError = (payload: unknown) => {
   return entries.join(", ");
 };
 
+const matchesAny = (value: string, patterns: RegExp[]) =>
+  patterns.some((pattern) => pattern.test(value));
+
+const resolveHumanReadableAuthErrorMessage = (
+  status: number,
+  rawMessage?: string | null,
+) => {
+  const normalized = (rawMessage || "").trim().toLowerCase();
+
+  if (status === 401) return INVALID_CREDENTIALS_MESSAGE;
+
+  if (
+    status === 429 ||
+    matchesAny(normalized, [
+      /too many requests/i,
+      /rate limit/i,
+      /слишком много/i,
+    ])
+  ) {
+    return TOO_MANY_REQUESTS_MESSAGE;
+  }
+
+  if (
+    matchesAny(normalized, [
+      /failed to fetch/i,
+      /networkerror/i,
+      /network request failed/i,
+      /fetch resource/i,
+      /load failed/i,
+    ])
+  ) {
+    return SERVER_UNAVAILABLE_MESSAGE;
+  }
+
+  if (
+    matchesAny(normalized, [/verification/i, /code/i]) &&
+    matchesAny(normalized, [/invalid/i, /incorrect/i, /wrong/i, /неверн/i])
+  ) {
+    return INVALID_VERIFICATION_CODE_MESSAGE;
+  }
+
+  if (
+    matchesAny(normalized, [/verification/i, /code/i]) &&
+    matchesAny(normalized, [/expired/i, /истек/i])
+  ) {
+    return EXPIRED_VERIFICATION_CODE_MESSAGE;
+  }
+
+  if (
+    matchesAny(normalized, [
+      /email taken/i,
+      /email.*taken/i,
+      /email.*already/i,
+      /already registered/i,
+      /already exists/i,
+    ])
+  ) {
+    return EMAIL_ALREADY_REGISTERED_MESSAGE;
+  }
+
+  if (
+    matchesAny(normalized, [
+      /username taken/i,
+      /username.*taken/i,
+      /name.*taken/i,
+      /username.*already/i,
+      /name.*already/i,
+    ])
+  ) {
+    return USERNAME_ALREADY_REGISTERED_MESSAGE;
+  }
+
+  if (
+    matchesAny(normalized, [/can't be blank/i, /required/i, /обязат/i]) ||
+    status === 422
+  ) {
+    return FILL_REQUIRED_FIELDS_MESSAGE;
+  }
+
+  if (
+    matchesAny(normalized, [/does not exist/i, /invalid credentials/i]) ||
+    status === 403
+  ) {
+    return INVALID_CREDENTIALS_MESSAGE;
+  }
+
+  return SERVER_UNAVAILABLE_MESSAGE;
+};
+
 const requestAuth = async <T>(
   path: string,
   payload: Record<string, unknown>,
@@ -151,14 +253,20 @@ const requestAuth = async <T>(
 ): Promise<T> => {
   const method = options?.method || "POST";
   const request = options?.withAuth ? fetchWithAuth : fetch;
-  const response = await request(resolveApiUrl(path), {
-    method,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+let response: Response;
+
+  try {
+    response = await request(resolveApiUrl(path), {
+      method,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new AuthRequestError(0, SERVER_UNAVAILABLE_MESSAGE);
+  }
 
   const contentType = response.headers.get("content-type") || "";
   const isJson = contentType.includes("application/json");
@@ -166,25 +274,17 @@ const requestAuth = async <T>(
 
   if (!response.ok) {
     const parsedApiMessage = extractApiErrorMessage(body);
-    const fallbackMessage =
-      response.status === 401
-        ? "Неверный email или пароль"
-        : DEFAULT_AUTH_ERROR_MESSAGE;
-
-    if (parsedApiMessage) {
-      throw new AuthRequestError(response.status, parsedApiMessage);
-    }
-
     const parsedMessage = parseAuthError(body);
-    if (parsedMessage) {
-      throw new AuthRequestError(response.status, parsedMessage);
-    }
-
-    throw new AuthRequestError(response.status, fallbackMessage);
+    const rawMessage = parsedApiMessage || parsedMessage;
+    const userMessage = resolveHumanReadableAuthErrorMessage(
+      response.status,
+      rawMessage,
+    );
+    throw new AuthRequestError(response.status, userMessage);
   }
 
   if (!isJson) {
-    throw new Error("Сервер вернул ответ в неожиданном формате");
+    throw new AuthRequestError(response.status, SERVER_UNAVAILABLE_MESSAGE);
   }
 
   return body as T;
@@ -198,16 +298,21 @@ export const loginUser = (payload: AuthUserPayload) =>
         throw error;
       }
 
-      const response = await requestAuth<LegacyAuthUserResponse>("/api/users/login", {
-        user: payload,
-      });
+      const response = await requestAuth<LegacyAuthUserResponse>(
+        "/api/users/login",
+        {
+          user: payload,
+        },
+      );
 
       return withDefaultRoles(response);
     });
 
-export const registerUser = (payload: RegisterUserPayload) =>
-  requestAuth<NewRegisterResponse>("/api/auth/register", {
-    name: payload.username,
+export const registerUser = (payload: RegisterUserPayload) => {
+  const fullName = `${payload.name} ${payload.surname}`.trim();
+
+  return requestAuth<NewRegisterResponse>("/api/auth/register", {
+    name: fullName,
     email: payload.email,
     password: payload.password,
   })
@@ -230,7 +335,11 @@ export const registerUser = (payload: RegisterUserPayload) =>
       }
 
       const response = await requestAuth<AuthUserResponse>("/api/users", {
-        user: payload,
+        user: {
+          username: fullName,
+          email: payload.email,
+          password: payload.password,
+        },
       });
 
       return {
@@ -238,6 +347,7 @@ export const registerUser = (payload: RegisterUserPayload) =>
         response: withDefaultRoles(response),
       } as const;
     });
+};
 
 export const resendVerificationCode = async (payload: { email: string }) => {
   await requestAuth<null>("/api/auth/resend-verification-code", {
@@ -249,10 +359,13 @@ export const verifyEmailCode = async (payload: {
   email: string;
   code: string;
 }) => {
-  const response = await requestAuth<NewAuthResponse>("/api/auth/verify-email", {
-    email: payload.email,
-    code: payload.code,
-  });
+  const response = await requestAuth<NewAuthResponse>(
+    "/api/auth/verify-email",
+    {
+      email: payload.email,
+      code: payload.code,
+    },
+  );
 
   return {
     user: mapNewAuthResponse(response).user,
@@ -286,8 +399,7 @@ export const updateCurrentUser = (payload: UpdateCurrentUserPayload) =>
   )
     .then((response) => {
       const storedToken =
-        globalThis.localStorage
-          ?.getItem("accessToken")
+        getAccessToken()
           ?.replace(/^Token\s+/i, "")
           .replace(/^Bearer\s+/i, "")
           .trim() || "";
@@ -299,7 +411,9 @@ export const updateCurrentUser = (payload: UpdateCurrentUserPayload) =>
           username: response.name,
           bio: response.bio || "",
           image:
-            response.image !== undefined ? response.image || null : payload.image,
+            response.image !== undefined
+              ? response.image || null
+              : payload.image,
           roles: response.roles || ["user"],
         },
       } satisfies AuthUserResponse;

@@ -1,6 +1,6 @@
 # Library
 
-![Architecture Illustration](docs/architecture-illustration.jpg)
+![Architecture Illustration](docs/architecture-illustration.png)
 
 ## Structure
 
