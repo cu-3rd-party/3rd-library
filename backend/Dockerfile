@@ -5,12 +5,10 @@ COPY Cargo.toml ./Cargo.toml
 RUN mkdir -p src
 RUN printf "fn main() {}\n" > src/main.rs
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/app/target \
     cargo build --release
 COPY src ./src
 COPY migrations ./migrations
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/app/target \
     cargo build --release
 
 FROM debian:13-slim
