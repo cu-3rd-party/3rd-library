@@ -2,7 +2,6 @@ use crate::http::{ApiContext, Result};
 use crate::metrics;
 use axum::Json;
 use axum::extract::{Path, Query, State};
-use serde::{Deserialize, Serialize};
 
 use crate::http::error::Error;
 use crate::http::extractor::AuthUser;
@@ -12,36 +11,17 @@ use sqlx::Row;
 
 use super::models::*;
 
-#[derive(Deserialize)]
-pub struct ListUsersQuery {
-    search: Option<String>,
-    page: Option<i64>,
-    limit: Option<i64>,
-}
-
-#[derive(Serialize)]
-pub struct PaginatedUsersResponse {
-    items: Vec<UserPublicProfile>,
-    page: i64,
-    limit: i64,
-    total: i64,
-}
-
-#[derive(Serialize)]
-pub struct UserPublicProfile {
-    pub id: uuid::Uuid,
-    pub name: String,
-    pub bio: String,
-    pub is_email_verified: bool,
-    pub materials_count: i64,
-}
-
-#[derive(Serialize)]
-pub struct UserWithMaterialsResponse {
-    user: UserPublicProfile,
-    materials: materials_models::PaginatedMaterialsResponse,
-}
-
+#[utoipa::path(
+    get,
+    path = "/api/users/me",
+    tag = "users",
+    responses(
+        (status = 200, description = "Current user profile", body = WebUser),
+        (status = 401, description = "Authentication required", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    ),
+    security(("bearer_auth" = []))
+)]
 pub async fn get_current_user(
     auth_user: AuthUser,
     State(ctx): State<ApiContext>,
@@ -72,6 +52,16 @@ pub async fn get_current_user(
     }))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/users",
+    tag = "users",
+    params(ListUsersQuery),
+    responses(
+        (status = 200, description = "Public users list", body = PaginatedUsersResponse),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    )
+)]
 pub async fn get_users(
     Query(query): Query<ListUsersQuery>,
     State(ctx): State<ApiContext>,
@@ -137,6 +127,20 @@ pub async fn get_users(
     }))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/users/{userId}",
+    tag = "users",
+    params(
+        ("userId" = uuid::Uuid, Path, description = "User id"),
+        ListUsersQuery
+    ),
+    responses(
+        (status = 200, description = "Public user profile with materials", body = UserWithMaterialsResponse),
+        (status = 404, description = "User not found", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    )
+)]
 pub async fn get_user_by_id(
     Path(user_id): Path<uuid::Uuid>,
     Query(query): Query<ListUsersQuery>,

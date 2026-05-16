@@ -4,14 +4,16 @@
     <option name="command" value="run --bin backend" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
     <envs>
-      <env name="CORS_ALLOWD_ORIGIN" value="*" />
       <env name="HMAC_KEY" value="dev" />
       <env name="POSTGRES_DB" value="db" />
       <env name="POSTGRES_HOST" value="localhost" />
+      <env name="POSTGRES_PASSWORD" value="admin" />
       <env name="POSTGRES_PORT" value="5432" />
       <env name="POSTGRES_USER" value="admin" />
       <env name="RUST_LOG" value="info" />
-      <env name="POSTGRES_PASSWORD" value="admin" />
+      <env name="S3_ACCESS_KEY" value="admin" />
+      <env name="S3_SECRET_KEY" value="qewrty123" />
+      <env name="S3_ENDPOINT" value="http://localhost:9000" />
     </envs>
     <option name="emulateTerminal" value="true" />
     <option name="channel" value="DEFAULT" />

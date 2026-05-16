@@ -11,6 +11,22 @@ use log::debug;
 use sqlx::Row;
 use uuid::Uuid;
 
+#[utoipa::path(
+    patch,
+    path = "/api/materials/submissions/{submissionId}",
+    tag = "materials",
+    params(("submissionId" = uuid::Uuid, Path, description = "Submission id")),
+    request_body(content = String, content_type = "multipart/form-data", description = "Multipart form fields for submission updates and optional `files` parts"),
+    responses(
+        (status = 200, description = "Submission updated", body = Submission),
+        (status = 400, description = "Invalid request", body = crate::http::error::ApiError),
+        (status = 401, description = "Verified authentication required", body = crate::http::error::ApiError),
+        (status = 403, description = "Access denied or invalid submission status", body = crate::http::error::ApiError),
+        (status = 404, description = "Submission not found", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    ),
+    security(("bearer_auth" = []))
+)]
 pub async fn update_submission(
     Path(submission_id): Path<Uuid>,
     user: VerifiedUser,

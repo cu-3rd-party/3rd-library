@@ -10,6 +10,18 @@ use axum::extract::State;
 use sqlx::Row;
 use uuid::Uuid;
 
+#[utoipa::path(
+    post,
+    path = "/api/auth/login",
+    tag = "auth",
+    request_body = LoginRequest,
+    responses(
+        (status = 200, description = "Login successful", body = AuthResponse),
+        (status = 401, description = "Invalid credentials", body = crate::http::error::ApiError),
+        (status = 403, description = "Email not verified", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    )
+)]
 pub async fn login_user(
     State(ctx): State<ApiContext>,
     Json(req): Json<LoginRequest>,

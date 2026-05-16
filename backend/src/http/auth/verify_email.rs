@@ -11,6 +11,19 @@ use uuid::Uuid;
 
 use super::models::*;
 
+#[utoipa::path(
+    post,
+    path = "/api/auth/verify-email",
+    tag = "auth",
+    request_body = VerifyEmailRequest,
+    responses(
+        (status = 200, description = "Email verified successfully", body = AuthResponse),
+        (status = 400, description = "Invalid verification code", body = crate::http::error::ApiError),
+        (status = 404, description = "User not found", body = crate::http::error::ApiError),
+        (status = 409, description = "Email already verified", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    )
+)]
 pub async fn verify_email(
     State(ctx): State<ApiContext>,
     Json(req): Json<VerifyEmailRequest>,

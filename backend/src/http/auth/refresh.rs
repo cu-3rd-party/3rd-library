@@ -10,6 +10,17 @@ use crate::http::extractor::AuthUser;
 use redis::AsyncCommands;
 use uuid::Uuid;
 
+#[utoipa::path(
+    post,
+    path = "/api/auth/refresh",
+    tag = "auth",
+    request_body = RefreshTokenRequest,
+    responses(
+        (status = 200, description = "Tokens refreshed", body = TokenPair),
+        (status = 401, description = "Invalid refresh token", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    )
+)]
 pub async fn refresh_token(
     State(ctx): State<ApiContext>,
     Json(req): Json<RefreshTokenRequest>,

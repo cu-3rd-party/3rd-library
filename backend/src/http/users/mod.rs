@@ -1,7 +1,7 @@
-mod get;
+pub(crate) mod get;
 pub mod helpers;
-mod models;
-mod update;
+pub(crate) mod models;
+pub(crate) mod update;
 
 pub use helpers::*;
 
@@ -14,8 +14,8 @@ use update::update_user_profile;
 
 pub fn router() -> Router<ApiContext> {
     Router::new()
-        .route("/users/me", get(get_current_user))
-        .route("/users", get(get_users))
-        .route("/users/{userId}", get(get_user_by_id))
-        .route("/users/me", patch(update_user_profile))
+        .route("/api/users/me", get(get_current_user))
+        .route("/api/users", get(get_users))
+        .route("/api/users/{userId}", get(get_user_by_id))
+        .route("/api/users/me", patch(update_user_profile))
 }

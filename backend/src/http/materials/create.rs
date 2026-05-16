@@ -9,6 +9,19 @@ use chrono::Utc;
 use log::debug;
 use uuid::Uuid;
 
+#[utoipa::path(
+    post,
+    path = "/api/materials/submissions",
+    tag = "materials",
+    request_body(content = String, content_type = "multipart/form-data", description = "Multipart form with `data` JSON part and `files` parts"),
+    responses(
+        (status = 200, description = "Submission created", body = Submission),
+        (status = 400, description = "Invalid multipart payload", body = crate::http::error::ApiError),
+        (status = 401, description = "Verified authentication required", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    ),
+    security(("bearer_auth" = []))
+)]
 pub async fn create_submission(
     user: VerifiedUser,
     State(ctx): State<ApiContext>,

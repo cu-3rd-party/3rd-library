@@ -31,7 +31,7 @@ export default defineConfig({
     }),
   ].filter(Boolean),
   server: {
-    port: 3000,
+    port: 5173,
     host: "localhost",
     https: DEV_ENABLE_HTTPS,
     proxy: {

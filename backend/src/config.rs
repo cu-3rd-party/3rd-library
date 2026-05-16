@@ -18,9 +18,6 @@ pub struct Config {
     #[command(flatten)]
     pub cors: CorsConfig,
 
-    #[command(flatten)]
-    pub storage: StorageConfig,
-
     #[cfg(feature = "smtp")]
     #[command(flatten)]
     pub smtp: SmtpConfig,
@@ -94,13 +91,6 @@ pub struct CorsConfig {
     pub allowed_origin: String,
 }
 
-#[derive(Parser, Debug, Clone)]
-#[group(id = "storage")]
-pub struct StorageConfig {
-    #[arg(env = "PFP_UPLOAD_DIR", default_value = "/uploads")]
-    pub pfp_upload_dir: String,
-}
-
 #[cfg(feature = "smtp")]
 #[derive(Parser, Debug, Clone)]
 #[group(id = "smtp")]
@@ -118,11 +108,11 @@ pub struct SmtpConfig {
 #[derive(Parser, Debug, Clone)]
 #[group(id = "s3")]
 pub struct S3Config {
-    #[arg(env = "S3_ACCESS_KEY")]
+    #[arg(env = "S3_ACCESS_KEY", default_value = "")]
     pub access_key: String,
-    #[arg(env = "S3_SECRET_KEY")]
+    #[arg(env = "S3_SECRET_KEY", default_value = "")]
     pub secret_key: String,
-    #[arg(env = "S3_ENDPOINT")]
+    #[arg(env = "S3_ENDPOINT", default_value = "")]
     pub endpoint: String,
     #[arg(env = "S3_REGION", default_value = "us-east-1")]
     pub region: String,

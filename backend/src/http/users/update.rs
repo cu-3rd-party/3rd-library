@@ -1,19 +1,24 @@
 use crate::http::{ApiContext, Result};
 use axum::Json;
 use axum::extract::State;
-use serde::Deserialize;
 
 use crate::http::extractor::AuthUser;
 use sqlx::Row;
 
 use super::models::*;
 
-#[derive(Deserialize)]
-pub struct UpdateUserRequest {
-    pub name: Option<String>,
-    pub bio: Option<String>,
-}
-
+#[utoipa::path(
+    patch,
+    path = "/api/users/me",
+    tag = "users",
+    request_body = UpdateUserRequest,
+    responses(
+        (status = 200, description = "User profile updated", body = WebUser),
+        (status = 401, description = "Authentication required", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    ),
+    security(("bearer_auth" = []))
+)]
 pub async fn update_user_profile(
     auth_user: AuthUser,
     State(ctx): State<ApiContext>,

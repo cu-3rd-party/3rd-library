@@ -9,6 +9,20 @@ use crate::http::materials::helpers;
 use chrono::{DateTime, Utc};
 use sqlx::Row;
 
+#[utoipa::path(
+    get,
+    path = "/api/materials/submissions/{submissionId}",
+    tag = "materials",
+    params(("submissionId" = uuid::Uuid, Path, description = "Submission id")),
+    responses(
+        (status = 200, description = "Submission details", body = Submission),
+        (status = 401, description = "Authentication required", body = crate::http::error::ApiError),
+        (status = 403, description = "Access denied", body = crate::http::error::ApiError),
+        (status = 404, description = "Submission not found", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    ),
+    security(("bearer_auth" = []))
+)]
 pub async fn get_submission_by_id(
     Path(submission_id): Path<uuid::Uuid>,
     auth_user: AuthUser,

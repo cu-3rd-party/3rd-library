@@ -24,10 +24,13 @@ use crate::metrics;
 use axum::http::HeaderValue;
 use axum::response::IntoResponse;
 use axum::routing::get;
+use auth::ApiDoc;
 use log::info;
 use s3::Bucket;
 use serde::Serialize;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(Clone)]
 pub struct ApiContext {
@@ -73,7 +76,6 @@ pub async fn serve(
     };
 
     let app = api_router()
-        .route("/api/health", get(health_check))
         .with_state(context.clone())
         .layer(axum::middleware::from_fn_with_state(
             context.clone(),
@@ -117,17 +119,26 @@ fn api_router() -> Router<ApiContext> {
         .merge(users::router())
         .merge(materials::router())
         .merge(moderation::router())
+        .route("/api/health", get(health_check))
+        .merge(SwaggerUi::new("/api/docs/swagger-ui")
+            .url("/api/docs/openapi.json", ApiDoc::openapi()))
 }
 
-async fn health_check() -> impl IntoResponse {
+#[utoipa::path(
+    get,
+    path = "/api/health",
+    tag = "system",
+    responses((status = 200, description = "Service is healthy", body = HealthCheck))
+)]
+pub(crate) async fn health_check() -> impl IntoResponse {
     Json(HealthCheck {
         status: "ok".to_string(),
         timestamp: chrono::Local::now().to_rfc2822(),
     })
 }
 
-#[derive(Serialize)]
-struct HealthCheck {
+#[derive(Serialize, utoipa::ToSchema)]
+pub(crate) struct HealthCheck {
     status: String,
     timestamp: String,
 }
