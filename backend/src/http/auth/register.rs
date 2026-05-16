@@ -15,6 +15,18 @@ use regex::Regex;
 const VERIFICATION_CODE_LENGTH: usize = 6;
 static EMAIL_REGEX: OnceLock<Regex> = OnceLock::new();
 
+#[utoipa::path(
+    post,
+    path = "/api/auth/register",
+    tag = "auth",
+    request_body = RegisterRequest,
+    responses(
+        (status = 200, description = "User registered successfully", body = RegisterResponse),
+        (status = 400, description = "Invalid request", body = crate::http::error::ApiError),
+        (status = 409, description = "Email already exists", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    )
+)]
 pub async fn register_user(
     State(ctx): State<ApiContext>,
     Json(req): Json<RegisterRequest>,

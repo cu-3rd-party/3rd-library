@@ -1,10 +1,10 @@
-mod create;
-mod get;
-mod get_single;
+pub(crate) mod create;
+pub(crate) mod get;
+pub(crate) mod get_single;
 mod helpers;
-mod list;
+pub(crate) mod list;
 pub mod models;
-mod update;
+pub(crate) mod update;
 
 use axum::extract::DefaultBodyLimit;
 pub use models::*;
@@ -20,14 +20,14 @@ use update::update_submission;
 
 pub fn router() -> Router<ApiContext> {
     Router::new()
-        .route("/materials", get(list_materials))
-        .route("/materials/{materialId}", get(get_material))
+        .route("/api/materials", get(list_materials))
+        .route("/api/materials/{materialId}", get(get_material))
         .route(
-            "/materials/submissions",
+            "/api/materials/submissions",
             get(list_submissions).post(create_submission),
         )
         .route(
-            "/materials/submissions/{submissionId}",
+            "/api/materials/submissions/{submissionId}",
             get(get_submission_by_id).patch(update_submission),
         )
         .layer(DefaultBodyLimit::max(30 * 1024 * 1024 * 1024))

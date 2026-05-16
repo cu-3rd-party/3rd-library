@@ -12,6 +12,20 @@ fn to_rfc3339(dt: DateTime<Utc>) -> String {
     dt.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string()
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/materials",
+    tag = "materials",
+    params(ListMaterialsQuery),
+    responses(
+        (status = 200, description = "Published materials list", body = PaginatedMaterialsResponse),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    ),
+    security(
+        (),
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn list_materials(
     Query(query): Query<ListMaterialsQuery>,
     _maybe_auth_user: MaybeAuthUser,
@@ -100,6 +114,18 @@ pub async fn list_materials(
     }))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/materials/submissions",
+    tag = "materials",
+    params(ListSubmissionsQuery),
+    responses(
+        (status = 200, description = "Current user submissions", body = PaginatedSubmissionsResponse),
+        (status = 401, description = "Authentication required", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    ),
+    security(("bearer_auth" = []))
+)]
 pub async fn list_submissions(
     auth_user: AuthUser,
     Query(query): Query<ListSubmissionsQuery>,

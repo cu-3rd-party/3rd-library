@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct RegisterRequest {
     pub name: String,
@@ -9,34 +10,34 @@ pub struct RegisterRequest {
     pub password: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct VerifyEmailRequest {
     pub email: String,
     pub code: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct ResendVerificationCodeRequest {
     pub email: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct LoginRequest {
     pub email: String,
     pub password: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct RefreshTokenRequest {
     #[serde(rename = "refreshToken")]
     pub refresh_token: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct WebUser {
     pub id: Uuid,
@@ -48,7 +49,7 @@ pub struct WebUser {
     pub roles: Vec<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct TokenPair {
     pub access_token: String,
@@ -56,14 +57,14 @@ pub struct TokenPair {
     pub expires_in: u64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct AuthResponse {
     pub user: WebUser,
     pub tokens: TokenPair,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct RegisterResponse {
     pub user: WebUser,

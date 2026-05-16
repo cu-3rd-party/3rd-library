@@ -21,15 +21,15 @@ pub use error::{Error, ResultExt};
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 use crate::metrics;
-use axum::http::{header, HeaderValue};
+use axum::http::HeaderValue;
 use axum::response::IntoResponse;
 use axum::routing::get;
+use auth::ApiDoc;
 use log::info;
 use s3::Bucket;
 use serde::Serialize;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use utoipa::OpenApi;
-use utoipa::openapi::OpenApiBuilder;
 use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(Clone)]
@@ -114,24 +114,23 @@ pub async fn serve(
     .context("error running HTTP server")
 }
 
-#[derive(OpenApi)]
-#[openapi(
-    info(description = "Документация к бекенду 3rd-library (даже не нейрослоп)")
-)]
-pub struct ApiDoc;
-
 fn api_router() -> Router<ApiContext> {
     auth::router()
         .merge(users::router())
         .merge(materials::router())
         .merge(moderation::router())
         .route("/api/health", get(health_check))
-        .merge(SwaggerUi::new("/swagger-ui")
-            .url("/api-docs/openapi.json", ApiDoc::openapi()))
+        .merge(SwaggerUi::new("/api/docs/swagger-ui")
+            .url("/api/docs/openapi.json", ApiDoc::openapi()))
 }
 
-#[utoipa::path(get, path = "/api/health", responses((status = 200, body = HealthCheck)))]
-async fn health_check() -> impl IntoResponse {
+#[utoipa::path(
+    get,
+    path = "/api/health",
+    tag = "system",
+    responses((status = 200, description = "Service is healthy", body = HealthCheck))
+)]
+pub(crate) async fn health_check() -> impl IntoResponse {
     Json(HealthCheck {
         status: "ok".to_string(),
         timestamp: chrono::Local::now().to_rfc2822(),
@@ -139,7 +138,7 @@ async fn health_check() -> impl IntoResponse {
 }
 
 #[derive(Serialize, utoipa::ToSchema)]
-struct HealthCheck {
+pub(crate) struct HealthCheck {
     status: String,
     timestamp: String,
 }

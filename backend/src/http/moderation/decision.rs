@@ -10,6 +10,22 @@ use crate::http::materials::models::Submission;
 
 use super::models::ModerationDecisionRequest;
 
+#[utoipa::path(
+    post,
+    path = "/api/moderation/submissions/{submissionId}/decision",
+    tag = "moderation",
+    params(("submissionId" = uuid::Uuid, Path, description = "Submission id")),
+    request_body = ModerationDecisionRequest,
+    responses(
+        (status = 200, description = "Moderation decision applied", body = Submission),
+        (status = 400, description = "Invalid action or submission state", body = crate::http::error::ApiError),
+        (status = 401, description = "Authentication required", body = crate::http::error::ApiError),
+        (status = 403, description = "Moderator role required", body = crate::http::error::ApiError),
+        (status = 404, description = "Submission not found", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    ),
+    security(("bearer_auth" = []))
+)]
 pub async fn moderation_decision(
     Path(submission_id): Path<uuid::Uuid>,
     auth_user: AuthUser,

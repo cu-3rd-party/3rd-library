@@ -12,6 +12,17 @@ fn to_rfc3339(dt: DateTime<Utc>) -> String {
     dt.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string()
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/materials/{materialId}",
+    tag = "materials",
+    params(("materialId" = uuid::Uuid, Path, description = "Material id")),
+    responses(
+        (status = 200, description = "Material details", body = MaterialDetails),
+        (status = 404, description = "Material not found", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    )
+)]
 pub async fn get_material(
     Path(material_id): Path<uuid::Uuid>,
     State(ctx): State<ApiContext>,

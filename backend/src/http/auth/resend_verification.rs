@@ -8,6 +8,18 @@ use crate::http::error::Error;
 use crate::smtp;
 use rand::Rng;
 
+#[utoipa::path(
+    post,
+    path = "/api/auth/resend-verification-code",
+    tag = "auth",
+    request_body = ResendVerificationCodeRequest,
+    responses(
+        (status = 200, description = "Verification code resent"),
+        (status = 404, description = "User not found or already verified", body = crate::http::error::ApiError),
+        (status = 429, description = "Verification code requested too recently", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    )
+)]
 pub async fn resend_verification_code(
     State(ctx): State<ApiContext>,
     Json(req): Json<ResendVerificationCodeRequest>,

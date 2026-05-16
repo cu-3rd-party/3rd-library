@@ -1,7 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="deploy" type="docker-deploy" factoryName="docker-compose.yml" server-name="nxs">
+  <configuration default="false" name="deploy" type="docker-deploy" factoryName="docker-compose.yml">
     <deployment type="docker-compose.yml">
       <settings>
+        <option name="containerName" value="" />
         <option name="envFilePath" value="$PROJECT_DIR$/env/backend.env" />
         <option name="envFilePaths">
           <list>

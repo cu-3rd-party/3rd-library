@@ -4,9 +4,10 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
 use sqlx::postgres::PgRow;
+use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Material {
     pub id: Uuid,
     pub author_id: Uuid,
@@ -21,7 +22,7 @@ pub struct Material {
     pub pub_date: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct MaterialFile {
     pub id: Uuid,
     pub name: String,
@@ -31,7 +32,7 @@ pub struct MaterialFile {
     pub url: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct MaterialDetails {
     #[serde(flatten)]
     pub material: Material,
@@ -40,7 +41,7 @@ pub struct MaterialDetails {
     pub submitted_at: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct PaginatedMaterialsResponse {
     pub items: Vec<Material>,
     pub page: i64,
@@ -48,7 +49,7 @@ pub struct PaginatedMaterialsResponse {
     pub total: i64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, IntoParams, ToSchema)]
 pub struct ListMaterialsQuery {
     pub search: Option<String>,
     pub courses: Option<String>,
@@ -61,14 +62,14 @@ pub struct ListMaterialsQuery {
     pub limit: Option<i64>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, IntoParams, ToSchema)]
 pub struct ListSubmissionsQuery {
     pub status: Option<String>,
     pub page: Option<i64>,
     pub limit: Option<i64>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Submission {
     pub id: Uuid,
     pub files: Vec<MaterialFile>,
@@ -106,7 +107,7 @@ impl From<PgRow> for Submission {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct PaginatedSubmissionsResponse {
     pub items: Vec<Submission>,
     pub page: i64,
@@ -114,7 +115,7 @@ pub struct PaginatedSubmissionsResponse {
     pub total: i64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct CreateSubmissionRequest {
     pub title: String,
     pub description: Option<String>,
@@ -125,7 +126,7 @@ pub struct CreateSubmissionRequest {
     pub files: Option<Vec<Vec<u8>>>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct UpdateSubmissionRequest {
     pub title: Option<String>,
     pub description: Option<String>,

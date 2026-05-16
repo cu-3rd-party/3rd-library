@@ -1,7 +1,6 @@
 use crate::http::{ApiContext, Result};
 use axum::Json;
 use axum::extract::{Query, State};
-use serde::Deserialize;
 use sqlx::Row;
 
 use crate::http::error::Error;
@@ -10,13 +9,19 @@ use crate::http::materials::models::Submission;
 
 use super::models::*;
 
-#[derive(Deserialize)]
-pub struct ModerationQuery {
-    pub status: Option<String>,
-    pub page: Option<i64>,
-    pub limit: Option<i64>,
-}
-
+#[utoipa::path(
+    get,
+    path = "/api/moderation/submissions",
+    tag = "moderation",
+    params(ModerationQuery),
+    responses(
+        (status = 200, description = "Moderation submissions list", body = PaginatedModerationResponse),
+        (status = 401, description = "Authentication required", body = crate::http::error::ApiError),
+        (status = 403, description = "Moderator role required", body = crate::http::error::ApiError),
+        (status = 500, description = "Internal server error", body = crate::http::error::ApiError)
+    ),
+    security(("bearer_auth" = []))
+)]
 pub async fn list_moderation_submissions(
     auth_user: AuthUser,
     Query(query): Query<ModerationQuery>,
@@ -80,7 +85,7 @@ pub async fn list_moderation_submissions(
             from submission s
             inner join web_user u on s.user_id = u.user_id
             where ($1::text is null or s.status = $1)
-            order by s.created_at asc
+            order by s.created_at
             limit $2 offset $3
         "#,
     )

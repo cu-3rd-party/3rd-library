@@ -1,8 +1,9 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use utoipa::{IntoParams, ToSchema};
 
 use crate::http::materials::models::Submission;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct SubmissionStatusCounters {
     pub all: i64,
     pub draft: i64,
@@ -11,7 +12,7 @@ pub struct SubmissionStatusCounters {
     pub approved: i64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct PaginatedModerationResponse {
     pub items: Vec<Submission>,
     pub page: i64,
@@ -20,8 +21,15 @@ pub struct PaginatedModerationResponse {
     pub counters: SubmissionStatusCounters,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct ModerationDecisionRequest {
     pub action: String,
     pub moderator_comment: Option<String>,
+}
+
+#[derive(Deserialize, IntoParams, ToSchema)]
+pub struct ModerationQuery {
+    pub status: Option<String>,
+    pub page: Option<i64>,
+    pub limit: Option<i64>,
 }
