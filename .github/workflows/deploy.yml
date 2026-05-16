@@ -2,10 +2,11 @@ name: Deploy
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: [Backend Unit Tests]
-    types: [completed]
-    branches: [master]
+
+#  workflow_run:
+#    workflows: [Backend Unit Tests]
+#    types: [completed]
+#    branches: [master]
 
 jobs:
   deploy:
