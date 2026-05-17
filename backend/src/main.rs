@@ -14,6 +14,10 @@ use backend::http;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
+    #[cfg(feature = "smtp")]
+    rustls::crypto::aws_lc_rs::default_provider()
+        .install_default()
+        .map_err(|_| anyhow::anyhow!("failed to install rustls crypto provider"))?;
 
     let config = Config::init_from_env();
     #[cfg(debug_assertions)]
