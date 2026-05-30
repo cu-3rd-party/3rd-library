@@ -2286,6 +2286,150 @@
         <option name="homepage" value="https://joelachance.github.io/text-ui/docs" />
         <option name="urlTemplate" value="https://joelachance.github.io/text-ui/r/{name}.json" />
       </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-bklit" />
+        <option name="name" value="Bklit" />
+        <option name="namespace" value="@bklit" />
+        <option name="baseUrl" value="https://ui.bklit.com/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Open-source composable chart components for React — line, area, bar, pie, radar, maps, and more. Built with Visx, Motion, and shadcn/ui." />
+        <option name="homepage" value="https://ui.bklit.com" />
+        <option name="urlTemplate" value="https://ui.bklit.com/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-corr" />
+        <option name="name" value="Corr" />
+        <option name="namespace" value="@corr" />
+        <option name="baseUrl" value="https://ui.corr.sh/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="A collection of shadcn-based React components, charts, animated components, and blocks built over time." />
+        <option name="homepage" value="https://ui.corr.sh" />
+        <option name="urlTemplate" value="https://ui.corr.sh/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-gymnopedies" />
+        <option name="name" value="Gymnopedies" />
+        <option name="namespace" value="@gymnopedies" />
+        <option name="baseUrl" value="https://gymnopedies.shoota.work/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="A dark, serif, glow-leaning shadcn registry of read-only components for blogs, essays, and long-form reading experiences — inspired by the quiet, candlelit cabaret of Erik Satie's Gymnopédies." />
+        <option name="homepage" value="https://gymnopedies.shoota.work" />
+        <option name="urlTemplate" value="https://gymnopedies.shoota.work/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-paddle" />
+        <option name="name" value="Paddle" />
+        <option name="namespace" value="@paddle" />
+        <option name="baseUrl" value="https://developer.paddle.com/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Drop-in components for building checkouts, pricing pages, and subscription management screens using Paddle Billing." />
+        <option name="homepage" value="https://developer.paddle.com/" />
+        <option name="urlTemplate" value="https://developer.paddle.com/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-trophy-ui" />
+        <option name="name" value="Trophy-ui" />
+        <option name="namespace" value="@trophy-ui" />
+        <option name="baseUrl" value="https://ui.trophy.so/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Open-source gamification UI components for streaks, achievements, leaderboards, points, and more. Built on shadcn/ui and Tailwind CSS." />
+        <option name="homepage" value="https://ui.trophy.so" />
+        <option name="urlTemplate" value="https://ui.trophy.so/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-toc-cn" />
+        <option name="name" value="Toc-cn" />
+        <option name="namespace" value="@toc-cn" />
+        <option name="baseUrl" value="https://tocn.vercel.app/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Documentation-style in-page table of contents with scroll spy, animated SVG tree indicator, and mobile sticky collapsible." />
+        <option name="homepage" value="https://tocn.vercel.app" />
+        <option name="urlTemplate" value="https://tocn.vercel.app/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-framecn" />
+        <option name="name" value="Framecn" />
+        <option name="namespace" value="@framecn" />
+        <option name="baseUrl" value="https://framecn.vercel.app/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Beautiful videos, made simple. Ready to use, customizable video components for React." />
+        <option name="homepage" value="https://framecn.vercel.app" />
+        <option name="urlTemplate" value="https://framecn.vercel.app/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-turbopills-ui" />
+        <option name="name" value="Turbopills-ui" />
+        <option name="namespace" value="@turbopills-ui" />
+        <option name="baseUrl" value="https://ui.turbopills.com/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Beautiful, accessible, and customizable React components for your telehealth applications." />
+        <option name="homepage" value="https://www.turbopills.com/ui/docs" />
+        <option name="urlTemplate" value="https://ui.turbopills.com/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-nexus-labs" />
+        <option name="name" value="Nexus-labs" />
+        <option name="namespace" value="@nexus-labs" />
+        <option name="baseUrl" value="https://nexus-ui.com/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Motion-native animated components for Next.js — backgrounds, heroes, inputs, carousels, and more. Open source. Copy-ready TypeScript." />
+        <option name="homepage" value="https://nexus-ui.com" />
+        <option name="urlTemplate" value="https://nexus-ui.com/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-wensity" />
+        <option name="name" value="Wensity" />
+        <option name="namespace" value="@wensity" />
+        <option name="baseUrl" value="https://raw.githubusercontent.com/ksparth12/wensity-shadcn-registry/main" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Motion-rich React components for AI interfaces, SaaS blocks, and cinematic interactions. Free Wensity components only." />
+        <option name="homepage" value="https://wensity.com" />
+        <option name="urlTemplate" value="https://raw.githubusercontent.com/ksparth12/wensity-shadcn-registry/main/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-dominik-ui" />
+        <option name="name" value="Dominik-ui" />
+        <option name="namespace" value="@dominik-ui" />
+        <option name="baseUrl" value="https://dominikkoch.dev/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Opinionated components and tools for building modern AI interfaces." />
+        <option name="homepage" value="https://dominikkoch.dev" />
+        <option name="urlTemplate" value="https://dominikkoch.dev/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-blockus" />
+        <option name="name" value="Blockus" />
+        <option name="namespace" value="@blockus" />
+        <option name="baseUrl" value="https://blockus.lndevui.com/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Production-ready React blocks built on shadcn/ui and Tailwind — drop them in, swap the copy, ship the page. Heroes, pricing and footer sections crafted by hand." />
+        <option name="homepage" value="https://blockus.lndevui.com" />
+        <option name="urlTemplate" value="https://blockus.lndevui.com/r/{name}.json" />
+      </RegistryConfigState>
     </registryConfigs>
   </component>
 </project>

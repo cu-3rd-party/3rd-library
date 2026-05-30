@@ -30,6 +30,8 @@ pub async fn create_submission(
     let submission_id = uuid::Uuid::new_v4();
     let now = Utc::now();
     let mut files = vec![];
+    let mut has_data = false;
+    let mut tx = ctx.db.begin().await?;
 
     while let Some(field) = multipart
         .next_field()
@@ -57,8 +59,9 @@ pub async fn create_submission(
                     .bind(&req.r#type)
                     .bind(&req.difficulty)
                     .bind(now)
-                    .execute(&ctx.db)
+                    .execute(&mut *tx)
                     .await?;
+                has_data = true;
             }
             "files" => {
                 let file_name = FileName::new_valid(
@@ -72,12 +75,12 @@ pub async fn create_submission(
                     .content_type()
                     .map(|s| s.to_string())
                     .ok_or_else(|| Error::BadRequest)?;
-                let content = field.text().await.map_err(|_| Error::BadRequest)?;
+                let content = field.bytes().await.map_err(|_| Error::BadRequest)?;
                 let key = format!("/materials/{}", file_name.name);
 
                 let result = ctx
                     .s3bucket
-                    .put_object_with_content_type(&key, content.as_bytes(), &mime_type)
+                    .put_object_with_content_type(&key, &content, &mime_type)
                     .await
                     .map_err(|err| Error::Anyhow(anyhow!(err)))?;
                 debug!(
@@ -90,7 +93,7 @@ pub async fn create_submission(
                     id: Uuid::new_v4(),
                     name: file_name.name,
                     extension: file_name.extension,
-                    size_bytes: content.as_bytes().len() as i64,
+                    size_bytes: content.len() as i64,
                     mime_type: Some(mime_type),
                     url: Some(key),
                 };
@@ -105,7 +108,7 @@ pub async fn create_submission(
                     .bind(&file.extension)
                     .bind(&file.mime_type)
                     .bind(&file.url)
-                    .execute(&ctx.db)
+                    .execute(&mut *tx)
                     .await?;
 
                 files.push(file);
@@ -115,6 +118,20 @@ pub async fn create_submission(
             }
         }
     }
+
+    if !has_data {
+        return Err(Error::BadRequest);
+    }
+
+    for file in &files {
+        sqlx::query(r#"insert into submission_file_rel (submission_id, file_id) values ($1, $2)"#)
+            .bind(submission_id)
+            .bind(file.id)
+            .execute(&mut *tx)
+            .await?;
+    }
+
+    tx.commit().await?;
 
     Ok(Json(Submission {
         id: submission_id,

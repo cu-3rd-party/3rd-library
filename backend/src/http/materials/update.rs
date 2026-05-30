@@ -165,12 +165,12 @@ pub async fn update_submission(
                     .content_type()
                     .map(|s| s.to_string())
                     .ok_or_else(|| Error::BadRequest)?;
-                let content = field.text().await.map_err(|_| Error::BadRequest)?;
+                let content = field.bytes().await.map_err(|_| Error::BadRequest)?;
                 let key = format!("/materials/{}", file_name.name);
 
                 let result = ctx
                     .s3bucket
-                    .put_object_with_content_type(&key, content.as_bytes(), &mime_type)
+                    .put_object_with_content_type(&key, &content, &mime_type)
                     .await
                     .map_err(|err| Error::Anyhow(anyhow!(err)))?;
                 debug!(
@@ -183,7 +183,7 @@ pub async fn update_submission(
                     id: Uuid::new_v4(),
                     name: file_name.name,
                     extension: file_name.extension,
-                    size_bytes: content.as_bytes().len() as i64,
+                    size_bytes: content.len() as i64,
                     mime_type: Some(mime_type),
                     url: Some(key),
                 };
