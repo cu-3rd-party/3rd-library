@@ -9,12 +9,13 @@ RUN corepack enable && corepack prepare pnpm@11.1.2 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
-ARG VITE_API_URL=http://localhost:5173
+# Пусто — API на том же домене (/api), как в self-service; локально — адрес бэкенда
+ARG VITE_API_URL=""
 ENV VITE_API_URL=${VITE_API_URL}
 RUN pnpm build
 
 FROM nginx:alpine
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY --chmod=644 nginx.conf /etc/nginx/nginx.conf
 COPY --from=build /app/dist /usr/share/nginx/html
-EXPOSE 80 5173
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]

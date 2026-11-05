@@ -1,0 +1,42 @@
+[package]
+name = "library-infrastructure"
+description = "Инфраструктура: sqlx-репозитории и UnitOfWork, сессии в Postgres, rate limit, S3, SMTP, JWT, argon2, метрики."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+authors.workspace = true
+
+[features]
+smtp = ["dep:mail-send", "dep:rust-embed", "dep:ammonia"]
+
+[dependencies]
+library-domain.workspace = true
+library-application.workspace = true
+library-migration.workspace = true
+ammonia = { workspace = true, optional = true }
+anyhow.workspace = true
+argon2.workspace = true
+async-trait.workspace = true
+bytes.workspace = true
+chrono.workspace = true
+hmac.workspace = true
+jwt.workspace = true
+mail-send = { workspace = true, optional = true }
+prometheus.workspace = true
+rand.workspace = true
+rust-embed = { workspace = true, optional = true }
+rust-s3.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+library-test-support.workspace = true
+
+[lints]
+workspace = true

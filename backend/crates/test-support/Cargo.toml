@@ -1,0 +1,22 @@
+[package]
+name = "library-test-support"
+description = "Общий PostgreSQL для интеграционных тестов: один сервер на тестовый бинарь, отдельная БД на тест."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+authors.workspace = true
+
+[dependencies]
+library-migration.workspace = true
+dtor.workspace = true
+sqlx.workspace = true
+testcontainers-modules.workspace = true
+tokio.workspace = true
+url.workspace = true
+uuid.workspace = true
+
+# без workspace-линтов: `#[dtor(unsafe)]` несовместим с `unsafe_code = "forbid"`
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+double_must_use = "allow"

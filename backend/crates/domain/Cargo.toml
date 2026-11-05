@@ -1,0 +1,19 @@
+[package]
+name = "library-domain"
+description = "Доменный слой: сущности, value objects, контракты репозиториев. Без зависимостей от БД и web."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+authors.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+chrono.workspace = true
+rand.workspace = true
+regex.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

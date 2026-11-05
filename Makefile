@@ -1,14 +1,15 @@
-COLOR_RESET := \033[0m
-COLOR_CYAN := \033[0;36m
-
-.PHONY: backend-check backend-test e2e
+.PHONY: backend-check backend-test backend-lint run
 
 backend-check:
-	cargo check -p backend
+	cargo check --workspace
 
+# интеграционным тестам нужен Docker или TEST_DATABASE_URL
 backend-test:
-	cargo test -p backend
+	cargo test --workspace
 
-e2e:
-	@printf "$(COLOR_CYAN)Running Selenium E2E tests...$(COLOR_RESET)\n"
-	@python e2e/run_e2e.py
+backend-lint:
+	cargo fmt --all --check
+	cargo clippy --workspace --all-targets --features library-web/smtp -- -D warnings
+
+run:
+	cargo run -p library-web

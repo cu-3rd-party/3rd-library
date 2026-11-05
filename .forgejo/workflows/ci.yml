@@ -1,0 +1,185 @@
+name: CI and deploy
+
+# Тесты — на каждый пуш и PR. Доставка в self-service (проект library):
+#   dev  (dev.lib.cu3rd.ru)  — каждый пуш в master;
+#   prod (prod.lib.cu3rd.ru) — ручной запуск (Run workflow на master, поле ref: тег или коммит, пусто — master)
+#                              или пуш тега на коммит из master.
+# self-service принимает доставки только из запусков на master, поэтому пуш тега не деплоит сам,
+# а запускает этот же воркфлоу на master с ref = тег.
+on:
+  push:
+    branches: [master]
+    tags: ['*']
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Тег или коммит из master для prod (пусто — текущий master)
+        required: false
+        default: ''
+
+env:
+  # что собирать и выкатывать: при ручном запуске — ref из формы, иначе — коммит события
+  TARGET_REF: ${{ inputs.ref || github.sha }}
+
+jobs:
+  backend:
+    if: github.ref_type != 'tag'
+    runs-on: homelab-docker
+    container: ghcr.io/catthehacker/ubuntu:act-24.04
+    timeout-minutes: 40
+    # один сервер на все тесты, по БД на тест (см. library-test-support)
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+    env:
+      TEST_DATABASE_URL: postgres://postgres:postgres@postgres:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_REF }}
+          persist-credentials: false
+      - name: Install Rust
+        run: |
+          if ! command -v cargo >/dev/null; then
+            curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable --component clippy,rustfmt
+            echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          fi
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --locked --features library-web/smtp -- -D warnings
+      - run: cargo test --workspace --locked
+
+  # Образы с тегом = sha коммита; в доставке тот же тег у обоих приложений
+  publish:
+    needs: backend
+    if: github.event_name != 'pull_request' && github.ref_type != 'tag'
+    runs-on: homelab-docker
+    container: ghcr.io/catthehacker/ubuntu:act-24.04
+    timeout-minutes: 60
+    outputs:
+      sha: ${{ steps.target.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_REF }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Resolve target commit
+        id: target
+        run: |
+          set -euo pipefail
+          sha=$(git rev-parse HEAD)
+          git fetch --quiet origin master
+          # в prod — только то, что уже в master
+          if ! git merge-base --is-ancestor "$sha" FETCH_HEAD; then
+            echo "::error::$TARGET_REF ($sha) is not on master"
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - name: Build and push images
+        env:
+          REGISTRY_USER: ${{ vars.REGISTRY_USER }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+          IMAGE_TAG: ${{ steps.target.outputs.sha }}
+        run: |
+          set -euo pipefail
+          export DOCKER_CONFIG
+          DOCKER_CONFIG=$(mktemp -d)
+          trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+          printf '%s' "$REGISTRY_TOKEN" | docker login git.cu3rd.ru --username "$REGISTRY_USER" --password-stdin
+          registry=git.cu3rd.ru/cu3rd/3rd-library
+          docker build -f backend/Dockerfile -t "$registry-backend:$IMAGE_TAG" .
+          docker build -t "$registry-frontend:$IMAGE_TAG" frontend
+          docker push "$registry-backend:$IMAGE_TAG"
+          docker push "$registry-frontend:$IMAGE_TAG"
+
+  deploy-dev:
+    needs: publish
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    concurrency: deploy-dev
+    runs-on: homelab-docker
+    # Подтверждает происхождение доставки: PR с новым тегом сливает self-service-service без ревью SRE
+    enable-openid-connect: true
+    container: ghcr.io/catthehacker/ubuntu:act-24.04
+    steps:
+      - name: Deliver backend
+        uses: https://git.cu3rd.ru/cu3rd/self-service/actions/deploy@master
+        with:
+          project: library
+          environment: dev
+          app: backend
+          tag: ${{ needs.publish.outputs.sha }}
+          secrets-json: ${{ toJSON(secrets) }}
+          variables-json: ${{ toJSON(vars) }}
+          delivery-token: ${{ secrets.SELF_SERVICE_DELIVERY_TOKEN }}
+      - name: Deliver frontend
+        uses: https://git.cu3rd.ru/cu3rd/self-service/actions/deploy@master
+        with:
+          project: library
+          environment: dev
+          app: frontend
+          tag: ${{ needs.publish.outputs.sha }}
+          secrets-json: ${{ toJSON(secrets) }}
+          variables-json: ${{ toJSON(vars) }}
+          delivery-token: ${{ secrets.SELF_SERVICE_DELIVERY_TOKEN }}
+
+  deploy-prod:
+    needs: publish
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
+    concurrency: deploy-prod
+    runs-on: homelab-docker
+    enable-openid-connect: true
+    container: ghcr.io/catthehacker/ubuntu:act-24.04
+    steps:
+      - name: Deliver backend
+        uses: https://git.cu3rd.ru/cu3rd/self-service/actions/deploy@master
+        with:
+          project: library
+          environment: prod
+          app: backend
+          tag: ${{ needs.publish.outputs.sha }}
+          secrets-json: ${{ toJSON(secrets) }}
+          variables-json: ${{ toJSON(vars) }}
+          delivery-token: ${{ secrets.SELF_SERVICE_DELIVERY_TOKEN }}
+      - name: Deliver frontend
+        uses: https://git.cu3rd.ru/cu3rd/self-service/actions/deploy@master
+        with:
+          project: library
+          environment: prod
+          app: frontend
+          tag: ${{ needs.publish.outputs.sha }}
+          secrets-json: ${{ toJSON(secrets) }}
+          variables-json: ${{ toJSON(vars) }}
+          delivery-token: ${{ secrets.SELF_SERVICE_DELIVERY_TOKEN }}
+
+  # Пуш тега: проверить, что тег на master, и запустить выкатку в prod из master
+  release-tag:
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    runs-on: homelab-docker
+    container: ghcr.io/catthehacker/ubuntu:act-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check the tag is on master
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          git fetch --quiet origin master
+          if ! git merge-base --is-ancestor HEAD FETCH_HEAD; then
+            echo "::error::tag $TAG is not on master, prod is not deployed"
+            exit 1
+          fi
+      - name: Run prod deploy on master
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          jq -n --arg tag "$TAG" '{ref: "master", inputs: {ref: $tag}}' |
+            curl -fsS -X POST -H "Authorization: token $TOKEN" -H 'Content-Type: application/json' \
+              "$GITHUB_SERVER_URL/api/v1/repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/dispatches" -d @-
+          echo "prod deploy of $TAG started: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions"

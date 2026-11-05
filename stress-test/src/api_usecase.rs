@@ -139,9 +139,7 @@ pub async fn api_usecase() -> Result<(), ApiError> {
     let comment_id = created_comment.comment.id;
     send_empty(
         client
-            .delete(format!(
-                "{API_URL}/api/articles/{slug}/comments/{comment_id}"
-            ))
+            .delete(format!("{API_URL}/api/articles/{slug}/comments/{comment_id}"))
             .header(AUTHORIZATION, format!("Token {token}"))
             .send()
             .await?,
@@ -180,10 +178,7 @@ impl MockData {
         let article_title = format!("Load test article {title_seed}");
         let article_description = generate_string(32);
         let article_body = format!("{} {}", generate_string(64), generate_string(64));
-        let article_tags = vec![
-            generate_string(6).to_lowercase(),
-            generate_string(6).to_lowercase(),
-        ];
+        let article_tags = vec![generate_string(6).to_lowercase(), generate_string(6).to_lowercase()];
 
         Self {
             username: generate_string(8),

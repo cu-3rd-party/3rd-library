@@ -1,0 +1,7 @@
+# Контекст — корень репозитория; отправляем только Rust-workspace
+*
+!Cargo.toml
+!Cargo.lock
+!backend/crates/
+!stress-test/
+backend/crates/*/tests/
