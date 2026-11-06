@@ -37,7 +37,7 @@ make backend-test     # все тесты; интеграционным нуже
 | Окружение | Домен | Когда |
 |---|---|---|
 | dev | https://dev.lib.cu3rd.ru | каждый пуш в `master` |
-| prod | https://prod.lib.cu3rd.ru | пуш тега на коммит из `master` или Actions → CI and deploy → Run workflow на `master` (поле `ref`: тег/коммит, пусто — текущий master) |
+| prod | https://lib.cu3rd.ru | пуш тега на коммит из `master` или Actions → CI and deploy → Run workflow на `master` (поле `ref`: тег/коммит, пусто — текущий master) |
 
 self-service принимает доставки только из запусков на `master`, поэтому пуш тега сам ничего не выкатывает:
 он проверяет, что тег на `master`, и запускает тот же воркфлоу на `master` с `ref = тег`.

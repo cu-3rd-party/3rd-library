@@ -2,7 +2,7 @@ name: CI and deploy
 
 # Тесты — на каждый пуш и PR. Доставка в self-service (проект library):
 #   dev  (dev.lib.cu3rd.ru)  — каждый пуш в master;
-#   prod (prod.lib.cu3rd.ru) — ручной запуск (Run workflow на master, поле ref: тег или коммит, пусто — master)
+#   prod (lib.cu3rd.ru) — ручной запуск (Run workflow на master, поле ref: тег или коммит, пусто — master)
 #                              или пуш тега на коммит из master.
 # self-service принимает доставки только из запусков на master, поэтому пуш тега не деплоит сам,
 # а запускает этот же воркфлоу на master с ref = тег.
