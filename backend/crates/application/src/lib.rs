@@ -5,6 +5,7 @@ mod access;
 pub mod auth;
 pub mod common;
 pub mod error;
+mod locks;
 pub mod materials;
 pub mod moderation;
 pub mod ports;

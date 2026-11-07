@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
 use chrono::{TimeDelta, Utc};
+use library_domain::common::now;
 use library_domain::users::{Email, User, UserRepository, VerificationCode};
 use uuid::Uuid;
 
 use super::{AuthResultDto, RegisterUser, Session, TokenClaims, TokenPairDto};
 use crate::ports::{Mailer, PasswordHasher, SessionStore, TokenCodec};
+use crate::locks::lock;
 use crate::users::UserDto;
 use crate::{AppError, AppResult};
 
@@ -46,7 +48,7 @@ impl AuthService {
         let email = Email::parse(&request.email)?;
         let password_hash = self.hasher.hash(request.password).await?;
         let code = VerificationCode::generate();
-        let user = User::register(email, request.name, password_hash, code.clone(), Utc::now());
+        let user = User::register(email, request.name, password_hash, code.clone(), now());
 
         if !self.users.insert(&user).await? {
             return Err(AppError::Conflict("Email already exists".into()));
@@ -59,13 +61,9 @@ impl AuthService {
 
     /// Подтверждение почты кодом; сразу открывает сессию.
     pub async fn verify_email(&self, email: &str, code: &str) -> AppResult<AuthResultDto> {
-        let mut user = self
-            .users
-            .find_by_email(email)
-            .await?
-            .ok_or_else(|| AppError::not_found(ENTITY, email))?;
+        let (_guard, mut user) = self.lock_by_email(email).await?;
 
-        user.verify_email(code, Utc::now())?;
+        user.verify_email(code, now())?;
         if !self.users.update(&user).await? {
             return Err(AppError::not_found(ENTITY, email));
         }
@@ -73,14 +71,12 @@ impl AuthService {
     }
 
     pub async fn resend_verification_code(&self, email: &str) -> AppResult<()> {
-        let mut user = self
-            .users
-            .find_by_email(email)
-            .await?
-            .filter(|user| !user.is_email_verified())
-            .ok_or_else(|| AppError::not_found(ENTITY, email))?;
+        let (_guard, mut user) = self.lock_by_email(email).await?;
+        if user.is_email_verified() {
+            return Err(AppError::not_found(ENTITY, email));
+        }
 
-        let now = Utc::now();
+        let now = now();
         if !user.can_reissue_code(now) {
             return Err(AppError::TooManyRequests);
         }
@@ -108,6 +104,8 @@ impl AuthService {
     /// Новая пара токенов по refresh-токену; старая сессия закрывается.
     pub async fn refresh(&self, refresh_token: &str) -> AppResult<TokenPairDto> {
         let session_id = Uuid::parse_str(refresh_token).map_err(|_| AppError::Unauthorized)?;
+        // одна сессия — одна ротация: параллельный refresh тем же токеном получит 401
+        let _guard = lock(session_id).await;
         let session = self.find_session(session_id).await?;
 
         self.sessions.delete(session_id).await?;
@@ -150,6 +148,15 @@ impl AuthService {
                 Err(AppError::Unauthorized)
             }
         }
+    }
+
+    /// Пользователь по email под замком сущности: состояние перечитывается уже под замком.
+    async fn lock_by_email(&self, email: &str) -> AppResult<(tokio::sync::MutexGuard<'static, ()>, User)> {
+        let not_found = || AppError::not_found(ENTITY, email);
+        let id = self.users.find_by_email(email).await?.ok_or_else(not_found)?.id();
+        let guard = lock(id.into_inner()).await;
+        let user = self.users.find_by_id(id).await?.ok_or_else(not_found)?;
+        Ok((guard, user))
     }
 
     async fn sign_in(&self, user: &User) -> AppResult<AuthResultDto> {
@@ -300,9 +307,11 @@ mod tests {
 
     fn users_with(existing: User) -> MockUsers {
         let mut users = MockUsers::new();
+        let by_id = existing.clone();
         users
             .expect_find_by_email()
             .returning(move |_| Ok(Some(existing.clone())));
+        users.expect_find_by_id().returning(move |_| Ok(Some(by_id.clone())));
         users
     }
 

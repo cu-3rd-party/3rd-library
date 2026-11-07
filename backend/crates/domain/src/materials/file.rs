@@ -72,7 +72,7 @@ impl MaterialFile {
             name: name.name,
             size_bytes,
             mime_type,
-            created: Utc::now(),
+            created: crate::common::now(),
         }
     }
 }

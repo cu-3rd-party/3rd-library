@@ -7,7 +7,6 @@ pub mod metrics;
 pub mod persistence;
 pub mod rate_limit;
 pub mod security;
-pub mod sessions;
 pub mod storage;
 
 use std::sync::Arc;
@@ -21,18 +20,20 @@ use library_domain::users::UserRepository;
 use sqlx::PgPool;
 
 pub use crate::config::{InfrastructureConfig, RateLimitConfig, S3Config, SmtpConfig};
-use crate::persistence::Db;
-use crate::persistence::repositories::{SqlxMaterialRepository, SqlxSubmissionRepository, SqlxUserRepository};
-use crate::persistence::unit_of_work::SqlxUnitOfWork;
+use crate::persistence::Store;
+use crate::persistence::repositories::{
+    MemoryMaterialRepository, MemorySessionStore, MemorySubmissionRepository, MemoryUnitOfWork, MemoryUserRepository,
+};
 use crate::rate_limit::MemoryRateLimiter;
 use crate::security::{Argon2PasswordHasher, JwtTokenCodec};
-use crate::sessions::PgSessionStore;
 use crate::storage::S3FileStorage;
 
 /// Реализации доменных абстракций и портов приложения — аналог `AddInfrastructureServices`.
 #[derive(Clone)]
 pub struct Infrastructure {
     pub db: PgPool,
+    /// Состояние в памяти (например, чтобы вызвать сверку с БД раньше срока).
+    pub store: Arc<Store>,
     pub users: Arc<dyn UserRepository>,
     pub materials: Arc<dyn MaterialRepository>,
     pub submissions: Arc<dyn SubmissionRepository>,
@@ -48,7 +49,6 @@ pub struct Infrastructure {
 
 /// Адаптеры к сервисам с внешним состоянием (в тестах их заменяют фейками).
 pub struct Adapters {
-    pub sessions: Arc<dyn SessionStore>,
     pub storage: Arc<dyn FileStorage>,
     pub mailer: Arc<dyn Mailer>,
     pub rate_limiter: Option<Arc<dyn RateLimiter>>,
@@ -70,29 +70,33 @@ impl Infrastructure {
             .context("could not prepare the S3 bucket")?;
 
         let adapters = Adapters {
-            sessions: Arc::new(PgSessionStore::new(db.clone())),
             storage: Arc::new(storage),
             mailer: mail::mailer(config),
             rate_limiter: MemoryRateLimiter::new(&config.rate_limit)
                 .map(|limiter| Arc::new(limiter) as Arc<dyn RateLimiter>),
         };
-        Ok(Self::new(db, &config.hmac_key, adapters))
+        Self::new(db, &config.hmac_key, adapters).await
     }
 
-    /// Репозитории на `db`, argon2 и JWT — свои, остальное — из `adapters`.
-    pub fn new(db: PgPool, hmac_key: &str, adapters: Adapters) -> Self {
-        Self {
-            users: Arc::new(SqlxUserRepository::new(Db::Pool(db.clone()))),
-            materials: Arc::new(SqlxMaterialRepository::new(Db::Pool(db.clone()))),
-            submissions: Arc::new(SqlxSubmissionRepository::new(Db::Pool(db.clone()))),
-            unit_of_work: Arc::new(SqlxUnitOfWork::new(db.clone())),
-            password_hasher: Arc::new(Argon2PasswordHasher),
+    /// Состояние из `db` загружается в память ([`Store`]); репозитории, сессии, argon2 и JWT — свои,
+    /// остальное — из `adapters`.
+    pub async fn new(db: PgPool, hmac_key: &str, adapters: Adapters) -> anyhow::Result<Self> {
+        let store = Store::load(db.clone())
+            .await
+            .context("could not load the state from the database")?;
+        Ok(Self {
+            users: Arc::new(MemoryUserRepository::new(store.clone())),
+            materials: Arc::new(MemoryMaterialRepository::new(store.clone())),
+            submissions: Arc::new(MemorySubmissionRepository::new(store.clone())),
+            unit_of_work: Arc::new(MemoryUnitOfWork::new(store.clone())),
+            password_hasher: Arc::new(Argon2PasswordHasher::new()),
             tokens: Arc::new(JwtTokenCodec::new(hmac_key)),
-            sessions: adapters.sessions,
+            sessions: Arc::new(MemorySessionStore::new(store.clone())),
+            store,
             storage: adapters.storage,
             mailer: adapters.mailer,
             rate_limiter: adapters.rate_limiter,
             db,
-        }
+        })
     }
 }

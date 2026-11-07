@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use chrono::Utc;
-use library_domain::common::PageRequest;
+use library_domain::common::{PageRequest, now};
 use library_domain::submissions::{StatusCounters, SubmissionId, SubmissionRepository, SubmissionStatus};
 use library_domain::unit_of_work::UnitOfWork;
 use library_domain::users::{UserId, UserRepository};
@@ -9,6 +8,7 @@ use uuid::Uuid;
 
 use crate::access::is_moderator;
 use crate::common::PageDto;
+use crate::locks::lock;
 use crate::submissions::{SubmissionDto, parse_status_filter};
 use crate::{AppError, AppResult};
 
@@ -69,12 +69,13 @@ impl ModerationService {
     ) -> AppResult<SubmissionDto> {
         self.ensure_moderator(moderator).await?;
         let moderator = UserId::from(moderator);
+        let _guard = lock(id).await;
         let mut submission = self
             .submissions
             .find_by_id(SubmissionId::from(id))
             .await?
             .ok_or_else(|| AppError::not_found(ENTITY, id))?;
-        let now = Utc::now();
+        let now = now();
 
         match action {
             "approve" => {
@@ -119,6 +120,8 @@ mod tests {
     use library_domain::submissions::Submission;
     use library_domain::unit_of_work::Transaction;
     use library_domain::users::{Email, PasswordHash, User, UserData, VerificationCode};
+
+    use chrono::Utc;
 
     use super::*;
     use crate::testing::{MockMaterials, MockSubmissions, MockUsers};

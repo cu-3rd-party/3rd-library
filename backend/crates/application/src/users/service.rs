@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 use super::{AuthorDto, AuthorWithMaterialsDto, UpdateProfile, UserDto};
 use crate::common::PageDto;
+use crate::locks::lock;
 use crate::materials::MaterialDto;
 use crate::{AppError, AppResult};
 
@@ -28,6 +29,7 @@ impl UserService {
     }
 
     pub async fn update_profile(&self, user_id: Uuid, request: UpdateProfile) -> AppResult<UserDto> {
+        let _guard = lock(user_id).await;
         let mut user = self.find(user_id).await?;
         user.update_profile(request.name, request.bio);
 

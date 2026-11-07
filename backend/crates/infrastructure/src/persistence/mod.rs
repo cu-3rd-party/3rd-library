@@ -1,7 +1,8 @@
-mod db;
+mod like;
 pub mod repositories;
 mod rows;
-pub mod unit_of_work;
+mod store;
+mod writer;
 
 use std::time::Duration;
 
@@ -9,11 +10,12 @@ use library_migration::MIGRATOR;
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 
-pub use self::db::Db;
+pub use self::store::{AUTH_SYNC_INTERVAL, Store};
 
+/// Пул: полосы группового коммита, чтение ролей, загрузка при старте. Чтения данных в БД не ходят.
 pub async fn connect(database_url: &str) -> Result<PgPool, sqlx::Error> {
     PgPoolOptions::new()
-        .max_connections(50)
+        .max_connections(16)
         .acquire_timeout(Duration::from_secs(5))
         .connect(database_url)
         .await

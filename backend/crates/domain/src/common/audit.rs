@@ -1,5 +1,7 @@
 use chrono::{DateTime, Utc};
 
+use super::now;
+
 /// Аудит-метки сущности (`created_at`/`updated_at`). Обновляются самой сущностью при изменениях (`touch`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Audit {
@@ -9,7 +11,7 @@ pub struct Audit {
 
 impl Audit {
     pub fn new() -> Self {
-        let now = Utc::now();
+        let now = now();
         Self {
             created: now,
             last_modified: now,
@@ -22,7 +24,7 @@ impl Audit {
     }
 
     pub fn touch(&mut self) {
-        self.last_modified = Utc::now();
+        self.last_modified = now();
     }
 
     pub fn created(&self) -> DateTime<Utc> {

@@ -1,12 +1,12 @@
-//! Строки таблиц (sqlx) и маппинг в доменные модели. Колонки, допускающие NULL по схеме, — `Option`.
+//! Строки таблиц (sqlx) для загрузки состояния при старте и маппинг в доменные модели. Колонки, допускающие NULL по схеме, — `Option`.
 
 use chrono::{DateTime, Utc};
 use library_domain::RepositoryError;
 use library_domain::common::Audit;
 use library_domain::error::RepositoryResult;
-use library_domain::materials::{MaterialFile, MaterialInfo, MaterialSummary};
+use library_domain::materials::{MaterialFile, MaterialInfo};
 use library_domain::submissions::{Submission, SubmissionData, SubmissionStatus};
-use library_domain::users::{AuthorSummary, Email, PasswordHash, ROLE_USER, User, UserData, VerificationCode};
+use library_domain::users::{Email, PasswordHash, ROLE_USER, User, UserData, VerificationCode};
 use uuid::Uuid;
 
 pub(crate) const USER_COLUMNS: &str = "user_id, email, password_hash, name, bio, roles, is_email_verified, \
@@ -14,10 +14,6 @@ pub(crate) const USER_COLUMNS: &str = "user_id, email, password_hash, name, bio,
 
 pub(crate) const FILE_COLUMNS: &str =
     "mf.file_id, mf.user_id, mf.name, mf.size_bytes, mf.extension, mf.mime_type, mf.storage_key, mf.created_at";
-
-pub(crate) const MATERIAL_SUMMARY_SELECT: &str = "select m.material_id, m.user_id, u.name as author_name, m.title, \
-     m.description, m.courses, m.subjects, m.type, m.difficulty, m.published_at, m.created_at \
-     from material m inner join web_user u on m.user_id = u.user_id";
 
 pub(crate) const SUBMISSION_COLUMNS: &str = "s.submission_id, s.user_id, s.material_id, s.title, s.description, \
      s.courses, s.subjects, s.type, s.difficulty, s.status, s.moderator_id, s.moderator_comment, \
@@ -63,27 +59,6 @@ impl From<UserRow> for User {
 }
 
 #[derive(sqlx::FromRow)]
-pub(crate) struct AuthorRow {
-    user_id: Uuid,
-    name: String,
-    bio: Option<String>,
-    is_email_verified: Option<bool>,
-    materials_count: i64,
-}
-
-impl From<AuthorRow> for AuthorSummary {
-    fn from(row: AuthorRow) -> Self {
-        Self {
-            id: row.user_id.into(),
-            name: row.name,
-            bio: row.bio.unwrap_or_default(),
-            is_email_verified: row.is_email_verified.unwrap_or(false),
-            materials_count: row.materials_count,
-        }
-    }
-}
-
-#[derive(sqlx::FromRow)]
 pub(crate) struct FileRow {
     file_id: Uuid,
     user_id: Uuid,
@@ -110,10 +85,10 @@ impl From<FileRow> for MaterialFile {
     }
 }
 
-/// Файл с id заявки, к которой он прикреплён (пакетная загрузка файлов для списка заявок).
+/// Файл с id заявки или материала, к которому он прикреплён (`owner_id`).
 #[derive(sqlx::FromRow)]
 pub(crate) struct LinkedFileRow {
-    pub(crate) submission_id: Uuid,
+    pub(crate) owner_id: Uuid,
     #[sqlx(flatten)]
     pub(crate) file: FileRow,
 }
@@ -142,28 +117,17 @@ impl From<InfoRow> for MaterialInfo {
     }
 }
 
-#[derive(sqlx::FromRow)]
-pub(crate) struct MaterialSummaryRow {
-    material_id: Uuid,
-    user_id: Uuid,
-    author_name: String,
-    #[sqlx(flatten)]
-    info: InfoRow,
-    published_at: Option<DateTime<Utc>>,
-    created_at: Option<DateTime<Utc>>,
-}
+pub(crate) const MATERIAL_COLUMNS: &str = "m.material_id, m.user_id, m.title, m.description, m.courses, \
+     m.subjects, m.type, m.difficulty, m.published_at, m.created_at";
 
-impl From<MaterialSummaryRow> for MaterialSummary {
-    fn from(row: MaterialSummaryRow) -> Self {
-        Self {
-            id: row.material_id.into(),
-            author_id: row.user_id.into(),
-            author_name: row.author_name,
-            info: row.info.into(),
-            published_at: row.published_at,
-            created: row.created_at.unwrap_or_default(),
-        }
-    }
+#[derive(sqlx::FromRow)]
+pub(crate) struct MaterialRow {
+    pub(crate) material_id: Uuid,
+    pub(crate) user_id: Uuid,
+    #[sqlx(flatten)]
+    pub(crate) info: InfoRow,
+    pub(crate) published_at: Option<DateTime<Utc>>,
+    pub(crate) created_at: Option<DateTime<Utc>>,
 }
 
 #[derive(sqlx::FromRow)]

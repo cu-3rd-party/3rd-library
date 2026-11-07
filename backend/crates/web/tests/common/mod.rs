@@ -11,7 +11,7 @@ use axum::http::{HeaderMap, Method, Request, StatusCode, header};
 use bytes::Bytes;
 use http_body_util::BodyExt;
 use library_application::ports::{ExternalResult, FileStorage, Mailer};
-use library_infrastructure::sessions::PgSessionStore;
+use library_infrastructure::persistence::Store;
 use library_infrastructure::{Adapters, Infrastructure};
 use library_test_support::TestDatabase;
 use library_web::{AppState, app, cors_layer};
@@ -53,6 +53,7 @@ pub type Part<'a> = (&'a str, Option<&'a str>, Option<&'a str>, &'a [u8]);
 pub struct TestApp {
     pub router: Router,
     pub db: PgPool,
+    pub store: Arc<Store>,
     pub mailer: Arc<MemoryMailer>,
     pub storage: Arc<MemoryStorage>,
     _database: TestDatabase,
@@ -74,13 +75,15 @@ impl TestApp {
             db.clone(),
             "test-hmac-key",
             Adapters {
-                sessions: Arc::new(PgSessionStore::new(db.clone())),
                 storage: storage.clone(),
                 mailer: mailer.clone(),
                 rate_limiter: None,
             },
-        );
+        )
+        .await
+        .unwrap();
         Self {
+            store: infrastructure.store.clone(),
             router: app(AppState::new(infrastructure), cors_layer("").unwrap(), true),
             db,
             mailer,
@@ -192,7 +195,8 @@ impl TestApp {
         )
     }
 
-    /// Модератор: роль выдаётся напрямую в БД, как в проде.
+    /// Модератор: роль выдаётся напрямую в БД, как в проде; бэкенд подхватывает её при сверке с БД
+    /// (раз в минуту, здесь — сразу).
     pub async fn moderator(&self, email: &str) -> String {
         let (user_id, token, _) = self.verified_user(email).await;
         sqlx::query("update web_user set roles = array['user', 'moderator'] where user_id = $1")
@@ -200,6 +204,7 @@ impl TestApp {
             .execute(&self.db)
             .await
             .unwrap();
+        self.store.sync_auth().await.unwrap();
         token
     }
 

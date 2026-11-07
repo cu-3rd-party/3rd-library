@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use chrono::Utc;
-use library_domain::common::PageRequest;
+use library_domain::common::{PageRequest, now};
 use library_domain::materials::{FileId, FileName, MaterialFile, MaterialInfo};
 use library_domain::submissions::{Submission, SubmissionChanges, SubmissionId, SubmissionRepository};
 use library_domain::users::{UserId, UserRepository};
@@ -10,6 +9,7 @@ use uuid::Uuid;
 use super::{CreateSubmission, NewFile, SubmissionDto, UpdateSubmission, parse_status_filter};
 use crate::access::is_moderator;
 use crate::common::PageDto;
+use crate::locks::lock;
 use crate::ports::FileStorage;
 use crate::{AppError, AppResult};
 
@@ -65,7 +65,7 @@ impl SubmissionService {
             kind: request.kind,
             difficulty: request.difficulty,
         };
-        let submission = Submission::submit(author, info, files, Utc::now());
+        let submission = Submission::submit(author, info, files, now());
 
         self.submissions.insert(&submission).await?;
         Ok(SubmissionDto::from(&submission))
@@ -84,6 +84,7 @@ impl SubmissionService {
     /// Правка своей заявки в статусе `draft` или `rejected`.
     pub async fn update(&self, user_id: Uuid, id: Uuid, request: UpdateSubmission) -> AppResult<SubmissionDto> {
         let user = UserId::from(user_id);
+        let _guard = lock(id).await;
         let mut submission = self.find(id).await?;
         if !submission.is_owned_by(user) || !submission.is_editable() {
             return Err(AppError::Forbidden);
@@ -103,7 +104,7 @@ impl SubmissionService {
                     .map(|ids| ids.into_iter().map(FileId::from).collect()),
                 new_files,
             },
-            Utc::now(),
+            now(),
         )?;
 
         if !self.submissions.update(&submission).await? {
@@ -149,6 +150,8 @@ mod tests {
     use async_trait::async_trait;
     use bytes::Bytes;
     use library_domain::submissions::SubmissionStatus;
+
+    use chrono::Utc;
 
     use super::*;
     use crate::ports::ExternalResult;

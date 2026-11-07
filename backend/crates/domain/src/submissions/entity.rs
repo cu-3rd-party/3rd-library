@@ -95,6 +95,24 @@ impl Submission {
         }
     }
 
+    /// Обратно в состояние для хранилища (например, чтобы переупорядочить файлы).
+    pub fn into_data(self) -> SubmissionData {
+        SubmissionData {
+            id: self.id,
+            author: self.author,
+            material_id: self.material_id,
+            info: self.info,
+            status: self.status,
+            moderator_id: self.moderator_id,
+            moderator_comment: self.moderator_comment,
+            files: self.files,
+            submitted_at: self.submitted_at,
+            reviewed_at: self.reviewed_at,
+            published_at: self.published_at,
+            audit: self.audit,
+        }
+    }
+
     pub fn is_owned_by(&self, user: UserId) -> bool {
         self.author == user
     }

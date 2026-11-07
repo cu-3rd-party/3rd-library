@@ -143,6 +143,11 @@ impl User {
         self.audit.touch();
     }
 
+    /// Роли из хранилища: их выдают в БД в обход бэкенда, и состояние в памяти с ними сверяется.
+    pub fn sync_roles(&mut self, roles: Vec<String>) {
+        self.roles = roles;
+    }
+
     pub fn is_moderator(&self) -> bool {
         self.roles.iter().any(|role| role == ROLE_MODERATOR)
     }

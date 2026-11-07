@@ -13,12 +13,12 @@ async-trait.workspace = true
 bytes.workspace = true
 chrono.workspace = true
 thiserror.workspace = true
+tokio.workspace = true
 tracing.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
 mockall.workspace = true
-tokio.workspace = true
 
 [lints]
 workspace = true
