@@ -8,7 +8,6 @@ WORKDIR /src
 FROM chef AS planner
 COPY Cargo.toml Cargo.lock ./
 COPY backend/crates backend/crates
-COPY stress-test stress-test
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS build
@@ -21,7 +20,6 @@ RUN --mount=type=cache,id=cargo-registry,target=/usr/local/cargo/registry \
 # Layer 2: исходники
 COPY Cargo.toml Cargo.lock ./
 COPY backend/crates backend/crates
-COPY stress-test stress-test
 RUN --mount=type=cache,id=cargo-registry,target=/usr/local/cargo/registry \
     cargo build --release --locked --package library-web --features "$FEATURES" \
     && cp target/release/library-web /app

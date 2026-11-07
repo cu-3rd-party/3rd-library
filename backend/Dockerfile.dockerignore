@@ -3,5 +3,4 @@
 !Cargo.toml
 !Cargo.lock
 !backend/crates/
-!stress-test/
 backend/crates/*/tests/

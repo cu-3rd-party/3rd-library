@@ -4,10 +4,9 @@
 как в [template-rust-svelte](https://github.com/pxc1984/template-rust-svelte)) и React SPA (`frontend/`).
 
 ```
-Cargo.toml   Cargo workspace (members = backend/crates/*, stress-test), общие версии зависимостей и линты
+Cargo.toml   Cargo workspace (members = backend/crates/*), общие версии зависимостей и линты
 backend/     крейты domain / application / infrastructure / migration / test-support / web — см. backend/README.md
 frontend/    React + Vite, раздаётся nginx (порт 8080, без root)
-stress-test/ нагрузочный клиент
 ```
 
 ## Запуск
