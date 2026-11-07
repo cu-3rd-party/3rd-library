@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
 
     let infrastructure = Infrastructure::init(&config.infrastructure).await?;
     start_business_metrics_updater(infrastructure.db.clone());
-    let app = app(AppState::new(infrastructure), cors_layer(&config.cors_allowed_origin)?);
+    let app = app(AppState::new(infrastructure), cors_layer(&config.cors_allowed_origin)?, config.openapi_enabled);
 
     let metrics_listener = TcpListener::bind(config.metrics_addr)
         .await

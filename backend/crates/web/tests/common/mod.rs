@@ -81,7 +81,7 @@ impl TestApp {
             },
         );
         Self {
-            router: app(AppState::new(infrastructure), cors_layer("").unwrap()),
+            router: app(AppState::new(infrastructure), cors_layer("").unwrap(), true),
             db,
             mailer,
             storage,

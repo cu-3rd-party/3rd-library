@@ -17,7 +17,7 @@ use tower_http::trace::TraceLayer;
 use utoipa::openapi::security::{Http, HttpAuthScheme, SecurityScheme};
 use utoipa::{Modify, OpenApi};
 use utoipa_axum::router::OpenApiRouter;
-use utoipa_swagger_ui::SwaggerUi;
+use utoipa_scalar::{Scalar, Servable};
 
 pub use crate::state::AppState;
 
@@ -49,14 +49,25 @@ impl Modify for SecurityAddon {
     }
 }
 
-/// Полный роутер API: `/api/...`, Swagger UI на `/api/docs/swagger-ui`, rate limit, CORS, метрики, трейсинг.
-pub fn app(state: AppState, cors: CorsLayer) -> Router {
-    let (router, openapi) = OpenApiRouter::with_openapi(ApiDoc::openapi())
+/// Полный роутер API: `/api/...`, Scalar UI на `/scalar`, rate limit, CORS, метрики, трейсинг.
+pub fn app(state: AppState, cors: CorsLayer, openapi_enabled: bool) -> Router {
+    let (mut router, openapi) = OpenApiRouter::with_openapi(ApiDoc::openapi())
         .merge(routes::router())
         .split_for_parts();
 
+    if openapi_enabled {
+        router = router
+            .route(
+                "/openapi/v1.json",
+                axum::routing::get({
+                    let openapi = openapi.clone();
+                    move || async move { axum::Json(openapi) }
+                }),
+            )
+            .merge(Scalar::with_url("/scalar", openapi));
+    }
+
     router
-        .merge(SwaggerUi::new("/api/docs/swagger-ui").url("/api/docs/openapi.json", openapi))
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             rate_limit::rate_limit_middleware,

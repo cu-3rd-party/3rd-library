@@ -14,6 +14,7 @@ pub struct Config {
     /// `CORS_ALLOWED_ORIGIN`: пусто или `*` — любой.
     pub cors_allowed_origin: String,
     pub infrastructure: InfrastructureConfig,
+    pub openapi_enabled: bool,
 }
 
 impl Config {
@@ -43,6 +44,7 @@ impl Config {
                 },
                 smtp: smtp()?,
             },
+            openapi_enabled: var("OPENAPI_ENABLED", "true") != "false",
         })
     }
 }

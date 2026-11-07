@@ -8,3 +8,7 @@ AGENTS.md
 *.gitignore
 *.DS_Store
 uploads/
+
+perf/.state/
+perf/results/
+perf/k6/fixtures.json

@@ -1,0 +1,34 @@
+# Реальная инфраструктура для нагрузочного теста: PostgreSQL и S3 (RustFS) как в проде.
+# Порты смещены, чтобы не конфликтовать с dev-стеком из корневого docker-compose.yml.
+name: lib-perf
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: perf
+      POSTGRES_PASSWORD: perf
+      POSTGRES_DB: postgres
+    ports:
+      - "55432:5432"
+    volumes:
+      - perf-db:/var/lib/postgresql/data
+    command: ["postgres", "-c", "shared_buffers=512MB", "-c", "max_connections=200", "-c", "fsync=on"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U perf -d postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  s3:
+    image: rustfs/rustfs:1.0.4
+    environment:
+      RUSTFS_ACCESS_KEY: perf
+      RUSTFS_SECRET_KEY: perf-secret-key
+    ports:
+      - "59000:9000"
+    volumes:
+      - perf-s3:/data
+
+volumes:
+  perf-db:
+  perf-s3:

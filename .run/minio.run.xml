@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="minio" type="docker-deploy" factoryName="docker-image" server-name="local">
+  <configuration default="false" name="minio" type="docker-deploy" factoryName="docker-image" server-name="Docker">
     <deployment type="docker-image">
       <settings>
         <option name="imageTag" value="minio/minio:latest" />

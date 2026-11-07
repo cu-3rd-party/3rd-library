@@ -1,10 +1,10 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="redis" type="docker-deploy" factoryName="docker-image" server-name="local">
+  <configuration default="false" name="postgres" type="docker-deploy" factoryName="docker-image" server-name="Docker">
     <deployment type="docker-image">
       <settings>
-        <option name="imageTag" value="redis:6.0.17-alpine" />
+        <option name="imageTag" value="postgres:16" />
         <option name="attachToContainerNeeded" value="true" />
-        <option name="containerName" value="3rd-library-redis" />
+        <option name="containerName" value="3rd-library-db" />
         <option name="envVars">
           <list>
             <DockerEnvVarImpl>
@@ -24,8 +24,8 @@
         <option name="portBindings">
           <list>
             <DockerPortBindingImpl>
-              <option name="containerPort" value="6379" />
-              <option name="hostPort" value="6379" />
+              <option name="containerPort" value="5432" />
+              <option name="hostPort" value="5432" />
             </DockerPortBindingImpl>
           </list>
         </option>

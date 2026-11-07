@@ -1,16 +1,9 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="test" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="buildProfileId" value="test" />
-    <option name="command" value="test -p backend --lib -- --test-threads 1" />
+    <option name="command" value="test --workspace" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
     <envs>
-      <env name="CORS_ALLOWD_ORIGIN" value="*" />
-      <env name="HMAC_KEY" value="dev" />
-      <env name="POSTGRES_DB" value="db" />
-      <env name="POSTGRES_HOST" value="localhost" />
-      <env name="POSTGRES_PASSWORD" value="admin" />
-      <env name="POSTGRES_PORT" value="5432" />
-      <env name="POSTGRES_USER" value="admin" />
       <env name="RUST_LOG" value="info" />
     </envs>
     <option name="emulateTerminal" value="true" />

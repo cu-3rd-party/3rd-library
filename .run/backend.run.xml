@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="backend" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="buildProfileId" value="dev" />
-    <option name="command" value="run --bin backend" />
+    <option name="command" value="run --bin library-web" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
     <envs>
       <env name="HMAC_KEY" value="dev" />
@@ -12,7 +12,7 @@
       <env name="POSTGRES_USER" value="admin" />
       <env name="RUST_LOG" value="info" />
       <env name="S3_ACCESS_KEY" value="admin" />
-      <env name="S3_SECRET_KEY" value="qewrty123" />
+      <env name="S3_SECRET_KEY" value="qwerty123" />
       <env name="S3_ENDPOINT" value="http://localhost:9000" />
     </envs>
     <option name="emulateTerminal" value="true" />
