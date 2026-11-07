@@ -66,7 +66,8 @@ impl Users {
     }
 
     fn put(&mut self, user: User) {
-        self.by_email.insert(user.email().as_str().to_owned(), user.id().into_inner());
+        self.by_email
+            .insert(user.email().as_str().to_owned(), user.id().into_inner());
         self.by_id.insert(user.id().into_inner(), Arc::new(user));
     }
 }
@@ -303,16 +304,18 @@ fn batch_of(changes: &[Change]) -> Batch {
                     submitted_at: submission.submitted_at(),
                     reviewed_at: submission.reviewed_at(),
                 });
-                batch.files.extend(submission.files().iter().map(|file| writer::FileRow {
-                    file_id: file.id.into_inner(),
-                    user_id: file.owner.into_inner(),
-                    name: file.name.clone(),
-                    size_bytes: file.size_bytes,
-                    extension: file.extension.clone(),
-                    mime_type: file.mime_type.clone(),
-                    storage_key: file.storage_key.clone(),
-                    created_at: file.created,
-                }));
+                batch
+                    .files
+                    .extend(submission.files().iter().map(|file| writer::FileRow {
+                        file_id: file.id.into_inner(),
+                        user_id: file.owner.into_inner(),
+                        name: file.name.clone(),
+                        size_bytes: file.size_bytes,
+                        extension: file.extension.clone(),
+                        mime_type: file.mime_type.clone(),
+                        storage_key: file.storage_key.clone(),
+                        created_at: file.created,
+                    }));
                 batch.submission_files.push(writer::SubmissionFilesRow {
                     submission_id: submission.id().into_inner(),
                     file_ids: submission.files().iter().map(|file| file.id.into_inner()).collect(),
@@ -401,7 +404,11 @@ impl Store {
         }
         catalog.feed.sort_by_key(|material| material.feed_key());
         for material in &catalog.feed {
-            catalog.by_author.entry(material.author).or_default().push(material.clone());
+            catalog
+                .by_author
+                .entry(material.author)
+                .or_default()
+                .push(material.clone());
         }
         catalog.authors = sqlx::query_scalar(
             "select u.user_id from web_user u where exists \
@@ -609,7 +616,11 @@ impl Store {
             }
         }
         if changed_roles > 0 || !revoked.is_empty() {
-            tracing::info!(changed_roles, revoked_sessions = revoked.len(), "synced authorization with the database");
+            tracing::info!(
+                changed_roles,
+                revoked_sessions = revoked.len(),
+                "synced authorization with the database"
+            );
         }
         Ok(())
     }
@@ -633,7 +644,10 @@ impl Store {
                 continue;
             };
             let ids: Vec<Uuid> = material.file_ids().iter().map(|id| id.into_inner()).collect();
-            let mut files: Vec<MaterialFile> = ids.iter().filter_map(|id| known.get(id).map(|file| (*file).clone())).collect();
+            let mut files: Vec<MaterialFile> = ids
+                .iter()
+                .filter_map(|id| known.get(id).map(|file| (*file).clone()))
+                .collect();
             if files.len() < ids.len() {
                 files = self.files_from_db(&ids).await;
             }
@@ -652,11 +666,12 @@ impl Store {
 
     async fn files_from_db(&self, ids: &[Uuid]) -> Vec<MaterialFile> {
         observe_db_query();
-        let rows: Result<Vec<FileRow>, _> =
-            sqlx::query_as(&format!("select {FILE_COLUMNS} from material_file mf where mf.file_id = any($1)"))
-                .bind(ids)
-                .fetch_all(&self.db)
-                .await;
+        let rows: Result<Vec<FileRow>, _> = sqlx::query_as(&format!(
+            "select {FILE_COLUMNS} from material_file mf where mf.file_id = any($1)"
+        ))
+        .bind(ids)
+        .fetch_all(&self.db)
+        .await;
         match rows {
             Ok(rows) => rows.into_iter().map(MaterialFile::from).collect(),
             Err(error) => {
@@ -670,7 +685,11 @@ impl Store {
     async fn authors_order_from_db(&self, new: &[MaterialRec]) -> Vec<Uuid> {
         let current = self.catalog().authors.clone();
         let mut ids = current.clone();
-        ids.extend(new.iter().map(|material| material.author).filter(|id| !current.contains(id)));
+        ids.extend(
+            new.iter()
+                .map(|material| material.author)
+                .filter(|id| !current.contains(id)),
+        );
         ids.dedup();
 
         observe_db_query();
@@ -690,7 +709,10 @@ impl Store {
 }
 
 fn sorted_files(submission: Submission) -> Submission {
-    if submission.files().is_sorted_by_key(|file| (file.created, file.id.into_inner())) {
+    if submission
+        .files()
+        .is_sorted_by_key(|file| (file.created, file.id.into_inner()))
+    {
         return submission;
     }
     let mut data = submission.into_data();

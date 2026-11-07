@@ -1,6 +1,6 @@
 mod common;
 
-use axum::http::{header, StatusCode};
+use axum::http::{StatusCode, header};
 use common::TestApp;
 use serde_json::json;
 
@@ -195,4 +195,3 @@ async fn profile_update_keeps_missing_fields() {
     assert_eq!(response.body["bio"], "hello");
     assert_eq!(response.body["name"], "User p@example.com");
 }
-

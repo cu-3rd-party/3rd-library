@@ -1,7 +1,7 @@
 mod common;
 
-use axum::http::StatusCode;
 use crate::common::TestApp;
+use axum::http::StatusCode;
 
 #[tokio::test]
 async fn health_and_openapi_are_served() {

@@ -220,7 +220,10 @@ impl MaterialRepository for MemoryMaterialRepository {
     ) -> RepositoryResult<Page<MaterialSummary>> {
         let users = self.target.store.users();
         let catalog = self.target.store.catalog();
-        let list = catalog.by_author.get(&author.into_inner()).map_or(&[][..], Vec::as_slice);
+        let list = catalog
+            .by_author
+            .get(&author.into_inner())
+            .map_or(&[][..], Vec::as_slice);
         Ok(materials_page(list, page, &users))
     }
 

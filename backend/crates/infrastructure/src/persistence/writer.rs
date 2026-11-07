@@ -352,9 +352,11 @@ async fn execute(db: &PgPool, batch: &MergedBatch) -> Result<(), WriteError> {
 fn is_transient(error: &sqlx::Error) -> bool {
     match error {
         sqlx::Error::Io(_) | sqlx::Error::PoolTimedOut | sqlx::Error::Protocol(_) | sqlx::Error::Tls(_) => true,
-        sqlx::Error::Database(error) => error
-            .code()
-            .is_some_and(|code| ["08", "40", "53", "55", "57"].iter().any(|class| code.starts_with(class))),
+        sqlx::Error::Database(error) => error.code().is_some_and(|code| {
+            ["08", "40", "53", "55", "57"]
+                .iter()
+                .any(|class| code.starts_with(class))
+        }),
         _ => false,
     }
 }

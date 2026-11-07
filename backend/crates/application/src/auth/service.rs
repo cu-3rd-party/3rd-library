@@ -6,8 +6,8 @@ use library_domain::users::{Email, User, UserRepository, VerificationCode};
 use uuid::Uuid;
 
 use super::{AuthResultDto, RegisterUser, Session, TokenClaims, TokenPairDto};
-use crate::ports::{Mailer, PasswordHasher, SessionStore, TokenCodec};
 use crate::locks::lock;
+use crate::ports::{Mailer, PasswordHasher, SessionStore, TokenCodec};
 use crate::users::UserDto;
 use crate::{AppError, AppResult};
 

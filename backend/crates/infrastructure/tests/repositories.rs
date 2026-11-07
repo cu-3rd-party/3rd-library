@@ -60,10 +60,16 @@ async fn user_roundtrip_and_unique_email() {
 
     assert!(users.insert(&user).await.unwrap());
     assert!(!users.insert(&self::user("a@example.com")).await.unwrap());
-    assert_eq!(users.find_by_email("a@example.com").await.unwrap().as_ref(), Some(&user));
+    assert_eq!(
+        users.find_by_email("a@example.com").await.unwrap().as_ref(),
+        Some(&user)
+    );
 
     let reloaded = MemoryUserRepository::new(reload(&pool).await);
-    assert_eq!(reloaded.find_by_email("a@example.com").await.unwrap(), Some(user.clone()));
+    assert_eq!(
+        reloaded.find_by_email("a@example.com").await.unwrap(),
+        Some(user.clone())
+    );
 }
 
 #[tokio::test]
@@ -83,7 +89,10 @@ async fn external_role_and_session_changes_are_synced() {
         sessions.save(&session(n), TimeDelta::hours(1)).await.unwrap();
     }
 
-    sqlx::query("update web_user set roles = array['user', 'moderator']").execute(&pool).await.unwrap();
+    sqlx::query("update web_user set roles = array['user', 'moderator']")
+        .execute(&pool)
+        .await
+        .unwrap();
     sqlx::query("delete from session where session_id = $1")
         .bind(Uuid::from_u128(1))
         .execute(&pool)
@@ -101,7 +110,10 @@ async fn external_role_and_session_changes_are_synced() {
     let mut edited = users.find_by_id(user.id()).await.unwrap().unwrap();
     edited.update_profile(None, Some("bio".into()));
     users.update(&edited).await.unwrap();
-    let roles: Vec<String> = sqlx::query_scalar("select roles from web_user").fetch_one(&pool).await.unwrap();
+    let roles: Vec<String> = sqlx::query_scalar("select roles from web_user")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(roles, ["user", "moderator"]);
     assert!(users.find_by_id(user.id()).await.unwrap().unwrap().is_moderator());
 }
@@ -121,7 +133,10 @@ async fn concurrent_writes_are_all_committed() {
         assert!(handle.await.unwrap());
     }
 
-    let count: i64 = sqlx::query_scalar("select count(*) from web_user").fetch_one(&pool).await.unwrap();
+    let count: i64 = sqlx::query_scalar("select count(*) from web_user")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(count, 64);
 }
 
@@ -157,7 +172,11 @@ async fn submission_files_follow_the_aggregate() {
     assert_eq!(stored, submission);
 
     let own = reloaded
-        .list_by_author(author.id(), Some(SubmissionStatus::PendingReview), PageRequest::default())
+        .list_by_author(
+            author.id(),
+            Some(SubmissionStatus::PendingReview),
+            PageRequest::default(),
+        )
         .await
         .unwrap();
     assert_eq!((own.total, own.items.len()), (1, 1));
@@ -172,7 +191,10 @@ async fn transaction_publishes_material_atomically() {
     MemoryUserRepository::new(store.clone()).insert(&author).await.unwrap();
     let file = MaterialFile::new(author.id(), FileName::parse("a.pdf").unwrap(), 1, None);
     let mut submission = Submission::submit(author.id(), info("Lecture"), vec![file], now());
-    MemorySubmissionRepository::new(store.clone()).insert(&submission).await.unwrap();
+    MemorySubmissionRepository::new(store.clone())
+        .insert(&submission)
+        .await
+        .unwrap();
     let unit_of_work = MemoryUnitOfWork::new(store.clone());
     let materials = MemoryMaterialRepository::new(store.clone());
 
@@ -190,11 +212,26 @@ async fn transaction_publishes_material_atomically() {
 
     for materials in [materials, MemoryMaterialRepository::new(reload(&pool).await)] {
         let found = materials.find_by_id(material.id()).await.unwrap().unwrap();
-        assert_eq!((found.author_name.as_str(), found.published_at), ("User", Some(material.published_at())));
-        assert_eq!(materials.files(MaterialId::from(material.id().into_inner())).await.unwrap(), submission.files());
-        let feed = materials.list_published(Some("LECT".into()), PageRequest::default()).await.unwrap();
+        assert_eq!(
+            (found.author_name.as_str(), found.published_at),
+            ("User", Some(material.published_at()))
+        );
+        assert_eq!(
+            materials
+                .files(MaterialId::from(material.id().into_inner()))
+                .await
+                .unwrap(),
+            submission.files()
+        );
+        let feed = materials
+            .list_published(Some("LECT".into()), PageRequest::default())
+            .await
+            .unwrap();
         assert_eq!(feed.total, 1);
     }
-    let authors = MemoryUserRepository::new(store).list_authors(None, PageRequest::default()).await.unwrap();
+    let authors = MemoryUserRepository::new(store)
+        .list_authors(None, PageRequest::default())
+        .await
+        .unwrap();
     assert_eq!((authors.total, authors.items[0].materials_count), (1, 1));
 }
