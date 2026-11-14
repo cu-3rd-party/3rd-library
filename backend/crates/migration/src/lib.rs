@@ -4,4 +4,11 @@
 
 pub use sqlx::migrate::Migrator;
 
-pub static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
+/// Без advisory lock: sqlx берёт сессионный `pg_advisory_lock`, а через transaction-пулер PgBouncer
+/// unlock уходит на другое серверное соединение, и lock висит, пока пулер не закроет первое.
+/// Следующий старт тогда ждёт его без таймаута. Мигрирует одна реплика (Recreate), гонок нет.
+pub static MIGRATOR: Migrator = {
+    let mut migrator = sqlx::migrate!("./migrations");
+    migrator.locking = false;
+    migrator
+};
